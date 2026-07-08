@@ -76,3 +76,8 @@ python3 urdf_formater.py
 
 `urdf_formater.py` may take some time because it can download and parse many URDF files.
 
+## Note about the use of claude
+
+To be honest, claude help me to build this data-set.
+I chosed to do things more manually for the Cat 3 by trying to create the pipeline on my own and claude help me to use tools I have never used and also correct bugs.
+For the Cat 1 & 2, claude was more efficient to collect things on his own so that is why there are no script for those categories.
