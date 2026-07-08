@@ -3,7 +3,7 @@
 # We just have to parse the URDF to only keep the relevant information translated into natural language
 
 import xml.etree.ElementTree as ET
-import collector as col
+import urdf_collector as col
 
 
 

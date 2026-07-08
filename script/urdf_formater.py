@@ -2,7 +2,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 from transformers import AutoTokenizer
-import parser as prs
+import urdf_parser as prs
 
 # ── Tokenizer ─────────────────────────────────────────────────────────────────
 
@@ -19,38 +19,6 @@ def count_tokens(text: str, tokenizer) -> int:
     if tokenizer is not None:
         return len(tokenizer.encode(text))
     return max(1, len(text) // 4)
-
-
-# ── PDF Text Cleaning ─────────────────────────────────────────────────────────
-
-import re
-
-def clean_pdf_text(raw_text: str, robot_name: str) -> str:
-    lines = raw_text.split("\n")
-    cleaned = []
-
-    for line in lines:
-        line = line.strip()
-
-        # Skip empty lines
-        if not line:
-            continue
-
-        # Skip headers/footers — typically short repeated lines with page numbers
-        if re.match(r"^(page\s*)?\d+\s*$", line, re.IGNORECASE):
-            continue
-        if re.match(r"^©\s*\d{4}", line):
-            continue
-        if re.match(r"^www\.", line):
-            continue
-        if len(line) < 5:
-            continue
-
-        cleaned.append(line)
-
-    # Join and add robot tag
-    text = f"Description of {robot_name} from his user manual: " + "".join(cleaned)
-    return text
 
 
 

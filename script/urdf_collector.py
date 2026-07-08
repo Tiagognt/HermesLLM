@@ -25,7 +25,7 @@ def get_urdf_files_from_repo(token, owner, repo):
     
 
     urdf_files = [
-        item for item in tree["tree"]
+        item for item in tree['tree']
         if item["type"] == "blob" and item["path"].endswith(".urdf")
     ]
     
