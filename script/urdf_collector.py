@@ -1,9 +1,13 @@
 import requests
 import os
 
-from robot_descriptions._descriptions import DESCRIPTIONS, Format
+try:
+    from robot_descriptions._descriptions import DESCRIPTIONS, Format
+except ImportError:
+    DESCRIPTIONS = {}
+    Format = None
 
-TOKEN = "gtp_yourtoken"
+TOKEN = os.environ.get("GITHUB_TOKEN", None)
 OWNERS_REPOS = [("unitreerobotics", "unitree_ros")]
 
 OUTPUT_DIR = "../data/raw/"
@@ -19,17 +23,29 @@ def get_urdf_files_from_repo(token, owner, repo):
         "Accept": "application/vnd.github.v3+json"
     }
 
-    url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/HEAD?recursive=1"
+    repo_info_url = f"https://api.github.com/repos/{owner}/{repo}"
+    repo_info_response = requests.get(repo_info_url, headers=headers)
+    repo_info = repo_info_response.json()
+    default_branch = repo_info.get("default_branch")
+
+    if repo_info_response.status_code != 200 or not default_branch:
+        print(f"Failed to read repo metadata for {owner}/{repo}: {repo_info.get('message', 'unknown error')}")
+        return repo_info.get("license", {}).get("name", "Unknown"), [], []
+
+    url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{default_branch}?recursive=1"
     response = requests.get(url, headers=headers)
     tree = response.json()
-    
+
+    if response.status_code != 200 or "tree" not in tree:
+        print(f"Failed to read tree for {owner}/{repo}: {tree.get('message', 'unknown error')}")
+        return repo_info.get("license", {}).get("name", "Unknown"), [], []
 
     urdf_files = [
-        item for item in tree['tree']
+        item for item in tree["tree"]
         if item["type"] == "blob" and item["path"].endswith(".urdf")
     ]
-    
-    license = requests.get(f"https://api.github.com/repos/{owner}/{repo}/license", headers=headers).json().get("license", {}).get("name", "Unknown")
+
+    license = repo_info.get("license", {}).get("name", "Unknown")
     urls = []
     
     for item in urdf_files:
@@ -58,12 +74,17 @@ ALLOWED_LICENSES = {"MIT", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "CC-BY-
 
 SELECTED_ROBOTS = [
     name for name, desc in DESCRIPTIONS.items()
-    if Format.URDF in desc.formats
+    if Format is not None
+    and Format.URDF in desc.formats
     and MOBILE_TAGS.intersection(desc.tags)
     and desc.license_spdx in ALLOWED_LICENSES
 ]
 
 def get_urdf_files_from_robot_descriptions(token, robot_names: list = SELECTED_ROBOTS, max_files: int = 100):
+    if not DESCRIPTIONS or Format is None:
+        print("robot_descriptions unavailable, skipping robot_descriptions collection")
+        return [], [], []
+
     all_licenses   = []
     all_urls       = []
     all_file_paths = []

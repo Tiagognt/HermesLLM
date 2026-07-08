@@ -1,12 +1,20 @@
 import json
 import uuid
 from datetime import datetime, timezone
-from transformers import AutoTokenizer
 import urdf_parser as prs
+
+try:
+    from transformers import AutoTokenizer
+except ImportError:
+    AutoTokenizer = None
 
 # ── Tokenizer ─────────────────────────────────────────────────────────────────
 
 def load_tokenizer():
+    if AutoTokenizer is None:
+        print("transformers unavailable, falling back to char/4 estimate")
+        return None
+
     try:
         tok = AutoTokenizer.from_pretrained("Qwen/Qwen3-0.6B", trust_remote_code=True)
         print("Qwen3 tokenizer loaded")
