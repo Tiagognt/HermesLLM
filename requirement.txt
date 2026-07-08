@@ -4,3 +4,6 @@ pin
 meshcat
 transformers
 robot_descriptions
+aiohttp 
+beautifulsoup4 
+lxml
