@@ -26,9 +26,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/pelvis.stl"/>
+        <mesh filename="meshes/pelvis.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -49,9 +50,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_hip_pitch_link.stl"/>
+        <mesh filename="meshes/left_hip_pitch_link.dae"/>
       </geometry>
-      <material name="dark"/>
+      <material name="ID2"/>
     </visual>
     <!-- <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -76,7 +77,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_hip_roll_link.stl"/>
+        <mesh filename="meshes/left_hip_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -103,9 +104,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_hip_yaw_link.stl"/>
+        <mesh filename="meshes/left_hip_yaw_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -130,9 +132,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_knee_link.stl"/>
+        <mesh filename="meshes/left_knee_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0.01 -0.022549 -0.25" rpy="0 0 0"/>
@@ -157,7 +160,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_ankle_roll_link.stl"/>
+        <mesh filename="meshes/left_ankle_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -184,9 +187,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_ankle_pitch_link.stl"/>
+        <mesh filename="meshes/left_ankle_pitch_link.dae"/>
       </geometry>
-      <material name="dark"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -211,9 +215,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_hip_pitch_link.stl"/>
+        <mesh filename="meshes/right_hip_pitch_link.dae"/>
       </geometry>
-      <material name="dark"/>
+      <material name="ID2"/>
     </visual>
     <!-- <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -238,7 +242,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_hip_roll_link.stl"/>
+        <mesh filename="meshes/right_hip_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -265,9 +269,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_hip_yaw_link.stl"/>
+        <mesh filename="meshes/right_hip_yaw_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -292,9 +297,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_knee_link.stl"/>
+        <mesh filename="meshes/right_knee_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0.01 0.022549 -0.25" rpy="0 0 0"/>
@@ -319,7 +325,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_ankle_roll_link.stl"/>
+        <mesh filename="meshes/right_ankle_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -346,9 +352,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_ankle_pitch_link.stl"/>
+        <mesh filename="meshes/right_ankle_pitch_link.dae"/>
       </geometry>
-      <material name="dark"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -376,7 +383,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/waist_yaw_link.stl"/>
+        <mesh filename="meshes/waist_yaw_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -403,7 +410,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/waist_roll_link.stl"/>
+        <mesh filename="meshes/waist_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -430,9 +437,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/torso_link.stl"/>
+        <mesh filename="meshes/torso_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -460,9 +468,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/head_pitch_link.stl"/>
+        <mesh filename="meshes/head_pitch_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
     </visual>
     <!-- <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -487,9 +495,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/head_yaw_link.stl"/>
+        <mesh filename="meshes/head_yaw_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -507,6 +516,28 @@
   </joint>
 
 
+  <!-- camera -->
+  <link name="camera"></link>
+  <joint name="camera" type="fixed">
+    <origin xyz="0.08667 0.03 0.0099" rpy="0 0 0"/>
+    <parent link="head_yaw_link"/>
+    <child link="camera"/>
+  </joint>
+  <!-- imu -->
+  <link name="imu_in_torso"></link>
+  <joint name="imu_in_torso_joint" type="fixed">
+    <origin xyz="-0.06382 -0.06538 0.29588" rpy="0 0 0"/>
+    <parent link="torso_link"/>
+    <child link="imu_in_torso"/>
+  </joint>
+  <link name="imu_in_pelvis"></link>
+  <joint name="imu_in_pelvis_joint" type="fixed">
+    <origin xyz="-0.055 0 -0.0589" rpy="0 0 0"/>
+    <parent link="pelvis"/>
+    <child link="imu_in_pelvis"/>
+  </joint>
+
+
   <!-- ARM -->
   <link name="left_shoulder_pitch_link">
     <inertial>
@@ -517,7 +548,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_shoulder_pitch_link.stl"/>
+        <mesh filename="meshes/left_shoulder_pitch_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -544,7 +575,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_shoulder_roll_link.stl"/>
+        <mesh filename="meshes/left_shoulder_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -571,7 +602,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_shoulder_yaw_link.stl"/>
+        <mesh filename="meshes/left_shoulder_yaw_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -598,9 +629,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_elbow_link.stl"/>
+        <mesh filename="meshes/left_elbow_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -625,7 +657,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_wrist_roll_link.stl"/>
+        <mesh filename="meshes/left_wrist_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -652,7 +684,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_wrist_pitch_link.stl"/>
+        <mesh filename="meshes/left_wrist_pitch_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -679,9 +711,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_wrist_yaw_link.stl"/>
+        <mesh filename="meshes/left_wrist_yaw_link.dae"/>
       </geometry>
-      <material name="dark"/>
+      <material name="white"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -706,7 +738,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/left_hand_link.stl"/>
+        <mesh filename="meshes/left_hand_link.dae"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -731,7 +763,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_shoulder_pitch_link.stl"/>
+        <mesh filename="meshes/right_shoulder_pitch_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -758,7 +790,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_shoulder_roll_link.stl"/>
+        <mesh filename="meshes/right_shoulder_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -785,7 +817,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_shoulder_yaw_link.stl"/>
+        <mesh filename="meshes/right_shoulder_yaw_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -812,9 +844,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_elbow_link.stl"/>
+        <mesh filename="meshes/right_elbow_link.dae"/>
       </geometry>
-      <material name="white"/>
+      <material name="ID2"/>
+      <material name="ID4"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -839,7 +872,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_wrist_roll_link.stl"/>
+        <mesh filename="meshes/right_wrist_roll_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -866,7 +899,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_wrist_pitch_link.stl"/>
+        <mesh filename="meshes/right_wrist_pitch_link.dae"/>
       </geometry>
       <material name="white"/>
     </visual>
@@ -893,9 +926,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_wrist_yaw_link.stl"/>
+        <mesh filename="meshes/right_wrist_yaw_link.dae"/>
       </geometry>
-      <material name="dark"/>
+      <material name="white"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -920,7 +953,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/right_hand_link.stl"/>
+        <mesh filename="meshes/right_hand_link.dae"/>
       </geometry>
       <material name="dark"/>
     </visual>

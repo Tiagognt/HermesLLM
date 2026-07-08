@@ -7,7 +7,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from transformers import AutoTokenizer
 
-PDF_DIR    = "../data/vendors_manuals_pdf"
+PDF_DIR    = "../data/raw/vendors_manuals_pdf"
 
 ROBOT_NAME_MAP = {
     "g1":           "Unitree G1",
@@ -223,4 +223,4 @@ def process_all_pdfs(pdf_dir: str, output_jsonl: str):
 
 
 if __name__ == "__main__":
-    process_all_pdfs(PDF_DIR, "../data/Cat3data_pdf.jsonl")
+    process_all_pdfs(PDF_DIR, "../data/clean/cat3/Cat3data_pdf.jsonl")

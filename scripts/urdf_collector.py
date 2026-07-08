@@ -10,7 +10,7 @@ except ImportError:
 TOKEN = os.environ.get("GITHUB_TOKEN", None)
 OWNERS_REPOS = [("unitreerobotics", "unitree_ros")]
 
-OUTPUT_DIR = "../data/raw/"
+OUTPUT_DIR = "../data/raw/urdf/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 

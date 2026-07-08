@@ -60,7 +60,7 @@ if __name__ == "__main__":
             records.append(record)
             print(f"  {url.split('/')[-1]} — {record['n_tokens']} tokens")
 
-    output_path = "../data/Cat3data_urdf.jsonl"
+    output_path = "../data/clean/cat3/Cat3data_urdf.jsonl"
     with open(output_path, "w", encoding="utf-8") as f:
         for record in records:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
