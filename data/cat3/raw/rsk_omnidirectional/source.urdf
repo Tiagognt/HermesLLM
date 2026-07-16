@@ -1,0 +1,4131 @@
+<?xml version="1.0" ?>
+<!-- Generated using onshape-to-robot -->
+<!-- Onshape https://cad.onshape.com/documents/81e7adfaf4d8d74f2936fbd5/w/97141f458dee8c3b80cbf3d2/e/5e1ff591ff562de3da8ed2af -->
+<robot name="rsk_urdf">
+    <!-- Link base -->
+    <link name="base">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="1e-09"/>
+            <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+        </inertial>
+    </link>
+    <!-- Link wheel_no_passives -->
+    <link name="wheel_no_passives">
+        <inertial>
+            <origin xyz="6.58074e-07 -5.13421e-06 -0.00986839" rpy="0 0 0"/>
+            <mass value="0.0266331"/>
+            <inertia ixx="3.77181e-06" ixy="8.61773e-10" ixz="-7.42627e-10" iyy="3.77247e-06" iyz="-1.53938e-11" izz="7.07069e-06"/>
+        </inertial>
+        <!-- Part wheel2 -->
+        <visual>
+            <origin xyz="8.67362e-18 -1.73472e-17 -0.0075" rpy="3.14159 4.85549e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/wheel2.stl"/>
+            </geometry>
+            <material name="wheel2_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec -->
+        <visual>
+            <origin xyz="-7.80626e-18 0.008 -0.0132" rpy="-3.14159 3.25381e-17 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part coupler_2 -->
+        <visual>
+            <origin xyz="3.46945e-18 -6.93889e-18 -0.012" rpy="4.78251e-18 -4.85549e-17 -4.33646e-17"/>
+            <geometry>
+                <mesh filename="package://assets/coupler__2.stl"/>
+            </geometry>
+            <material name="coupler_2_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e -->
+        <visual>
+            <origin xyz="2.86229e-17 0.008 -0.005" rpy="-4.78251e-18 4.85549e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_2 -->
+        <visual>
+            <origin xyz="-0.0138564 0.008 -0.005" rpy="5.07286e-17 4.85549e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_2_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part wheel1 -->
+        <visual>
+            <origin xyz="8.67362e-18 -1.73472e-17 -0.0075" rpy="3.14159 4.85549e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/wheel1.stl"/>
+            </geometry>
+            <material name="wheel1_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_2 -->
+        <visual>
+            <origin xyz="-0.0138564 0.008 -0.0142" rpy="-2.21186e-16 7.03835e-16 -0.523599"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_2_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_3 -->
+        <visual>
+            <origin xyz="0.0138564 -0.008 -0.0142" rpy="2.62819e-16 -7.59346e-16 2.61799"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_3_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_4 -->
+        <visual>
+            <origin xyz="4.33681e-18 -0.016 -0.0142" rpy="-1.59577e-16 2.29731e-17 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_4_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_3 -->
+        <visual>
+            <origin xyz="0.0138564 -0.008 -0.005" rpy="4.78251e-18 -2.15088e-16 3.24415e-16"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_3_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_5 -->
+        <visual>
+            <origin xyz="-0.0138564 -0.008 -0.0142" rpy="2.99249e-16 6.06746e-17 0.523599"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_5_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_4 -->
+        <visual>
+            <origin xyz="-0.0138564 -0.008 -0.005" rpy="-2.59746e-16 -2.48941e-16 -2.0944"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_4_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_5 -->
+        <visual>
+            <origin xyz="0.0138564 0.008 -0.005" rpy="5.92813e-16 2.48941e-16 1.0472"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_5_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_6 -->
+        <visual>
+            <origin xyz="7.45931e-17 -0.016 -0.005" rpy="1.05859e-16 3.5476e-16 -1.0472"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_6_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_6 -->
+        <visual>
+            <origin xyz="0.0138564 0.008 -0.0142" rpy="-3.5476e-16 -2.82719e-16 -2.61799"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_6_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_7 -->
+        <visual>
+            <origin xyz="-5.89806e-17 0.016 -0.0142" rpy="1.04066e-16 -5.07286e-17 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_7_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_7 -->
+        <visual>
+            <origin xyz="-1.99493e-17 0.016 -0.005" rpy="-5.03477e-17 -3.5476e-16 2.0944"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_7_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_8 -->
+        <visual>
+            <origin xyz="0.008 -3.46945e-17 -0.0132" rpy="3.14159 1.04066e-16 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_8_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_9 -->
+        <visual>
+            <origin xyz="-5.89806e-17 -0.008 -0.0132" rpy="-3.14159 2.29731e-17 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_9_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_8 -->
+        <visual>
+            <origin xyz="-0.008 -5.89806e-17 -0.005" rpy="4.85549e-17 4.78251e-18 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_8_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_9 -->
+        <visual>
+            <origin xyz="-5.89806e-17 -0.008 -0.005" rpy="8.80492e-17 6.24674e-17 -1.05809e-16"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_9_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_10 -->
+        <visual>
+            <origin xyz="-0.008 -2.08167e-17 -0.0132" rpy="-3.14159 -2.15088e-16 -1.85489e-16"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_10_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_10 -->
+        <visual>
+            <origin xyz="0.008 -4.85723e-17 -0.005" rpy="-4.85549e-17 2.29731e-17 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_10_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Link pin_bearing_oring -->
+    <link name="pin_bearing_oring">
+        <inertial>
+            <origin xyz="-3.08019e-17 8.62827e-17 -6.90771e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-3.98211e-24" ixz="-4.20772e-24" iyy="3.55777e-08" iyz="-7.95607e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring -->
+        <!-- Part pin -->
+        <!-- Part bearing -->
+        <collision>
+            <origin xyz="-3.45301e-17 9.73886e-17 -7.76289e-17" rpy="3.14159 -2.15852e-17 -1.32388e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-3.46945e-17 9.71445e-17 0.002" rpy="3.14159 -2.15852e-17 -1.32388e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring -->
+    <joint name="wheel1_passive_1" type="continuous">
+        <origin xyz="-0.00880698 0.0271051 -0.01" rpy="0.314159 -1.5708 0"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_2 -->
+    <link name="pin_bearing_oring_2">
+        <inertial>
+            <origin xyz="-1.36531e-17 6.0596e-17 -1.2237e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.17392e-24" ixz="8.71781e-24" iyy="3.55777e-08" iyz="-2.26453e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_2 -->
+        <!-- Part pin_2 -->
+        <!-- Part bearing_2 -->
+        <collision>
+            <origin xyz="-1.42517e-17 6.94071e-17 -1.38344e-16" rpy="3.14159 7.31972e-17 7.64015e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.38778e-17 6.93889e-17 0.002" rpy="3.14159 7.31972e-17 7.64015e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_2_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_2 -->
+    <joint name="wheel1_passive_2" type="continuous">
+        <origin xyz="-0.0167519 0.023057 -0.01" rpy="-1.5708 3.18404e-16 -0.942478"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_3 -->
+    <link name="pin_bearing_oring_3">
+        <inertial>
+            <origin xyz="5.54335e-17 6.05915e-17 7.80393e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-2.95675e-24" ixz="-1.6448e-23" iyy="3.55777e-08" iyz="-9.87739e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_3 -->
+        <!-- Part pin_3 -->
+        <!-- Part bearing_3 -->
+        <collision>
+            <origin xyz="6.25105e-17 6.95063e-17 8.84709e-17" rpy="-3.77474e-16 5.13796e-16 -1.33925e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.245e-17 6.93889e-17 -0.002" rpy="-3.77474e-16 5.13796e-16 -1.33925e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_3_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_3 -->
+    <joint name="wheel1_passive_3" type="continuous">
+        <origin xyz="-0.023057 0.0167519 -0.01" rpy="1.5708 -8.6135e-17 -0.628319"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_4 -->
+    <link name="pin_bearing_oring_4">
+        <inertial>
+            <origin xyz="-2.78967e-17 -1.18947e-17 -1.24731e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.42556e-24" ixz="9.89892e-26" iyy="3.55777e-08" iyz="8.40134e-26" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_4 -->
+        <!-- Part pin_4 -->
+        <!-- Part bearing_4 -->
+        <collision>
+            <origin xyz="-3.12256e-17 -1.38785e-17 -1.40513e-16" rpy="-3.14159 -2.31632e-18 -2.00262e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-3.1225e-17 -1.38778e-17 0.002" rpy="-3.14159 -2.31632e-18 -2.00262e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_4_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_4 -->
+    <joint name="wheel1_passive_4" type="continuous">
+        <origin xyz="-0.0271051 0.00880698 -0.01" rpy="1.5708 -3.9118e-14 -0.314159"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_4"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_5 -->
+    <link name="pin_bearing_oring_5">
+        <inertial>
+            <origin xyz="9.23121e-17 1.78564e-16 -6.92215e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.54239e-24" ixz="3.79058e-24" iyy="3.55777e-08" iyz="-2.2042e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_5 -->
+        <!-- Part pin_5 -->
+        <!-- Part bearing_5 -->
+        <collision>
+            <origin xyz="1.04026e-16 2.01256e-16 -7.80626e-17" rpy="3.14159 -5.77588e-17 7.19686e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="1.04083e-16 2.01228e-16 0.002" rpy="3.14159 -5.77588e-17 7.19686e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_5_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_5 -->
+    <joint name="wheel1_passive_5" type="continuous">
+        <origin xyz="-0.0285 -1.38778e-17 -0.01" rpy="1.5708 -6.94375e-14 -3.52311e-16"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_5"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_6 -->
+    <link name="pin_bearing_oring_6">
+        <inertial>
+            <origin xyz="-3.00036e-17 1.34432e-17 6.75831e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.83592e-24" ixz="-1.91075e-23" iyy="3.55777e-08" iyz="-2.1711e-23" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_6 -->
+        <!-- Part pin_6 -->
+        <!-- Part bearing_6 -->
+        <collision>
+            <origin xyz="-3.4861e-17 1.38842e-17 7.67615e-17" rpy="-6.15667e-16 3.95303e-16 -1.47312e-16"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-3.46945e-17 1.38778e-17 -0.002" rpy="-6.15667e-16 3.95303e-16 -1.47312e-16"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_6_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_6 -->
+    <joint name="wheel1_passive_6" type="continuous">
+        <origin xyz="-0.0271051 -0.00880698 -0.01" rpy="1.5708 -7.82847e-17 0.314159"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_6"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_7 -->
+    <link name="pin_bearing_oring_7">
+        <inertial>
+            <origin xyz="-1.55244e-17 -6.22384e-17 -8.86401e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.84132e-24" ixz="-2.09202e-24" iyy="3.55777e-08" iyz="6.12257e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_7 -->
+        <!-- Part pin_7 -->
+        <!-- Part bearing_7 -->
+        <collision>
+            <origin xyz="-1.71358e-17 -6.96028e-17 -1.0018e-16" rpy="3.14159 -1.21133e-16 -5.53963e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.73472e-17 -6.93889e-17 0.002" rpy="3.14159 -1.21133e-16 -5.53963e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_7_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_7 -->
+    <joint name="wheel1_passive_7" type="continuous">
+        <origin xyz="-0.023057 -0.0167519 -0.01" rpy="1.5708 -1.36975e-14 0.628319"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_7"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_8 -->
+    <link name="pin_bearing_oring_8">
+        <inertial>
+            <origin xyz="3.0563e-18 -6.79783e-17 -8.03042e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.88252e-24" ixz="2.81308e-24" iyy="3.55777e-08" iyz="-3.81017e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_8 -->
+        <!-- Part pin_8 -->
+        <!-- Part bearing_8 -->
+        <collision>
+            <origin xyz="3.39657e-18 -7.61468e-17 -9.02056e-17" rpy="-3.14159 -1.70512e-17 -3.3432e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="3.46945e-18 -7.63278e-17 0.002" rpy="-3.14159 -1.70512e-17 -3.3432e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_8_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_8 -->
+    <joint name="wheel1_passive_8" type="continuous">
+        <origin xyz="-0.0167519 -0.023057 -0.01" rpy="1.5708 -1.76654e-15 0.942478"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_8"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_9 -->
+    <link name="pin_bearing_oring_9">
+        <inertial>
+            <origin xyz="4.92003e-17 -8.22472e-17 -9.13869e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.16882e-25" ixz="9.17842e-25" iyy="3.55777e-08" iyz="8.74394e-26" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_9 -->
+        <!-- Part pin_9 -->
+        <!-- Part bearing_9 -->
+        <collision>
+            <origin xyz="5.55112e-17 -9.19428e-17 -1.02349e-16" rpy="-3.14159 -2.58443e-17 1.73417e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="5.55112e-17 -9.19403e-17 0.002" rpy="-3.14159 -2.58443e-17 1.73417e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_9_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_9 -->
+    <joint name="wheel1_passive_9" type="continuous">
+        <origin xyz="-0.00880698 -0.0271051 -0.01" rpy="-0.314159 -1.5708 0"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_9"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_10 -->
+    <link name="pin_bearing_oring_10">
+        <inertial>
+            <origin xyz="1.63277e-17 8.88398e-17 4.32014e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.54556e-23" ixz="1.61009e-23" iyy="3.55777e-08" iyz="-1.0539e-23" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_10 -->
+        <!-- Part pin_10 -->
+        <!-- Part bearing_10 -->
+        <collision>
+            <origin xyz="1.88057e-17 9.70049e-17 4.94396e-17" rpy="-1.7738e-16 -6.87671e-16 3.89874e-16"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="1.9082e-17 9.71445e-17 -0.002" rpy="-1.7738e-16 -6.87671e-16 3.89874e-16"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_10_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_10 -->
+    <joint name="wheel1_passive_10" type="continuous">
+        <origin xyz="1.73472e-18 -0.0285 -0.01" rpy="1.5708 -4.78251e-18 1.5708"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_10"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_11 -->
+    <link name="pin_bearing_oring_11">
+        <inertial>
+            <origin xyz="2.29469e-17 8.46682e-18 -1.06131e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.01777e-24" ixz="2.58048e-25" iyy="3.55777e-08" iyz="4.18323e-25" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_11 -->
+        <!-- Part pin_11 -->
+        <!-- Part bearing_11 -->
+        <collision>
+            <origin xyz="2.77185e-17 1.03442e-17 -1.19696e-16" rpy="3.14159 2.43078e-17 3.68003e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="2.77556e-17 1.04083e-17 0.002" rpy="3.14159 2.43078e-17 3.68003e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_11_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_11 -->
+    <joint name="wheel1_passive_11" type="continuous">
+        <origin xyz="0.00880698 -0.0271051 -0.01" rpy="0.314159 -1.5708 0"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_11"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_12 -->
+    <link name="pin_bearing_oring_12">
+        <inertial>
+            <origin xyz="-8.10478e-17 2.75099e-17 -9.73618e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-6.64522e-25" ixz="-1.07957e-24" iyy="3.55777e-08" iyz="4.43165e-25" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_12 -->
+        <!-- Part pin_12 -->
+        <!-- Part bearing_12 -->
+        <collision>
+            <origin xyz="-9.0164e-17 3.13033e-17 -1.09288e-16" rpy="-3.14159 -5.03539e-18 3.74313e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-9.02056e-17 3.1225e-17 0.002" rpy="-3.14159 -5.03539e-18 3.74313e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_12_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_12 -->
+    <joint name="wheel1_passive_12" type="continuous">
+        <origin xyz="0.0167519 -0.023057 -0.01" rpy="0.628319 -1.5708 0"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_12"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_13 -->
+    <link name="pin_bearing_oring_13">
+        <inertial>
+            <origin xyz="-2.21909e-17 -4.18331e-18 -8.59899e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="3.28539e-24" ixz="3.85277e-24" iyy="3.55777e-08" iyz="-7.18558e-25" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_13 -->
+        <!-- Part pin_13 -->
+        <!-- Part bearing_13 -->
+        <collision>
+            <origin xyz="-2.43572e-17 -6.93844e-18 -9.71445e-17" rpy="3.14159 -4.78502e-17 4.54044e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.42861e-17 -6.93889e-18 0.002" rpy="3.14159 -4.78502e-17 4.54044e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_13_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_13 -->
+    <joint name="wheel1_passive_13" type="continuous">
+        <origin xyz="0.023057 -0.0167519 -0.01" rpy="1.5708 7.01929e-15 -0.628319"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_13"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_14 -->
+    <link name="pin_bearing_oring_14">
+        <inertial>
+            <origin xyz="-1.38909e-16 6.21183e-17 -2.89387e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="4.34701e-25" ixz="-1.35332e-25" iyy="3.55777e-08" iyz="8.59574e-26" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_14 -->
+        <!-- Part pin_14 -->
+        <!-- Part bearing_14 -->
+        <collision>
+            <origin xyz="-1.5612e-16 6.93887e-17 -3.29597e-17" rpy="-3.14159 -4.23284e-19 1.93868e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.56125e-16 6.93889e-17 0.002" rpy="-3.14159 -4.23284e-19 1.93868e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_14_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_14 -->
+    <joint name="wheel1_passive_14" type="continuous">
+        <origin xyz="0.0271051 -0.00880698 -0.01" rpy="1.5708 7.51136e-15 -0.314159"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_14"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_15 -->
+    <link name="pin_bearing_oring_15">
+        <inertial>
+            <origin xyz="2.9993e-17 -7.59573e-17 -7.57749e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="4.41296e-24" ixz="-1.17048e-24" iyy="3.55777e-08" iyz="1.80306e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_15 -->
+        <!-- Part pin_15 -->
+        <!-- Part bearing_15 -->
+        <collision>
+            <origin xyz="3.47564e-17 -8.33339e-17 -8.50015e-17" rpy="3.14159 -1.97697e-17 8.10242e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="3.46945e-17 -8.32667e-17 0.002" rpy="3.14159 -1.97697e-17 8.10242e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_15_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_15 -->
+    <joint name="wheel1_passive_15" type="continuous">
+        <origin xyz="0.0285 -1.73472e-17 -0.01" rpy="1.5708 -2.63053e-14 -3.93956e-16"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_15"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_16 -->
+    <link name="pin_bearing_oring_16">
+        <inertial>
+            <origin xyz="4.8269e-17 6.47304e-18 1.22611e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="8.53447e-23" ixz="1.45931e-22" iyy="3.55777e-08" iyz="6.40993e-23" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_16 -->
+        <!-- Part pin_16 -->
+        <!-- Part bearing_16 -->
+        <collision>
+            <origin xyz="5.53634e-17 6.91645e-18 1.37477e-16" rpy="1.82077e-15 -4.22746e-15 1.22334e-15"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="5.55112e-17 6.93889e-18 -0.002" rpy="1.82077e-15 -4.22746e-15 1.22334e-15"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_16_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_16 -->
+    <joint name="wheel1_passive_16" type="continuous">
+        <origin xyz="0.0271051 0.00880698 -0.01" rpy="1.5708 2.27736e-17 -2.82743"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_16"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_17 -->
+    <link name="pin_bearing_oring_17">
+        <inertial>
+            <origin xyz="2.54107e-17 5.65064e-18 1.1148e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-4.62938e-23" ixz="3.94516e-23" iyy="3.55777e-08" iyz="2.64823e-23" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_17 -->
+        <!-- Part pin_17 -->
+        <!-- Part bearing_17 -->
+        <collision>
+            <origin xyz="2.8569e-17 7.58102e-18 1.24466e-16" rpy="1.97879e-16 -4.16631e-16 -7.15388e-16"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="2.77556e-17 6.93889e-18 -0.002" rpy="1.97879e-16 -4.16631e-16 -7.15388e-16"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_17_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_17 -->
+    <joint name="wheel1_passive_17" type="continuous">
+        <origin xyz="0.023057 0.0167519 -0.01" rpy="1.5708 4.17525e-17 -2.51327"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_17"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_18 -->
+    <link name="pin_bearing_oring_18">
+        <inertial>
+            <origin xyz="-2.10847e-17 6.71128e-17 4.30906e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.71189e-23" ixz="1.38256e-22" iyy="3.55777e-08" iyz="1.93128e-23" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_18 -->
+        <!-- Part pin_18 -->
+        <!-- Part bearing_18 -->
+        <collision>
+            <origin xyz="-2.3781e-17 7.59564e-17 4.77049e-18" rpy="-3.14159 -1.36332e-15 3.85017e-16"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.08167e-17 7.63278e-17 0.002" rpy="-3.14159 -1.36332e-15 3.85017e-16"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_18_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_18 -->
+    <joint name="wheel1_passive_18" type="continuous">
+        <origin xyz="0.0167519 0.023057 -0.01" rpy="1.5708 1.79434e-17 -2.19911"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_18"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_19 -->
+    <link name="pin_bearing_oring_19">
+        <inertial>
+            <origin xyz="-1.19704e-17 -5.58435e-17 -9.27842e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="5.88429e-26" ixz="7.91964e-24" iyy="3.55777e-08" iyz="3.3854e-26" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_19 -->
+        <!-- Part pin_19 -->
+        <!-- Part bearing_19 -->
+        <collision>
+            <origin xyz="-1.41222e-17 -6.24542e-17 -1.04083e-16" rpy="3.14159 -1.45923e-17 3.04296e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.38778e-17 -6.245e-17 0.002" rpy="3.14159 -1.45923e-17 3.04296e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_19_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_19 -->
+    <joint name="wheel1_passive_19" type="continuous">
+        <origin xyz="0.00880698 0.0271051 -0.01" rpy="-0.314159 -1.5708 0"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_19"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_20 -->
+    <link name="pin_bearing_oring_20">
+        <inertial>
+            <origin xyz="-9.339e-17 -9.35079e-17 -2.01691e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.541e-24" ixz="1.82621e-25" iyy="3.55777e-08" iyz="-1.7409e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_20 -->
+        <!-- Part pin_20 -->
+        <!-- Part bearing_20 -->
+        <collision>
+            <origin xyz="-1.04048e-16 -1.03983e-16 -2.25514e-17" rpy="-3.14159 -3.51528e-17 2.63913e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.04083e-16 -1.04083e-16 0.002" rpy="-3.14159 -3.51528e-17 2.63913e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_20_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives to pin_bearing_oring_20 -->
+    <joint name="wheel1_passive_20" type="continuous">
+        <origin xyz="2.1684e-17 0.0285 -0.01" rpy="8.13793e-17 -1.5708 0"/>
+        <parent link="wheel_no_passives"/>
+        <child link="pin_bearing_oring_20"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Joint from base to wheel_no_passives -->
+    <joint name="wheel1_speed" type="continuous">
+        <origin xyz="0.0408764 -0.0236 0.017" rpy="1.5708 -0.355266 -2.0944"/>
+        <parent link="base"/>
+        <child link="wheel_no_passives"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link wheel_no_passives_2 -->
+    <link name="wheel_no_passives_2">
+        <inertial>
+            <origin xyz="6.58074e-07 -5.13421e-06 -0.00986839" rpy="0 0 0"/>
+            <mass value="0.0266331"/>
+            <inertia ixx="3.77181e-06" ixy="8.61773e-10" ixz="-7.42627e-10" iyy="3.77247e-06" iyz="-1.53938e-11" izz="7.07069e-06"/>
+        </inertial>
+        <!-- Part wheel2_2 -->
+        <visual>
+            <origin xyz="-2.34124e-18 -3.46945e-18 -0.0075" rpy="3.14159 -4.51565e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/wheel2.stl"/>
+            </geometry>
+            <material name="wheel2_2_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_11 -->
+        <visual>
+            <origin xyz="6.12304e-18 0.008 -0.0132" rpy="3.14159 -3.71854e-18 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_11_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part coupler_3 -->
+        <visual>
+            <origin xyz="2.10948e-18 0 -0.012" rpy="5.1769e-31 -1.03547e-17 -1.91994e-29"/>
+            <geometry>
+                <mesh filename="package://assets/coupler__2.stl"/>
+            </geometry>
+            <material name="coupler_3_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_11 -->
+        <visual>
+            <origin xyz="1.44146e-17 0.008 -0.005" rpy="-5.1769e-31 1.03547e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_11_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_12 -->
+        <visual>
+            <origin xyz="-0.0138564 0.008 -0.005" rpy="2.4037e-17 -4.51565e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_12_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part wheel1_2 -->
+        <visual>
+            <origin xyz="-2.34124e-18 -3.46945e-18 -0.0075" rpy="3.14159 -4.51565e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/wheel1.stl"/>
+            </geometry>
+            <material name="wheel1_2_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_12 -->
+        <visual>
+            <origin xyz="-0.0138564 0.008 -0.0142" rpy="3.49257e-17 3.46945e-16 -0.523599"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_12_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_13 -->
+        <visual>
+            <origin xyz="0.0138564 -0.008 -0.0142" rpy="1.87119e-16 -3.46945e-16 2.61799"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_13_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_14 -->
+        <visual>
+            <origin xyz="5.76598e-18 -0.016 -0.0142" rpy="4.51565e-17 3.51927e-17 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_14_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_13 -->
+        <visual>
+            <origin xyz="0.0138564 -0.008 -0.005" rpy="3.48101e-17 -2.32399e-16 4.44089e-16"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_13_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_15 -->
+        <visual>
+            <origin xyz="-0.0138564 -0.008 -0.0142" rpy="-1.41962e-16 1.249e-16 0.523599"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_15_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_14 -->
+        <visual>
+            <origin xyz="-0.0138564 -0.008 -0.005" rpy="-6.93889e-17 -7.60966e-17 -2.0944"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_14_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_15 -->
+        <visual>
+            <origin xyz="0.0138564 0.008 -0.005" rpy="3.46945e-16 -3.49257e-17 1.0472"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_15_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_16 -->
+        <visual>
+            <origin xyz="5.26839e-17 -0.016 -0.005" rpy="-1.249e-16 5.23266e-17 -1.0472"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_16_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_16 -->
+        <visual>
+            <origin xyz="0.0138564 0.008 -0.0142" rpy="-2.4571e-17 -2.35922e-16 -2.61799"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_16_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_17 -->
+        <visual>
+            <origin xyz="7.5039e-19 0.016 -0.0142" rpy="1.21377e-16 -1.28814e-17 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_17_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_17 -->
+        <visual>
+            <origin xyz="1.83026e-17 0.016 -0.005" rpy="1.249e-16 -8.00821e-17 2.0944"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_17_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_18 -->
+        <visual>
+            <origin xyz="0.008 0 -0.0132" rpy="3.14159 -4.51565e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_18_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_19 -->
+        <visual>
+            <origin xyz="-1.41363e-17 -0.008 -0.0132" rpy="-3.14159 -5.06627e-17 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_19_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_18 -->
+        <visual>
+            <origin xyz="-0.008 3.46945e-18 -0.005" rpy="1.03547e-17 5.1769e-31 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_18_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_19 -->
+        <visual>
+            <origin xyz="-8.38456e-18 -0.008 -0.005" rpy="7.22267e-17 1.56179e-16 -1.91994e-29"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_19_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_20 -->
+        <visual>
+            <origin xyz="-0.008 -6.93889e-18 -0.0132" rpy="3.14159 4.51565e-17 5.55112e-17"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_20_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_20 -->
+        <visual>
+            <origin xyz="0.008 -3.46945e-18 -0.005" rpy="-1.03547e-17 2.03185e-17 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_20_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Link pin_bearing_oring_21 -->
+    <link name="pin_bearing_oring_21">
+        <inertial>
+            <origin xyz="1.76593e-17 5.86536e-18 4.40535e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-3.21707e-24" ixz="-2.9416e-24" iyy="3.55777e-08" iyz="-1.29817e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_21 -->
+        <!-- Part pin_21 -->
+        <!-- Part bearing_21 -->
+        <collision>
+            <origin xyz="2.08802e-17 6.9641e-18 5.20417e-18" rpy="3.14159 2.86246e-17 -3.93315e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="2.08167e-17 6.93889e-18 0.002" rpy="3.14159 2.86246e-17 -3.93315e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_21_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_21 -->
+    <joint name="wheel2_passive1" type="continuous">
+        <origin xyz="0.0271051 -0.00880698 -0.01" rpy="-1.5708 -2.20675e-14 -0.314159"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_21"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_22 -->
+    <link name="pin_bearing_oring_22">
+        <inertial>
+            <origin xyz="6.01395e-18 -1.22058e-18 7.39292e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-2.48028e-24" ixz="3.79462e-25" iyy="3.55777e-08" iyz="2.71526e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_22 -->
+        <!-- Part pin_22 -->
+        <!-- Part bearing_22 -->
+        <collision>
+            <origin xyz="6.92749e-18 -1.10527e-19 8.23994e-18" rpy="3.14159 -9.60455e-19 -8.0888e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.93889e-18 0 0.002" rpy="3.14159 -9.60455e-19 -8.0888e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_22_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_22 -->
+    <joint name="wheel2_passive2" type="continuous">
+        <origin xyz="0.023057 -0.0167519 -0.01" rpy="-0.942478 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_22"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_23 -->
+    <link name="pin_bearing_oring_23">
+        <inertial>
+            <origin xyz="8.06299e-17 -1.42782e-17 -1.23189e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.8922e-24" ixz="3.99169e-24" iyy="3.55777e-08" iyz="2.92601e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_23 -->
+        <!-- Part pin_23 -->
+        <!-- Part bearing_23 -->
+        <collision>
+            <origin xyz="9.00394e-17 -1.39431e-17 -1.38778e-16" rpy="-3.14159 2.92422e-17 2.75242e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="9.02056e-17 -1.38778e-17 0.002" rpy="-3.14159 2.92422e-17 2.75242e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_23_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_23 -->
+    <joint name="wheel2_passive3" type="continuous">
+        <origin xyz="0.0167519 -0.023057 -0.01" rpy="-1.5708 -9.8851e-15 2.19911"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_23"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_24 -->
+    <link name="pin_bearing_oring_24">
+        <inertial>
+            <origin xyz="5.50809e-18 -4.67836e-19 1.53435e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-5.00296e-25" ixz="-5.77895e-24" iyy="3.55777e-08" iyz="4.95759e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_24 -->
+        <!-- Part pin_24 -->
+        <!-- Part bearing_24 -->
+        <collision>
+            <origin xyz="7.1724e-18 -1.2755e-19 1.69136e-17" rpy="-3.14159 -3.62932e-17 8.45653e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.93889e-18 0 0.002" rpy="-3.14159 -3.62932e-17 8.45653e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_24_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_24 -->
+    <joint name="wheel2_passive4" type="continuous">
+        <origin xyz="0.00880698 -0.0271051 -0.01" rpy="-0.314159 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_24"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_25 -->
+    <link name="pin_bearing_oring_25">
+        <inertial>
+            <origin xyz="-1.38512e-17 1.20058e-17 7.43328e-19" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.58334e-37" ixz="-5.09281e-24" iyy="3.55777e-08" iyz="1.57689e-36" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_25 -->
+        <!-- Part pin_25 -->
+        <!-- Part bearing_25 -->
+        <collision>
+            <origin xyz="-1.37227e-17 1.38778e-17 8.67362e-19" rpy="-3.14159 1.11748e-17 1.76607e-30"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.38778e-17 1.38778e-17 0.002" rpy="-3.14159 1.11748e-17 1.76607e-30"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_25_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_25 -->
+    <joint name="wheel2_passive5" type="continuous">
+        <origin xyz="-5.01677e-18 -0.0285 -0.01" rpy="-1.66533e-16 -1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_25"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_26 -->
+    <link name="pin_bearing_oring_26">
+        <inertial>
+            <origin xyz="6.79399e-18 6.62236e-18 -2.09403e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-9.20321e-25" ixz="-2.62812e-24" iyy="3.55777e-08" iyz="-2.88363e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_26 -->
+        <!-- Part pin_26 -->
+        <!-- Part bearing_26 -->
+        <collision>
+            <origin xyz="6.93567e-18 6.951e-18 -2.25514e-17" rpy="3.14159 7.6614e-17 -2.90625e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.93889e-18 6.93889e-18 0.002" rpy="3.14159 7.6614e-17 -2.90625e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_26_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_26 -->
+    <joint name="wheel2_passive6" type="continuous">
+        <origin xyz="-0.00880698 -0.0271051 -0.01" rpy="-2.82743 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_26"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_27 -->
+    <link name="pin_bearing_oring_27">
+        <inertial>
+            <origin xyz="-1.3248e-17 -4.18469e-18 -1.76236e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="9.77665e-25" ixz="1.23065e-37" iyy="3.55777e-08" iyz="5.05609e-37" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_27 -->
+        <!-- Part pin_27 -->
+        <!-- Part bearing_27 -->
+        <collision>
+            <origin xyz="-1.38778e-17 -3.46945e-18 -1.73472e-18" rpy="-3.14159 2.21867e-31 -3.25893e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.38778e-17 -3.46945e-18 0.002" rpy="-3.14159 2.21867e-31 -3.25893e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_27_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_27 -->
+    <joint name="wheel2_passive7" type="continuous">
+        <origin xyz="0.0285 -3.46945e-18 -0.01" rpy="-1.5708 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_27"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_28 -->
+    <link name="pin_bearing_oring_28">
+        <inertial>
+            <origin xyz="-5.45087e-18 1.73948e-17 5.75448e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-6.90982e-24" ixz="-1.92192e-24" iyy="3.55777e-08" iyz="1.33073e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_28 -->
+        <!-- Part pin_28 -->
+        <!-- Part bearing_28 -->
+        <collision>
+            <origin xyz="-6.85854e-18 2.08098e-17 6.93889e-18" rpy="-3.14159 -1.43671e-17 -8.11418e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-6.93889e-18 2.08167e-17 0.002" rpy="-3.14159 -1.43671e-17 -8.11418e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_28_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_28 -->
+    <joint name="wheel2_passive8" type="continuous">
+        <origin xyz="0.0271051 0.00880698 -0.01" rpy="-1.88496 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_28"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_29 -->
+    <link name="pin_bearing_oring_29">
+        <inertial>
+            <origin xyz="-1.56682e-19 9.3801e-18 2.86342e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.14613e-24" ixz="-1.94878e-24" iyy="3.55777e-08" iyz="1.1868e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_29 -->
+        <!-- Part pin_29 -->
+        <!-- Part bearing_29 -->
+        <collision>
+            <origin xyz="-1.41e-20 1.04754e-17 3.46945e-18" rpy="-3.14159 6.67747e-17 -1.54391e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 1.04083e-17 0.002" rpy="-3.14159 6.67747e-17 -1.54391e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_29_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_29 -->
+    <joint name="wheel2_passive9" type="continuous">
+        <origin xyz="0.023057 0.0167519 -0.01" rpy="-2.19911 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_29"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_30 -->
+    <link name="pin_bearing_oring_30">
+        <inertial>
+            <origin xyz="6.75414e-18 6.1157e-17 -1.00253e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.46922e-24" ixz="2.21289e-24" iyy="3.55777e-08" iyz="6.53184e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_30 -->
+        <!-- Part pin_30 -->
+        <!-- Part bearing_30 -->
+        <collision>
+            <origin xyz="6.89888e-18 6.92132e-17 -1.12757e-16" rpy="-3.14159 -2.8145e-17 -8.80214e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.93889e-18 6.93889e-17 0.002" rpy="-3.14159 -2.8145e-17 -8.80214e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_30_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_30 -->
+    <joint name="wheel2_passive10" type="continuous">
+        <origin xyz="0.0167519 0.023057 -0.01" rpy="-2.51327 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_30"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_31 -->
+    <link name="pin_bearing_oring_31">
+        <inertial>
+            <origin xyz="1.69508e-17 5.52675e-17 -1.1148e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.81735e-25" ixz="-5.28499e-24" iyy="3.55777e-08" iyz="1.88702e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_31 -->
+        <!-- Part pin_31 -->
+        <!-- Part bearing_31 -->
+        <collision>
+            <origin xyz="1.92029e-17 6.25311e-17 -1.25767e-16" rpy="-3.14159 4.5617e-17 -2.12484e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="1.9082e-17 6.245e-17 0.002" rpy="-3.14159 4.5617e-17 -2.12484e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_31_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_31 -->
+    <joint name="wheel2_passive11" type="continuous">
+        <origin xyz="0.00880698 0.0271051 -0.01" rpy="1.5708 1.28548e-16 -1.88496"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_31"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_32 -->
+    <link name="pin_bearing_oring_32">
+        <inertial>
+            <origin xyz="-1.10858e-17 -8.80267e-17 -1.10516e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-6.31915e-37" ixz="5.79845e-24" iyy="3.55777e-08" iyz="-5.45274e-36" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_32 -->
+        <!-- Part pin_32 -->
+        <!-- Part bearing_32 -->
+        <collision>
+            <origin xyz="-1.40175e-17 -9.88792e-17 -1.24466e-16" rpy="3.14159 -4.40885e-17 4.45425e-30"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.38778e-17 -9.88792e-17 0.002" rpy="3.14159 -4.40885e-17 4.45425e-30"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_32_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_32 -->
+    <joint name="wheel2_passive12" type="continuous">
+        <origin xyz="1.8894e-18 0.0285 -0.01" rpy="-3.14159 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_32"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_33 -->
+    <link name="pin_bearing_oring_33">
+        <inertial>
+            <origin xyz="6.90668e-18 -7.152e-17 -1.17407e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-7.52968e-25" ixz="-3.55981e-24" iyy="3.55777e-08" iyz="2.20484e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_33 -->
+        <!-- Part pin_33 -->
+        <!-- Part bearing_33 -->
+        <collision>
+            <origin xyz="7.03969e-18 -7.98609e-17 -1.32273e-16" rpy="-3.14159 1.42795e-17 -9.87703e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.93889e-18 -7.97973e-17 0.002" rpy="-3.14159 1.42795e-17 -9.87703e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_33_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_33 -->
+    <joint name="wheel2_passive13" type="continuous">
+        <origin xyz="-0.00880698 0.0271051 -0.01" rpy="-0.314159 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_33"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_34 -->
+    <link name="pin_bearing_oring_34">
+        <inertial>
+            <origin xyz="1.20145e-18 -5.00587e-17 -9.67834e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-8.65644e-25" ixz="6.28454e-24" iyy="3.55777e-08" iyz="-3.65209e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_34 -->
+        <!-- Part pin_34 -->
+        <!-- Part bearing_34 -->
+        <collision>
+            <origin xyz="-1.84162e-19 -5.53348e-17 -1.09288e-16" rpy="-3.14159 -1.9915e-17 -3.01683e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 -5.55112e-17 0.002" rpy="-3.14159 -1.9915e-17 -3.01683e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_34_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_34 -->
+    <joint name="wheel2_passive14" type="continuous">
+        <origin xyz="-0.0167519 0.023057 -0.01" rpy="-0.628319 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_34"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_35 -->
+    <link name="pin_bearing_oring_35">
+        <inertial>
+            <origin xyz="1.67069e-17 -2.14799e-17 -1.04107e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="7.32568e-25" ixz="4.35373e-24" iyy="3.55777e-08" iyz="-2.26996e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_35 -->
+        <!-- Part pin_35 -->
+        <!-- Part bearing_35 -->
+        <collision>
+            <origin xyz="2.07129e-17 -2.42389e-17 -1.17961e-16" rpy="3.14159 -3.40258e-17 4.30573e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="2.08167e-17 -2.42861e-17 0.002" rpy="3.14159 -3.40258e-17 4.30573e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_35_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_35 -->
+    <joint name="wheel2_passive15" type="continuous">
+        <origin xyz="-0.023057 0.0167519 -0.01" rpy="-0.942478 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_35"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_36 -->
+    <link name="pin_bearing_oring_36">
+        <inertial>
+            <origin xyz="-1.85879e-17 8.07499e-17 -9.8229e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-7.83967e-25" ixz="-1.22563e-24" iyy="3.55777e-08" iyz="-3.65149e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_36 -->
+        <!-- Part pin_36 -->
+        <!-- Part bearing_36 -->
+        <collision>
+            <origin xyz="-2.07644e-17 9.03239e-17 -1.11022e-16" rpy="3.14159 -1.00739e-17 2.60998e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.08167e-17 9.02056e-17 0.002" rpy="3.14159 -1.00739e-17 2.60998e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_36_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_36 -->
+    <joint name="wheel2_passive16" type="continuous">
+        <origin xyz="-0.0167519 -0.023057 -0.01" rpy="-2.51327 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_36"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_37 -->
+    <link name="pin_bearing_oring_37">
+        <inertial>
+            <origin xyz="1.80641e-17 3.19791e-17 -1.16539e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.22944e-23" ixz="1.09608e-23" iyy="3.55777e-08" iyz="5.80224e-25" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_37 -->
+        <!-- Part pin_37 -->
+        <!-- Part bearing_37 -->
+        <collision>
+            <origin xyz="2.05419e-17 3.46279e-17 -1.31405e-16" rpy="3.14159 -7.42562e-17 -1.69702e-16"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="2.08167e-17 3.46945e-17 0.002" rpy="3.14159 -7.42562e-17 -1.69702e-16"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_37_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_37 -->
+    <joint name="wheel2_passive17" type="continuous">
+        <origin xyz="-0.023057 -0.0167519 -0.01" rpy="1.5708 3.5412e-17 0.628319"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_37"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_38 -->
+    <link name="pin_bearing_oring_38">
+        <inertial>
+            <origin xyz="-3.79361e-17 1.11997e-17 -1.13167e-16" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.35078e-24" ixz="2.18988e-26" iyy="3.55777e-08" iyz="1.54817e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_38 -->
+        <!-- Part pin_38 -->
+        <!-- Part bearing_38 -->
+        <collision>
+            <origin xyz="-4.16493e-17 1.38456e-17 -1.26635e-16" rpy="-3.14159 1.29056e-17 -4.72368e-18"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-4.16334e-17 1.38778e-17 0.002" rpy="-3.14159 1.29056e-17 -4.72368e-18"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_38_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_38 -->
+    <joint name="wheel2_passive18" type="continuous">
+        <origin xyz="-0.0271051 -0.00880698 -0.01" rpy="-1.88496 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_38"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_39 -->
+    <link name="pin_bearing_oring_39">
+        <inertial>
+            <origin xyz="-1.86445e-17 9.3075e-18 -9.85182e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-2.35417e-25" ixz="-3.6206e-37" iyy="3.55777e-08" iyz="-9.63832e-37" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_39 -->
+        <!-- Part pin_39 -->
+        <!-- Part bearing_39 -->
+        <collision>
+            <origin xyz="-2.08167e-17 1.04083e-17 -1.11022e-16" rpy="3.14159 -5.42342e-31 -6.4264e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.08167e-17 1.04083e-17 0.002" rpy="3.14159 -5.42342e-31 -6.4264e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_39_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_39 -->
+    <joint name="wheel2_passive19" type="continuous">
+        <origin xyz="-0.0285 0 -0.01" rpy="-1.5708 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_39"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_40 -->
+    <link name="pin_bearing_oring_40">
+        <inertial>
+            <origin xyz="-1.94471e-17 -3.78078e-18 -9.96264e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.21851e-24" ixz="7.51259e-25" iyy="3.55777e-08" iyz="-2.98129e-24" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_40 -->
+        <!-- Part pin_40 -->
+        <!-- Part bearing_40 -->
+        <collision>
+            <origin xyz="-2.08456e-17 -3.45253e-18 -1.12323e-16" rpy="3.14159 3.52223e-18 3.81082e-17"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.08167e-17 -3.46945e-18 0.002" rpy="3.14159 3.52223e-18 3.81082e-17"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_40_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_2 to pin_bearing_oring_40 -->
+    <joint name="wheel2_passive20" type="continuous">
+        <origin xyz="-0.0271051 0.00880698 -0.01" rpy="-1.25664 1.5708 0"/>
+        <parent link="wheel_no_passives_2"/>
+        <child link="pin_bearing_oring_40"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Joint from base to wheel_no_passives_2 -->
+    <joint name="wheel2_speed" type="continuous">
+        <origin xyz="-0.0408764 -0.0236 0.017" rpy="-1.5708 -1.08703e-13 -1.0472"/>
+        <parent link="base"/>
+        <child link="wheel_no_passives_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link wheel_no_passives_3 -->
+    <link name="wheel_no_passives_3">
+        <inertial>
+            <origin xyz="6.58074e-07 -5.13421e-06 -0.00986839" rpy="0 0 0"/>
+            <mass value="0.0266331"/>
+            <inertia ixx="3.77181e-06" ixy="8.61773e-10" ixz="-7.42627e-10" iyy="3.77247e-06" iyz="-1.53938e-11" izz="7.07069e-06"/>
+        </inertial>
+        <!-- Part wheel2_3 -->
+        <visual>
+            <origin xyz="1.14925e-17 3.46945e-18 -0.0075" rpy="-3.14159 7.41429e-16 -3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/wheel2.stl"/>
+            </geometry>
+            <material name="wheel2_3_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_21 -->
+        <visual>
+            <origin xyz="2.82435e-17 0.008 -0.0132" rpy="-3.14159 1.9984e-15 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_21_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part coupler_4 -->
+        <visual>
+            <origin xyz="5.42101e-20 -3.46945e-18 -0.012" rpy="-9.52058e-35 1.23338e-32 -6.95261e-19"/>
+            <geometry>
+                <mesh filename="package://assets/coupler__2.stl"/>
+            </geometry>
+            <material name="coupler_4_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_21 -->
+        <visual>
+            <origin xyz="2.41777e-17 0.008 -0.005" rpy="4.44089e-16 7.69185e-16 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_21_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_22 -->
+        <visual>
+            <origin xyz="-0.0138564 0.008 -0.005" rpy="4.44089e-16 7.20613e-16 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_22_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part wheel1_3 -->
+        <visual>
+            <origin xyz="1.14925e-17 3.46945e-18 -0.0075" rpy="-3.14159 7.41429e-16 -3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/wheel1.stl"/>
+            </geometry>
+            <material name="wheel1_3_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_22 -->
+        <visual>
+            <origin xyz="-0.0138564 0.008 -0.0142" rpy="-1.4988e-15 5.69986e-16 -0.523599"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_22_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_23 -->
+        <visual>
+            <origin xyz="0.0138564 -0.008 -0.0142" rpy="-4.996e-16 9.28815e-16 2.61799"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_23_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_24 -->
+        <visual>
+            <origin xyz="2.92735e-17 -0.016 -0.0142" rpy="-3.38219e-15 5.55112e-16 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_24_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_23 -->
+        <visual>
+            <origin xyz="0.0138564 -0.008 -0.005" rpy="-2.00392e-31 -3.10257e-16 4.25931e-16"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_23_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_25 -->
+        <visual>
+            <origin xyz="-0.0138564 -0.008 -0.0142" rpy="-1.32828e-15 -3.73704e-16 0.523599"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_25_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_24 -->
+        <visual>
+            <origin xyz="-0.0138564 -0.008 -0.005" rpy="1.65046e-15 8.88178e-16 -2.0944"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_24_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_25 -->
+        <visual>
+            <origin xyz="0.0138564 0.008 -0.005" rpy="-1.42842e-15 -9.99201e-16 1.0472"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_25_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_26 -->
+        <visual>
+            <origin xyz="5.24754e-17 -0.016 -0.005" rpy="-1.68021e-15 5.59097e-16 -1.0472"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_26_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_26 -->
+        <visual>
+            <origin xyz="0.0138564 0.008 -0.0142" rpy="1.10624e-15 2.62682e-16 -2.61799"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_26_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_27 -->
+        <visual>
+            <origin xyz="4.30428e-17 0.016 -0.0142" rpy="-2.39097e-15 -3.33067e-16 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_27_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_27 -->
+        <visual>
+            <origin xyz="3.85434e-17 0.016 -0.005" rpy="-1.65046e-15 1.10624e-15 2.0944"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_27_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_28 -->
+        <visual>
+            <origin xyz="0.008 -1.73472e-17 -0.0132" rpy="-3.14159 -6.19519e-17 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_28_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_29 -->
+        <visual>
+            <origin xyz="9.75782e-19 -0.008 -0.0132" rpy="-3.14159 -2.22045e-15 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_29_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_28 -->
+        <visual>
+            <origin xyz="-0.008 -2.77556e-17 -0.005" rpy="-1.94688e-15 -6.66134e-16 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_28_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_29 -->
+        <visual>
+            <origin xyz="-3.1984e-18 -0.008 -0.005" rpy="-6.66134e-16 1.77689e-16 2.10884e-16"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_29_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_30 -->
+        <visual>
+            <origin xyz="-0.008 -4.16334e-17 -0.0132" rpy="-3.14159 -7.10454e-16 5.48007e-17"/>
+            <geometry>
+                <mesh filename="package://assets/hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec.stl"/>
+            </geometry>
+            <material name="hex_nut_style_1_grade_a___b_m3x0_5__59e06dee1671df03e56ade283ea1f5ec_30_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_30 -->
+        <visual>
+            <origin xyz="0.008 -1.04083e-17 -0.005" rpy="-2.71606e-15 -1.11022e-16 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_8__cca8b3192bff7455e4b9cc3364d29e0e_30_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Link pin_bearing_oring_41 -->
+    <link name="pin_bearing_oring_41">
+        <inertial>
+            <origin xyz="-7.0803e-18 -3.73449e-17 -7.504e-19" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-4.29409e-39" ixz="-2.74829e-40" iyy="3.55777e-08" iyz="3.0649e-25" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_41 -->
+        <!-- Part pin_41 -->
+        <!-- Part bearing_41 -->
+        <collision>
+            <origin xyz="-6.93889e-18 -4.16417e-17 -8.67362e-19" rpy="-3.14159 2.44093e-32 -2.81832e-34"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-6.93889e-18 -4.16334e-17 0.002" rpy="-3.14159 2.44093e-32 -2.81832e-34"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_41_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_41 -->
+    <joint name="wheel3_passive1" type="continuous">
+        <origin xyz="1.32815e-17 0.0285 -0.01" rpy="3.14159 -1.5708 0"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_41"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_42 -->
+    <link name="pin_bearing_oring_42">
+        <inertial>
+            <origin xyz="1.23228e-17 6.60924e-18 -1.52136e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-2.10558e-39" ixz="-4.59674e-24" iyy="3.55777e-08" iyz="9.76077e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_42 -->
+        <!-- Part pin_42 -->
+        <!-- Part bearing_42 -->
+        <collision>
+            <origin xyz="1.39967e-17 6.93889e-18 -1.73472e-18" rpy="-3.14159 2.80218e-17 -2.24975e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="1.38778e-17 6.93889e-18 0.002" rpy="-3.14159 2.80218e-17 -2.24975e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_42_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_42 -->
+    <joint name="wheel3_passive2" type="continuous">
+        <origin xyz="-0.00880698 0.0271051 -0.01" rpy="1.5708 -6.27432e-16 -1.25664"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_42"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_43 -->
+    <link name="pin_bearing_oring_43">
+        <inertial>
+            <origin xyz="-6.22543e-18 6.60924e-18 5.50531e-19" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-6.31076e-39" ixz="-3.17033e-24" iyy="3.55777e-08" iyz="-4.45051e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_43 -->
+        <!-- Part pin_43 -->
+        <!-- Part bearing_43 -->
+        <collision>
+            <origin xyz="-6.86165e-18 6.93889e-18 8.67362e-19" rpy="-3.14159 2.33701e-17 -1.01915e-31"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-6.93889e-18 6.93889e-18 0.002" rpy="-3.14159 2.33701e-17 -1.01915e-31"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_43_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_43 -->
+    <joint name="wheel3_passive3" type="continuous">
+        <origin xyz="-0.0167519 0.023057 -0.01" rpy="1.5708 -7.98256e-16 -0.942478"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_43"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_44 -->
+    <link name="pin_bearing_oring_44">
+        <inertial>
+            <origin xyz="2.54449e-17 -3.29654e-19 1.57772e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-2.91996e-39" ixz="-5.01173e-24" iyy="3.55777e-08" iyz="3.85858e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_44 -->
+        <!-- Part pin_44 -->
+        <!-- Part bearing_44 -->
+        <collision>
+            <origin xyz="2.78888e-17 -1.57318e-34 1.73472e-17" rpy="3.14159 2.74907e-17 -4.37641e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="2.77556e-17 0 0.002" rpy="3.14159 2.74907e-17 -4.37641e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_44_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_44 -->
+    <joint name="wheel3_passive4" type="continuous">
+        <origin xyz="-0.023057 0.0167519 -0.01" rpy="1.5708 -8.3543e-16 -0.628319"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_44"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_45 -->
+    <link name="pin_bearing_oring_45">
+        <inertial>
+            <origin xyz="-1.33712e-19 -3.29654e-19 1.32149e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="6.06483e-39" ixz="3.74435e-25" iyy="3.55777e-08" iyz="2.80899e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_45 -->
+        <!-- Part pin_45 -->
+        <!-- Part bearing_45 -->
+        <collision>
+            <origin xyz="7.10264e-21 -4.16043e-35 1.73472e-18" rpy="-3.14159 -1.6569e-17 1.03727e-31"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 0 0.002" rpy="-3.14159 -1.6569e-17 1.03727e-31"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_45_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_45 -->
+    <joint name="wheel3_passive5" type="continuous">
+        <origin xyz="-0.0271051 0.00880698 -0.01" rpy="1.5708 -8.4362e-16 -0.314159"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_45"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_46 -->
+    <link name="pin_bearing_oring_46">
+        <inertial>
+            <origin xyz="-5.22801e-19 -7.26855e-18 -9.03831e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-6.07236e-40" ixz="-1.54967e-25" iyy="3.55777e-08" iyz="-4.20515e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_46 -->
+        <!-- Part pin_46 -->
+        <!-- Part bearing_46 -->
+        <collision>
+            <origin xyz="3.87508e-21 -6.93889e-18 -9.97466e-18" rpy="-3.14159 1.05792e-18 -1.13951e-31"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 -6.93889e-18 0.002" rpy="-3.14159 1.05792e-18 -1.13951e-31"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_46_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_46 -->
+    <joint name="wheel3_passive6" type="continuous">
+        <origin xyz="-0.0285 0 -0.01" rpy="1.5708 -7.5361e-16 -9.43428e-17"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_46"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_47 -->
+    <link name="pin_bearing_oring_47">
+        <inertial>
+            <origin xyz="-7.01402e-18 -1.10084e-18 -4.65342e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.2852e-39" ixz="-1.0082e-24" iyy="3.55777e-08" iyz="8.56616e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_47 -->
+        <!-- Part pin_47 -->
+        <!-- Part bearing_47 -->
+        <collision>
+            <origin xyz="-6.87771e-18 6.10297e-35 -5.20417e-18" rpy="3.14159 -2.373e-17 -8.7755e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-6.93889e-18 0 0.002" rpy="3.14159 -2.373e-17 -8.7755e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_47_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_47 -->
+    <joint name="wheel3_passive7" type="continuous">
+        <origin xyz="-0.0271051 -0.00880698 -0.01" rpy="1.5708 -5.94505e-16 0.314159"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_47"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_48 -->
+    <link name="pin_bearing_oring_48">
+        <inertial>
+            <origin xyz="-2.73979e-18 -3.29654e-19 -1.18397e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-3.27367e-39" ixz="-1.89303e-24" iyy="3.55777e-08" iyz="-4.7304e-40" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_48 -->
+        <!-- Part pin_48 -->
+        <!-- Part bearing_48 -->
+        <collision>
+            <origin xyz="-3.37725e-18 3.13638e-35 -1.73472e-18" rpy="-3.14159 -2.5252e-17 -1.2381e-31"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-3.46945e-18 0 0.002" rpy="-3.14159 -2.5252e-17 -1.2381e-31"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_48_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_48 -->
+    <joint name="wheel3_passive8" type="continuous">
+        <origin xyz="-0.023057 -0.0167519 -0.01" rpy="1.5708 -3.64302e-16 0.628319"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_48"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_49 -->
+    <link name="pin_bearing_oring_49">
+        <inertial>
+            <origin xyz="-4.79763e-18 6.60924e-18 -1.76225e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.90221e-39" ixz="6.47233e-24" iyy="3.55777e-08" iyz="-8.41109e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_49 -->
+        <!-- Part pin_49 -->
+        <!-- Part bearing_49 -->
+        <collision>
+            <origin xyz="-5.41023e-18 6.93889e-18 -2.1684e-18" rpy="-3.14159 -6.55801e-18 6.25323e-33"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-5.20417e-18 6.93889e-18 0.002" rpy="-3.14159 -6.55801e-18 6.25323e-33"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_49_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_49 -->
+    <joint name="wheel3_passive9" type="continuous">
+        <origin xyz="-0.0167519 -0.023057 -0.01" rpy="1.5708 -1.01156e-16 0.942478"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_49"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_50 -->
+    <link name="pin_bearing_oring_50">
+        <inertial>
+            <origin xyz="-7.97661e-18 -3.29654e-19 -7.20719e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-4.87122e-40" ixz="1.42831e-24" iyy="3.55777e-08" iyz="-1.08144e-38" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_50 -->
+        <!-- Part pin_50 -->
+        <!-- Part bearing_50 -->
+        <collision>
+            <origin xyz="-8.78952e-18 3.34336e-34 -8.23994e-18" rpy="-3.14159 5.84943e-17 5.54014e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-8.67362e-18 0 0.002" rpy="-3.14159 5.84943e-17 5.54014e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_50_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_50 -->
+    <joint name="wheel3_passive10" type="continuous">
+        <origin xyz="-0.00880698 -0.0271051 -0.01" rpy="1.5708 1.69176e-16 1.25664"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_50"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_51 -->
+    <link name="pin_bearing_oring_51">
+        <inertial>
+            <origin xyz="-7.0803e-18 2.75271e-18 3.57846e-19" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.9128e-39" ixz="-2.91653e-39" iyy="3.55777e-08" iyz="1.03042e-25" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_51 -->
+        <!-- Part pin_51 -->
+        <!-- Part bearing_51 -->
+        <collision>
+            <origin xyz="-6.93889e-18 3.46807e-18 4.33681e-19" rpy="-3.14159 -8.9921e-33 -2.67087e-33"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-6.93889e-18 3.46945e-18 0.002" rpy="-3.14159 -8.9921e-33 -2.67087e-33"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_51_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_51 -->
+    <joint name="wheel3_passive11" type="continuous">
+        <origin xyz="1.01915e-17 -0.0285 -0.01" rpy="3.14159 -1.5708 0"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_51"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_52 -->
+    <link name="pin_bearing_oring_52">
+        <inertial>
+            <origin xyz="-1.83068e-18 -3.29654e-19 6.14007e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="2.46043e-39" ixz="-2.79325e-24" iyy="3.55777e-08" iyz="-1.03253e-38" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_52 -->
+        <!-- Part pin_52 -->
+        <!-- Part bearing_52 -->
+        <collision>
+            <origin xyz="-1.69277e-18 2.45128e-34 6.93889e-18" rpy="3.14159 4.28089e-17 5.56481e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.73472e-18 0 0.002" rpy="3.14159 4.28089e-17 5.56481e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_52_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_52 -->
+    <joint name="wheel3_passive12" type="continuous">
+        <origin xyz="0.00880698 -0.0271051 -0.01" rpy="1.5708 -6.27432e-16 -1.25664"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_52"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_53 -->
+    <link name="pin_bearing_oring_53">
+        <inertial>
+            <origin xyz="-4.59262e-18 -3.29654e-19 -8.02635e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-5.56726e-39" ixz="-7.71455e-24" iyy="3.55777e-08" iyz="-7.68593e-40" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_53 -->
+        <!-- Part pin_53 -->
+        <!-- Part bearing_53 -->
+        <collision>
+            <origin xyz="-4.86508e-18 1.52658e-34 -9.1073e-18" rpy="-3.14159 -7.17438e-17 8.80112e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-5.20417e-18 0 0.002" rpy="-3.14159 -7.17438e-17 8.80112e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_53_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_53 -->
+    <joint name="wheel3_passive13" type="continuous">
+        <origin xyz="0.0167519 -0.023057 -0.01" rpy="1.5708 -7.98256e-16 -0.942478"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_53"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_54 -->
+    <link name="pin_bearing_oring_54">
+        <inertial>
+            <origin xyz="5.39261e-18 -3.29654e-19 -7.73727e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="9.86652e-39" ixz="6.79595e-24" iyy="3.55777e-08" iyz="-2.84755e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_54 -->
+        <!-- Part pin_54 -->
+        <!-- Part bearing_54 -->
+        <collision>
+            <origin xyz="6.70989e-18 2.37513e-34 -8.67362e-18" rpy="-3.14159 3.87466e-18 5.26432e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.93889e-18 0 0.002" rpy="-3.14159 3.87466e-18 5.26432e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_54_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_54 -->
+    <joint name="wheel3_passive14" type="continuous">
+        <origin xyz="0.023057 -0.0167519 -0.01" rpy="1.5708 -8.3543e-16 -0.628319"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_54"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_55 -->
+    <link name="pin_bearing_oring_55">
+        <inertial>
+            <origin xyz="1.25075e-17 -3.29654e-19 -9.47199e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-2.80457e-39" ixz="2.93478e-24" iyy="3.55777e-08" iyz="1.95967e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_55 -->
+        <!-- Part pin_55 -->
+        <!-- Part bearing_55 -->
+        <collision>
+            <origin xyz="1.38112e-17 -1.99156e-34 -1.04083e-17" rpy="3.14159 -2.58594e-17 -2.7073e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="1.38778e-17 0 0.002" rpy="3.14159 -2.58594e-17 -2.7073e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_55_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_55 -->
+    <joint name="wheel3_passive15" type="continuous">
+        <origin xyz="0.0271051 -0.00880698 -0.01" rpy="1.5708 -8.4362e-16 -0.314159"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_55"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_56 -->
+    <link name="pin_bearing_oring_56">
+        <inertial>
+            <origin xyz="-2.56834e-17 5.83805e-18 3.57846e-19" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="5.09588e-38" ixz="9.10292e-25" iyy="3.55777e-08" iyz="-9.88528e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_56 -->
+        <!-- Part pin_56 -->
+        <!-- Part bearing_56 -->
+        <collision>
+            <origin xyz="-2.78479e-17 6.93889e-18 4.33681e-19" rpy="-3.14159 5.29448e-17 8.02654e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.77556e-17 6.93889e-18 0.002" rpy="-3.14159 5.29448e-17 8.02654e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_56_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_56 -->
+    <joint name="wheel3_passive16" type="continuous">
+        <origin xyz="0.00880698 0.0271051 -0.01" rpy="1.5708 1.69176e-16 1.25664"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_56"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_57 -->
+    <link name="pin_bearing_oring_57">
+        <inertial>
+            <origin xyz="-3.81421e-17 -1.10084e-18 1.16331e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="8.0617e-38" ixz="6.47233e-24" iyy="3.55777e-08" iyz="-4.47785e-38" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_57 -->
+        <!-- Part pin_57 -->
+        <!-- Part bearing_57 -->
+        <collision>
+            <origin xyz="-4.18394e-17 2.85802e-34 1.34441e-17" rpy="-3.14159 -6.55801e-18 6.25323e-33"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-4.16334e-17 0 0.002" rpy="-3.14159 -6.55801e-18 6.25323e-33"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_57_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_57 -->
+    <joint name="wheel3_passive17" type="continuous">
+        <origin xyz="0.0167519 0.023057 -0.01" rpy="1.5708 -1.01156e-16 0.942478"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_57"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_58 -->
+    <link name="pin_bearing_oring_58">
+        <inertial>
+            <origin xyz="-1.25601e-17 -3.29654e-19 1.44281e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="-1.03739e-38" ixz="1.82506e-24" iyy="3.55777e-08" iyz="-3.05249e-39" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_58 -->
+        <!-- Part pin_58 -->
+        <!-- Part bearing_58 -->
+        <collision>
+            <origin xyz="-1.39547e-17 1.82356e-34 1.56125e-17" rpy="-3.14159 1.41503e-17 -2.00306e-31"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.38778e-17 0 0.002" rpy="-3.14159 1.41503e-17 -2.00306e-31"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_58_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_58 -->
+    <joint name="wheel3_passive18" type="continuous">
+        <origin xyz="0.023057 0.0167519 -0.01" rpy="1.5708 -3.92058e-16 0.628319"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_58"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_59 -->
+    <link name="pin_bearing_oring_59">
+        <inertial>
+            <origin xyz="-6.22014e-18 5.06687e-18 -2.50841e-17" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="3.10149e-38" ixz="-3.8387e-24" iyy="3.55777e-08" iyz="1.11107e-37" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_59 -->
+        <!-- Part pin_59 -->
+        <!-- Part bearing_59 -->
+        <collision>
+            <origin xyz="-6.85676e-18 6.93889e-18 -2.77556e-17" rpy="-3.14159 3.79995e-17 -4.2219e-32"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-6.93889e-18 6.93889e-18 0.002" rpy="-3.14159 3.79995e-17 -4.2219e-32"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_59_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_59 -->
+    <joint name="wheel3_passive19" type="continuous">
+        <origin xyz="0.0271051 0.00880698 -0.01" rpy="1.5708 -5.94505e-16 0.314159"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_59"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link pin_bearing_oring_60 -->
+    <link name="pin_bearing_oring_60">
+        <inertial>
+            <origin xyz="-1.82485e-17 6.49736e-18 8.36386e-18" rpy="0 0 0"/>
+            <mass value="0.00337198"/>
+            <inertia ixx="3.55777e-08" ixy="1.89865e-23" ixz="-3.68937e-23" iyy="3.55777e-08" iyz="1.5503e-22" izz="6.05554e-08"/>
+        </inertial>
+        <!-- Part oring_60 -->
+        <!-- Part pin_60 -->
+        <!-- Part bearing_60 -->
+        <collision>
+            <origin xyz="-2.08071e-17 6.93889e-18 8.67362e-18" rpy="4.35751e-15 1.04518e-15 2.71206e-16"/>
+            <geometry>
+                <cylinder length="0.004" radius="0.006"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-2.08167e-17 6.93889e-18 -0.002" rpy="4.35751e-15 1.04518e-15 2.71206e-16"/>
+            <geometry>
+                <mesh filename="package://assets/bearing.stl"/>
+            </geometry>
+            <material name="bearing_60_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from wheel_no_passives_3 to pin_bearing_oring_60 -->
+    <joint name="wheel3_passive20" type="continuous">
+        <origin xyz="0.0285 0 -0.01" rpy="1.5708 7.41429e-16 3.14159"/>
+        <parent link="wheel_no_passives_3"/>
+        <child link="pin_bearing_oring_60"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Joint from base to wheel_no_passives_3 -->
+    <joint name="wheel3_speed" type="continuous">
+        <origin xyz="-1.92398e-17 0.0472 0.017" rpy="1.5708 0.0233987 -1.66533e-16"/>
+        <parent link="base"/>
+        <child link="wheel_no_passives_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link kicker_front -->
+    <link name="kicker_front">
+        <inertial>
+            <origin xyz="-0.00426625 1.45534e-17 -0.0318837" rpy="0 0 0"/>
+            <mass value="0.00935331"/>
+            <inertia ixx="4.03198e-06" ixy="-3.04903e-22" ixz="1.59427e-07" iyy="7.89604e-07" iyz="3.01764e-22" izz="4.26246e-06"/>
+        </inertial>
+        <!-- Part kicker_tip_2 -->
+        <visual>
+            <origin xyz="-0.035 0.025 -0.0326" rpy="3.14159 -0 -1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/kicker_tip_2.stl"/>
+            </geometry>
+            <material name="kicker_tip_2_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part kicker_tip_1 -->
+        <visual>
+            <origin xyz="0.01 -0.025 -0.0326" rpy="3.14159 -0 1.5708"/>
+            <geometry>
+                <mesh filename="package://assets/kicker_tip_1.stl"/>
+            </geometry>
+            <material name="kicker_tip_1_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+        <!-- Part square_thin_nut_grade_b_m3x0_5__1f32078b7141c356c1ef5a853a7893b2 -->
+        <visual>
+            <origin xyz="-1.73472e-18 3.54473e-18 -0.0347" rpy="0 -0 3.14159"/>
+            <geometry>
+                <mesh filename="package://assets/square_thin_nut_grade_b_m3x0_5__1f32078b7141c356c1ef5a853a7893b2.stl"/>
+            </geometry>
+            <material name="square_thin_nut_grade_b_m3x0_5__1f32078b7141c356c1ef5a853a7893b2_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part square_thin_nut_grade_b_m3x0_5__1f32078b7141c356c1ef5a853a7893b2_2 -->
+        <visual>
+            <origin xyz="0 -7.52852e-20 -0.0315" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/square_thin_nut_grade_b_m3x0_5__1f32078b7141c356c1ef5a853a7893b2.stl"/>
+            </geometry>
+            <material name="square_thin_nut_grade_b_m3x0_5__1f32078b7141c356c1ef5a853a7893b2_2_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+        <!-- Part plunger -->
+        <visual>
+            <origin xyz="-0.00775 -0.0066 -0.029" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/plunger.stl"/>
+            </geometry>
+            <material name="plunger_material">
+                <color rgba="0.972549 0.529412 0.00392157 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to kicker_front -->
+    <joint name="kicker" type="prismatic">
+        <origin xyz="-1.73472e-18 -0.0405 0.00775" rpy="-1.5708 -1.5708 0"/>
+        <parent link="base"/>
+        <child link="kicker_front"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10" lower="-0.01" upper="0"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_02_meter -->
+    <link name="base_m3_spacer__length_0_02_meter">
+        <inertial>
+            <origin xyz="1.42965e-19 5.53781e-19 0.011317" rpy="0 0 0"/>
+            <mass value="0.00339162"/>
+            <inertia ixx="1.55413e-07" ixy="1.53249e-38" ixz="9.54973e-62" iyy="1.55413e-07" iyz="9.41676e-93" izz="1.64687e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_02_meter -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -6.14475e-55 9.86076e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_02_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_02_meter_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_02_meter -->
+    <joint name="base_m3_spacer__length_0_02_meter_fixed" type="fixed">
+        <origin xyz="-0.0237904 -0.0249937 0.0335" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_02_meter"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_18650 -->
+    <link name="base_18650">
+        <inertial>
+            <origin xyz="0.0104556 0.042 0.0111537" rpy="0 0 0"/>
+            <mass value="0.0413512"/>
+            <inertia ixx="1.53964e-05" ixy="-4.36411e-22" ixz="3.56928e-74" iyy="1.67472e-06" iyz="-3.53505e-75" izz="1.53964e-05"/>
+        </inertial>
+        <!-- Part 18650 -->
+        <visual>
+            <origin xyz="-5.42101e-19 0 0" rpy="-1.69327e-69 -4.80091e-70 -3.71854e-17"/>
+            <geometry>
+                <mesh filename="package://assets/18650.stl"/>
+            </geometry>
+            <material name="18650_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_18650 -->
+    <joint name="base_18650_fixed" type="fixed">
+        <origin xyz="-0.0400271 0.0225965 0.0556537" rpy="-3.14159 1.87188e-53 1.0472"/>
+        <parent link="base"/>
+        <child link="base_18650"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07">
+        <inertial>
+            <origin xyz="-7.90612e-20 0 -0.0033509" rpy="0 0 0"/>
+            <mass value="0.000820681"/>
+            <inertia ixx="6.25988e-09" ixy="0" ixz="0" iyy="6.25988e-09" iyz="0" izz="2.39762e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_fixed" type="fixed">
+        <origin xyz="0 -0.062 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_marker -->
+    <link name="base_marker">
+        <inertial>
+            <origin xyz="-8.50716e-19 -0.00053028 0.0045" rpy="0 0 0"/>
+            <mass value="0.0214227"/>
+            <inertia ixx="1.83133e-05" ixy="1.7911e-36" ixz="8.71934e-60" iyy="1.77158e-05" iyz="6.44845e-91" izz="3.59969e-05"/>
+        </inertial>
+        <!-- Part marker -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -4.76122e-55 7.39557e-32"/>
+            <geometry>
+                <mesh filename="package://assets/marker.stl"/>
+            </geometry>
+            <material name="marker_material">
+                <color rgba="0.917647 0.72549 0.490196 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_marker -->
+    <joint name="base_marker_fixed" type="fixed">
+        <origin xyz="4.33681e-16 1.60982e-15 0.0505" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_marker"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785">
+        <inertial>
+            <origin xyz="-1.62957e-19 -7.7726e-21 -0.0117908" rpy="0 0 0"/>
+            <mass value="0.00186019"/>
+            <inertia ixx="1.42735e-07" ixy="0" ixz="0" iyy="1.42735e-07" iyz="0" izz="3.56706e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_fixed" type="fixed">
+        <origin xyz="-0.0335404 -0.00810625 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2">
+        <inertial>
+            <origin xyz="-1.62957e-19 -7.7726e-21 -0.0117908" rpy="0 0 0"/>
+            <mass value="0.00186019"/>
+            <inertia ixx="1.42735e-07" ixy="0" ixz="0" iyy="1.42735e-07" iyz="0" izz="3.56706e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2_fixed" type="fixed">
+        <origin xyz="0.00975 0.0331 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3">
+        <inertial>
+            <origin xyz="-1.62957e-19 -7.7726e-21 -0.0117908" rpy="0 0 0"/>
+            <mass value="0.00186019"/>
+            <inertia ixx="1.42735e-07" ixy="0" ixz="0" iyy="1.42735e-07" iyz="0" izz="3.56706e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3_fixed" type="fixed">
+        <origin xyz="0.0237904 -0.0249937 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_18650_2 -->
+    <link name="base_18650_2">
+        <inertial>
+            <origin xyz="0.0104556 0.042 0.0111537" rpy="0 0 0"/>
+            <mass value="0.0413512"/>
+            <inertia ixx="1.53964e-05" ixy="1.04057e-21" ixz="3.56928e-74" iyy="1.67472e-06" iyz="5.5793e-75" izz="1.53964e-05"/>
+        </inertial>
+        <!-- Part 18650_2 -->
+        <visual>
+            <origin xyz="0 -6.93889e-18 0" rpy="-8.14544e-71 -9.32782e-70 6.34822e-17"/>
+            <geometry>
+                <mesh filename="package://assets/18650.stl"/>
+            </geometry>
+            <material name="18650_2_material">
+                <color rgba="0.647059 0.647059 0.647059 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_18650_2 -->
+    <joint name="base_18650_2_fixed" type="fixed">
+        <origin xyz="-0.0570303 0.00914608 0.0556537" rpy="-3.14159 6.23961e-54 1.0472"/>
+        <parent link="base"/>
+        <child link="base_18650_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter -->
+    <link name="base_m3_spacer__length_0_03_meter">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter -->
+    <joint name="base_m3_spacer__length_0_03_meter_fixed" type="fixed">
+        <origin xyz="0.0332917 0.0723372 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_frame -->
+    <link name="base_frame">
+        <inertial>
+            <origin xyz="7.85799e-08 -7.39085e-05 0.0015" rpy="0 0 0"/>
+            <mass value="0.0446653"/>
+            <inertia ixx="7.46545e-05" ixy="1.41542e-11" ixz="8.46641e-12" iyy="7.4459e-05" iyz="1.89496e-12" izz="0.000149046"/>
+        </inertial>
+        <!-- Part frame -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -7.24454e-71 -3.69779e-32"/>
+            <geometry>
+                <mesh filename="package://assets/frame.stl"/>
+            </geometry>
+            <material name="frame_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_frame -->
+    <joint name="base_frame_fixed" type="fixed">
+        <origin xyz="-1.04083e-17 8.32667e-17 0.0305" rpy="-6.5253e-55 6.5253e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_frame"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_006_meter -->
+    <link name="base_m3_spacer__length_0_006_meter">
+        <inertial>
+            <origin xyz="1.51661e-19 5.6092e-19 0.0043556" rpy="0 0 0"/>
+            <mass value="0.00128938"/>
+            <inertia ixx="1.24082e-08" ixy="2.90094e-25" ixz="0" iyy="1.24082e-08" iyz="0" izz="5.24648e-09"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_006_meter -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 3.77194e-17"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_006_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_006_meter_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_006_meter -->
+    <joint name="base_m3_spacer__length_0_006_meter_fixed" type="fixed">
+        <origin xyz="-0.0237904 -0.0249937 0.0245" rpy="0 -0 0.523599"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_006_meter"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_blue1_blue -->
+    <link name="base_blue1_blue">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="1e-09"/>
+            <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+        </inertial>
+        <!-- Part blue1_blue -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 7.0837e-48"/>
+            <geometry>
+                <mesh filename="package://assets/blue1_blue.stl"/>
+            </geometry>
+            <material name="blue1_blue_material">
+                <color rgba="0.231373 0.380392 0.705882 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_blue1_blue -->
+    <joint name="base_blue1_blue_fixed" type="fixed">
+        <origin xyz="0.00122945 -0.000286033 0.0505" rpy="-2.85456e-24 2.48154e-24 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_blue1_blue"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4">
+        <inertial>
+            <origin xyz="-1.62957e-19 -7.7726e-21 -0.0117908" rpy="0 0 0"/>
+            <mass value="0.00186019"/>
+            <inertia ixx="1.42735e-07" ixy="0" ixz="0" iyy="1.42735e-07" iyz="0" izz="3.56706e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4_fixed" type="fixed">
+        <origin xyz="0.0335404 -0.00810625 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_4"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_coupler -->
+    <link name="base_coupler">
+        <inertial>
+            <origin xyz="0.02065 0.038 0.00488365" rpy="0 0 0"/>
+            <mass value="0.0120399"/>
+            <inertia ixx="8.00999e-06" ixy="-2.19771e-22" ixz="9.03674e-92" iyy="2.45617e-06" iyz="1.41733e-75" izz="9.80338e-06"/>
+        </inertial>
+        <!-- Part coupler -->
+        <visual>
+            <origin xyz="3.46945e-18 -3.46945e-18 0" rpy="-5.79563e-70 -0 -7.97104e-18"/>
+            <geometry>
+                <mesh filename="package://assets/coupler.stl"/>
+            </geometry>
+            <material name="coupler_material">
+                <color rgba="0.4 0.4 0.4 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_coupler -->
+    <joint name="base_coupler_fixed" type="fixed">
+        <origin xyz="0.0156562 -0.0329573 0.0335" rpy="1.6719e-54 6.23961e-54 1.0472"/>
+        <parent link="base"/>
+        <child link="base_coupler"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2">
+        <inertial>
+            <origin xyz="-7.90612e-20 0 -0.0033509" rpy="0 0 0"/>
+            <mass value="0.000820681"/>
+            <inertia ixx="6.25988e-09" ixy="0" ixz="0" iyy="6.25988e-09" iyz="0" izz="2.39762e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2_fixed" type="fixed">
+        <origin xyz="0 -0.0475 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_6__acf8a907a0472c0ae6086bf20401fa07_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_blue1_white -->
+    <link name="base_blue1_white">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="1e-09"/>
+            <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+        </inertial>
+        <!-- Part blue1_white -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 -7.0837e-48"/>
+            <geometry>
+                <mesh filename="package://assets/blue1_white.stl"/>
+            </geometry>
+            <material name="blue1_white_material">
+                <color rgba="0.980392 0.980392 0.980392 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_blue1_white -->
+    <joint name="base_blue1_white_fixed" type="fixed">
+        <origin xyz="4.19044e-16 -2.22673e-06 0.0653" rpy="-3.14159 -2.48154e-24 3.14159"/>
+        <parent link="base"/>
+        <child link="base_blue1_white"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5">
+        <inertial>
+            <origin xyz="-1.62957e-19 -7.7726e-21 -0.0117908" rpy="0 0 0"/>
+            <mass value="0.00186019"/>
+            <inertia ixx="1.42735e-07" ixy="0" ixz="0" iyy="1.42735e-07" iyz="0" izz="3.56706e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5_fixed" type="fixed">
+        <origin xyz="-0.0237904 -0.0249937 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_5"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_board -->
+    <link name="base_board">
+        <inertial>
+            <origin xyz="1.41177e-07 -1.25648e-05 -0.000800002" rpy="0 0 0"/>
+            <mass value="0.0350741"/>
+            <inertia ixx="5.48785e-05" ixy="-2.82529e-11" ixz="3.31311e-12" iyy="5.48453e-05" iyz="7.37322e-13" izz="0.000109709"/>
+        </inertial>
+        <!-- Part board -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/board.stl"/>
+            </geometry>
+            <material name="board_material">
+                <color rgba="0.301961 0.290196 0.262745 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_board -->
+    <joint name="base_board_fixed" type="fixed">
+        <origin xyz="0 0 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_board"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6 -->
+    <link name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6">
+        <inertial>
+            <origin xyz="-1.62957e-19 -7.7726e-21 -0.0117908" rpy="0 0 0"/>
+            <mass value="0.00186019"/>
+            <inertia ixx="1.42735e-07" ixy="0" ixz="0" iyy="1.42735e-07" iyz="0" izz="3.56706e-09"/>
+        </inertial>
+        <!-- Part hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785.stl"/>
+            </geometry>
+            <material name="hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6_material">
+                <color rgba="0.603922 0.647059 0.686275 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6 -->
+    <joint name="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6_fixed" type="fixed">
+        <origin xyz="-0.00975 0.0331 -0.0046" rpy="3.14159 -0 0"/>
+        <parent link="base"/>
+        <child link="base_hex_socket_head_cap_screw_m3x0_50_x_25_x_18__e477b94a6da3e3efbf1606183756b785_6"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_coil -->
+    <link name="base_coil">
+        <inertial>
+            <origin xyz="0.00775 0.0066 0.015" rpy="0 0 0"/>
+            <mass value="0.0289495"/>
+            <inertia ixx="2.19036e-06" ixy="0" ixz="0" iyy="2.19036e-06" iyz="0" izz="5.97988e-07"/>
+        </inertial>
+        <!-- Part coil -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/coil.stl"/>
+            </geometry>
+            <material name="coil_material">
+                <color rgba="0.0862745 0.321569 0.580392 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_coil -->
+    <joint name="base_coil_fixed" type="fixed">
+        <origin xyz="-0.0066 -0.0695 8.67362e-19" rpy="-1.5708 -1.5708 0"/>
+        <parent link="base"/>
+        <child link="base_coil"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_frame_2 -->
+    <link name="base_frame_2">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="1e-09"/>
+            <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+        </inertial>
+        <!-- Part frame_2 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/frame__2.stl"/>
+            </geometry>
+            <material name="frame_2_material">
+                <color rgba="0.921569 0.8 0.654902 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_frame_2 -->
+    <joint name="base_frame_2_fixed" type="fixed">
+        <origin xyz="-0.0066 -0.0695 0" rpy="-1.5708 -1.5708 0"/>
+        <parent link="base"/>
+        <child link="base_frame_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_n20 -->
+    <link name="base_n20">
+        <inertial>
+            <origin xyz="0.006 0.0143094 0.00585908" rpy="0 0 0"/>
+            <mass value="0.0115526"/>
+            <inertia ixx="1.21524e-06" ixy="-1.8706e-38" ixz="-1.44465e-39" iyy="3.02377e-07" iyz="1.17204e-07" izz="1.18608e-06"/>
+        </inertial>
+        <!-- Part n20 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 -1.2326e-32"/>
+            <geometry>
+                <mesh filename="package://assets/n20.stl"/>
+            </geometry>
+            <material name="n20_material">
+                <color rgba="0.917647 0.72549 0.490196 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_n20 -->
+    <joint name="base_n20_fixed" type="fixed">
+        <origin xyz="-0.006 0.0166 0.012" rpy="0 -0 -1.66533e-16"/>
+        <parent link="base"/>
+        <child link="base_n20"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_motorbox_top -->
+    <link name="base_motorbox_top">
+        <inertial>
+            <origin xyz="0.006 0.0165087 0.00722774" rpy="0 0 0"/>
+            <mass value="0.00309324"/>
+            <inertia ixx="1.89426e-07" ixy="-6.28766e-14" ixz="3.54306e-14" iyy="2.32174e-07" iyz="-2.34602e-09" izz="3.12459e-07"/>
+        </inertial>
+        <!-- Part motorbox_top -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 -1.84889e-32"/>
+            <geometry>
+                <mesh filename="package://assets/motorbox_top.stl"/>
+            </geometry>
+            <material name="motorbox_top_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_motorbox_top -->
+    <joint name="base_motorbox_top_fixed" type="fixed">
+        <origin xyz="-0.006 0.0166 0.012" rpy="0 -0 -5.27356e-16"/>
+        <parent link="base"/>
+        <child link="base_motorbox_top"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_motorbox_bottom -->
+    <link name="base_motorbox_bottom">
+        <inertial>
+            <origin xyz="0.006 0.0173508 -0.00614326" rpy="0 0 0"/>
+            <mass value="0.00516874"/>
+            <inertia ixx="2.91142e-07" ixy="-8.66017e-40" ixz="6.1622e-41" iyy="2.02751e-07" iyz="6.28953e-09" izz="3.75001e-07"/>
+        </inertial>
+        <!-- Part motorbox_bottom -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 -9.79755e-33"/>
+            <geometry>
+                <mesh filename="package://assets/motorbox_bottom.stl"/>
+            </geometry>
+            <material name="motorbox_bottom_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_motorbox_bottom -->
+    <joint name="base_motorbox_bottom_fixed" type="fixed">
+        <origin xyz="-0.006 0.0166 0.012" rpy="0 -0 -1.7792e-16"/>
+        <parent link="base"/>
+        <child link="base_motorbox_bottom"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_n20_2 -->
+    <link name="base_n20_2">
+        <inertial>
+            <origin xyz="0.006 0.0143094 0.00585908" rpy="0 0 0"/>
+            <mass value="0.0115526"/>
+            <inertia ixx="1.21524e-06" ixy="3.109e-23" ixz="-8.71656e-24" iyy="3.02377e-07" iyz="1.17204e-07" izz="1.18608e-06"/>
+        </inertial>
+        <!-- Part n20_2 -->
+        <visual>
+            <origin xyz="-2.60209e-18 -3.46945e-18 0" rpy="0 -0 4.40885e-17"/>
+            <geometry>
+                <mesh filename="package://assets/n20.stl"/>
+            </geometry>
+            <material name="n20_2_material">
+                <color rgba="0.917647 0.72549 0.490196 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_n20_2 -->
+    <joint name="base_n20_2_fixed" type="fixed">
+        <origin xyz="-0.011376 -0.0134962 0.012" rpy="0 -0 2.0944"/>
+        <parent link="base"/>
+        <child link="base_n20_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_motorbox_top_2 -->
+    <link name="base_motorbox_top_2">
+        <inertial>
+            <origin xyz="0.006 0.0165087 0.00722774" rpy="0 0 0"/>
+            <mass value="0.00309324"/>
+            <inertia ixx="1.89426e-07" ixy="-6.28766e-14" ixz="3.54306e-14" iyy="2.32174e-07" iyz="-2.34602e-09" izz="3.12459e-07"/>
+        </inertial>
+        <!-- Part motorbox_top_2 -->
+        <visual>
+            <origin xyz="1.73472e-18 0 0" rpy="0 -0 6.24143e-17"/>
+            <geometry>
+                <mesh filename="package://assets/motorbox_top.stl"/>
+            </geometry>
+            <material name="motorbox_top_2_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_motorbox_top_2 -->
+    <joint name="base_motorbox_top_2_fixed" type="fixed">
+        <origin xyz="-0.011376 -0.0134962 0.012" rpy="0 -0 2.0944"/>
+        <parent link="base"/>
+        <child link="base_motorbox_top_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_motorbox_bottom_2 -->
+    <link name="base_motorbox_bottom_2">
+        <inertial>
+            <origin xyz="0.006 0.0173508 -0.00614326" rpy="0 0 0"/>
+            <mass value="0.00516874"/>
+            <inertia ixx="2.91142e-07" ixy="7.58552e-24" ixz="1.36969e-25" iyy="2.02751e-07" iyz="6.28953e-09" izz="3.75001e-07"/>
+        </inertial>
+        <!-- Part motorbox_bottom_2 -->
+        <visual>
+            <origin xyz="8.67362e-19 3.46945e-18 0" rpy="0 -0 1.08886e-17"/>
+            <geometry>
+                <mesh filename="package://assets/motorbox_bottom.stl"/>
+            </geometry>
+            <material name="motorbox_bottom_2_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_motorbox_bottom_2 -->
+    <joint name="base_motorbox_bottom_2_fixed" type="fixed">
+        <origin xyz="-0.011376 -0.0134962 0.012" rpy="0 -0 2.0944"/>
+        <parent link="base"/>
+        <child link="base_motorbox_bottom_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_2 -->
+    <link name="base_m3_spacer__length_0_03_meter_2">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_2 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_2_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_2 -->
+    <joint name="base_m3_spacer__length_0_03_meter_2_fixed" type="fixed">
+        <origin xyz="-0.0792917 -0.00733717 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_3 -->
+    <link name="base_m3_spacer__length_0_03_meter_3">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_3 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_3_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_3 -->
+    <joint name="base_m3_spacer__length_0_03_meter_3_fixed" type="fixed">
+        <origin xyz="0.0465237 0.0534186 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_4 -->
+    <link name="base_m3_spacer__length_0_03_meter_4">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_4 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_4_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_4 -->
+    <joint name="base_m3_spacer__length_0_03_meter_4_fixed" type="fixed">
+        <origin xyz="0.046 -0.065 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_4"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_5 -->
+    <link name="base_m3_spacer__length_0_03_meter_5">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_5 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_5_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_5 -->
+    <joint name="base_m3_spacer__length_0_03_meter_5_fixed" type="fixed">
+        <origin xyz="-0.0695237 0.0135814 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_5"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_6 -->
+    <link name="base_m3_spacer__length_0_03_meter_6">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_6 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_6_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_6 -->
+    <joint name="base_m3_spacer__length_0_03_meter_6_fixed" type="fixed">
+        <origin xyz="-0.0332917 0.0723372 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_6"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_7 -->
+    <link name="base_m3_spacer__length_0_03_meter_7">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_7 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_7_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_7 -->
+    <joint name="base_m3_spacer__length_0_03_meter_7_fixed" type="fixed">
+        <origin xyz="-0.0465237 0.0534186 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_7"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_8 -->
+    <link name="base_m3_spacer__length_0_03_meter_8">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_8 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_8_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_8 -->
+    <joint name="base_m3_spacer__length_0_03_meter_8_fixed" type="fixed">
+        <origin xyz="-0.046 -0.065 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_8"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_9 -->
+    <link name="base_m3_spacer__length_0_03_meter_9">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_9 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_9_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_9 -->
+    <joint name="base_m3_spacer__length_0_03_meter_9_fixed" type="fixed">
+        <origin xyz="0.0792917 -0.00733717 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_9"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_03_meter_10 -->
+    <link name="base_m3_spacer__length_0_03_meter_10">
+        <inertial>
+            <origin xyz="1.34279e-19 6.69511e-19 0.0163098" rpy="0 0 0"/>
+            <mass value="0.00489322"/>
+            <inertia ixx="4.49042e-07" ixy="0" ixz="0" iyy="4.49042e-07" iyz="0" izz="2.44845e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_03_meter_10 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_03_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_03_meter_10_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_03_meter_10 -->
+    <joint name="base_m3_spacer__length_0_03_meter_10_fixed" type="fixed">
+        <origin xyz="0.0695237 0.0135814 0" rpy="0 -0 0"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_03_meter_10"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_02_meter_2 -->
+    <link name="base_m3_spacer__length_0_02_meter_2">
+        <inertial>
+            <origin xyz="1.42965e-19 5.53781e-19 0.011317" rpy="0 0 0"/>
+            <mass value="0.00339162"/>
+            <inertia ixx="1.55413e-07" ixy="1.53249e-38" ixz="9.54973e-62" iyy="1.55413e-07" iyz="9.41676e-93" izz="1.64687e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_02_meter_2 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -6.14475e-55 9.86076e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_02_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_02_meter_2_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_02_meter_2 -->
+    <joint name="base_m3_spacer__length_0_02_meter_2_fixed" type="fixed">
+        <origin xyz="0.0335404 -0.00810625 0.0335" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_02_meter_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_02_meter_3 -->
+    <link name="base_m3_spacer__length_0_02_meter_3">
+        <inertial>
+            <origin xyz="1.42965e-19 5.53781e-19 0.011317" rpy="0 0 0"/>
+            <mass value="0.00339162"/>
+            <inertia ixx="1.55413e-07" ixy="1.53249e-38" ixz="9.54973e-62" iyy="1.55413e-07" iyz="9.41676e-93" izz="1.64687e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_02_meter_3 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -6.14475e-55 9.86076e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_02_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_02_meter_3_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_02_meter_3 -->
+    <joint name="base_m3_spacer__length_0_02_meter_3_fixed" type="fixed">
+        <origin xyz="-0.00975 0.0331 0.0335" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_02_meter_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_02_meter_4 -->
+    <link name="base_m3_spacer__length_0_02_meter_4">
+        <inertial>
+            <origin xyz="1.42965e-19 4.02323e-18 0.011317" rpy="0 0 0"/>
+            <mass value="0.00339162"/>
+            <inertia ixx="1.55413e-07" ixy="1.53249e-38" ixz="9.54973e-62" iyy="1.55413e-07" iyz="9.41676e-93" izz="1.64687e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_02_meter_4 -->
+        <visual>
+            <origin xyz="0 3.46945e-18 0" rpy="0 -6.14475e-55 9.86076e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_02_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_02_meter_4_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_02_meter_4 -->
+    <joint name="base_m3_spacer__length_0_02_meter_4_fixed" type="fixed">
+        <origin xyz="0.0237904 -0.0249937 0.0335" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_02_meter_4"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_02_meter_5 -->
+    <link name="base_m3_spacer__length_0_02_meter_5">
+        <inertial>
+            <origin xyz="1.42965e-19 -6.38511e-18 0.011317" rpy="0 0 0"/>
+            <mass value="0.00339162"/>
+            <inertia ixx="1.55413e-07" ixy="1.53249e-38" ixz="9.54973e-62" iyy="1.55413e-07" iyz="9.41676e-93" izz="1.64687e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_02_meter_5 -->
+        <visual>
+            <origin xyz="0 -6.93889e-18 0" rpy="0 -6.14475e-55 9.86076e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_02_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_02_meter_5_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_02_meter_5 -->
+    <joint name="base_m3_spacer__length_0_02_meter_5_fixed" type="fixed">
+        <origin xyz="0.00975 0.0331 0.0335" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_02_meter_5"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_02_meter_6 -->
+    <link name="base_m3_spacer__length_0_02_meter_6">
+        <inertial>
+            <origin xyz="1.42965e-19 5.53781e-19 0.011317" rpy="0 0 0"/>
+            <mass value="0.00339162"/>
+            <inertia ixx="1.55413e-07" ixy="1.53249e-38" ixz="9.54973e-62" iyy="1.55413e-07" iyz="9.41676e-93" izz="1.64687e-08"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_02_meter_6 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -6.14475e-55 9.86076e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_02_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_02_meter_6_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_02_meter_6 -->
+    <joint name="base_m3_spacer__length_0_02_meter_6_fixed" type="fixed">
+        <origin xyz="-0.0335404 -0.00810625 0.0335" rpy="-5.70911e-24 -3.26265e-55 -4.996e-16"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_02_meter_6"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_006_meter_2 -->
+    <link name="base_m3_spacer__length_0_006_meter_2">
+        <inertial>
+            <origin xyz="1.51661e-19 -1.1738e-18 0.0043556" rpy="0 0 0"/>
+            <mass value="0.00128938"/>
+            <inertia ixx="1.24082e-08" ixy="2.90094e-25" ixz="0" iyy="1.24082e-08" iyz="0" izz="5.24648e-09"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_006_meter_2 -->
+        <visual>
+            <origin xyz="0 -1.73472e-18 0" rpy="0 -0 3.77194e-17"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_006_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_006_meter_2_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_006_meter_2 -->
+    <joint name="base_m3_spacer__length_0_006_meter_2_fixed" type="fixed">
+        <origin xyz="-0.0335404 -0.00810625 0.0245" rpy="0 -0 0.523599"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_006_meter_2"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_006_meter_3 -->
+    <link name="base_m3_spacer__length_0_006_meter_3">
+        <inertial>
+            <origin xyz="1.51661e-19 2.29564e-18 0.0043556" rpy="0 0 0"/>
+            <mass value="0.00128938"/>
+            <inertia ixx="1.24082e-08" ixy="2.34015e-25" ixz="0" iyy="1.24082e-08" iyz="0" izz="5.24648e-09"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_006_meter_3 -->
+        <visual>
+            <origin xyz="0 1.73472e-18 0" rpy="0 -0 -4.0637e-17"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_006_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_006_meter_3_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_006_meter_3 -->
+    <joint name="base_m3_spacer__length_0_006_meter_3_fixed" type="fixed">
+        <origin xyz="0.0237904 -0.0249937 0.0245" rpy="0 -0 2.61799"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_006_meter_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_006_meter_4 -->
+    <link name="base_m3_spacer__length_0_006_meter_4">
+        <inertial>
+            <origin xyz="1.51661e-19 5.6092e-19 0.0043556" rpy="0 0 0"/>
+            <mass value="0.00128938"/>
+            <inertia ixx="1.24082e-08" ixy="6.88244e-40" ixz="0" iyy="1.24082e-08" iyz="0" izz="5.24648e-09"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_006_meter_4 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 3.08149e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_006_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_006_meter_4_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_006_meter_4 -->
+    <joint name="base_m3_spacer__length_0_006_meter_4_fixed" type="fixed">
+        <origin xyz="0.00975 0.0331 0.0245" rpy="0 -0 -1.5708"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_006_meter_4"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_006_meter_5 -->
+    <link name="base_m3_spacer__length_0_006_meter_5">
+        <inertial>
+            <origin xyz="1.51661e-19 2.29564e-18 0.0043556" rpy="0 0 0"/>
+            <mass value="0.00128938"/>
+            <inertia ixx="1.24082e-08" ixy="2.34015e-25" ixz="0" iyy="1.24082e-08" iyz="0" izz="5.24648e-09"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_006_meter_5 -->
+        <visual>
+            <origin xyz="0 1.73472e-18 0" rpy="0 -0 -4.0637e-17"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_006_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_006_meter_5_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_006_meter_5 -->
+    <joint name="base_m3_spacer__length_0_006_meter_5_fixed" type="fixed">
+        <origin xyz="0.0335404 -0.00810625 0.0245" rpy="0 -0 2.61799"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_006_meter_5"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_m3_spacer__length_0_006_meter_6 -->
+    <link name="base_m3_spacer__length_0_006_meter_6">
+        <inertial>
+            <origin xyz="1.51661e-19 5.6092e-19 0.0043556" rpy="0 0 0"/>
+            <mass value="0.00128938"/>
+            <inertia ixx="1.24082e-08" ixy="6.88244e-40" ixz="0" iyy="1.24082e-08" iyz="0" izz="5.24648e-09"/>
+        </inertial>
+        <!-- Part m3_spacer__length_0_006_meter_6 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 3.08149e-32"/>
+            <geometry>
+                <mesh filename="package://assets/m3_spacer__length_0_006_meter.stl"/>
+            </geometry>
+            <material name="m3_spacer__length_0_006_meter_6_material">
+                <color rgba="0.8 0.8 0.8 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_m3_spacer__length_0_006_meter_6 -->
+    <joint name="base_m3_spacer__length_0_006_meter_6_fixed" type="fixed">
+        <origin xyz="-0.00975 0.0331 0.0245" rpy="0 -0 -1.5708"/>
+        <parent link="base"/>
+        <child link="base_m3_spacer__length_0_006_meter_6"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_n20_3 -->
+    <link name="base_n20_3">
+        <inertial>
+            <origin xyz="0.006 0.0143094 0.00585908" rpy="0 0 0"/>
+            <mass value="0.0115526"/>
+            <inertia ixx="1.21524e-06" ixy="-1.45226e-23" ixz="6.50613e-24" iyy="3.02377e-07" iyz="1.17204e-07" izz="1.18608e-06"/>
+        </inertial>
+        <!-- Part n20_3 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 -2.57628e-17"/>
+            <geometry>
+                <mesh filename="package://assets/n20.stl"/>
+            </geometry>
+            <material name="n20_3_material">
+                <color rgba="0.917647 0.72549 0.490196 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_n20_3 -->
+    <joint name="base_n20_3_fixed" type="fixed">
+        <origin xyz="0.017376 -0.00310385 0.012" rpy="0 -0 -2.0944"/>
+        <parent link="base"/>
+        <child link="base_n20_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_motorbox_top_3 -->
+    <link name="base_motorbox_top_3">
+        <inertial>
+            <origin xyz="0.006 0.0165087 0.00722774" rpy="0 0 0"/>
+            <mass value="0.00309324"/>
+            <inertia ixx="1.89426e-07" ixy="-6.28766e-14" ixz="3.54306e-14" iyy="2.32174e-07" iyz="-2.34602e-09" izz="3.12459e-07"/>
+        </inertial>
+        <!-- Part motorbox_top_3 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 5.15256e-17"/>
+            <geometry>
+                <mesh filename="package://assets/motorbox_top.stl"/>
+            </geometry>
+            <material name="motorbox_top_3_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_motorbox_top_3 -->
+    <joint name="base_motorbox_top_3_fixed" type="fixed">
+        <origin xyz="0.017376 -0.00310385 0.012" rpy="0 -0 -2.0944"/>
+        <parent link="base"/>
+        <child link="base_motorbox_top_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+    <!-- Link base_motorbox_bottom_3 -->
+    <link name="base_motorbox_bottom_3">
+        <inertial>
+            <origin xyz="0.006 0.0173508 -0.00614326" rpy="0 0 0"/>
+            <mass value="0.00516874"/>
+            <inertia ixx="2.91142e-07" ixy="8.661e-24" ixz="0" iyy="2.02751e-07" iyz="6.28953e-09" izz="3.75001e-07"/>
+        </inertial>
+        <!-- Part motorbox_bottom_3 -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 2.97483e-17"/>
+            <geometry>
+                <mesh filename="package://assets/motorbox_bottom.stl"/>
+            </geometry>
+            <material name="motorbox_bottom_3_material">
+                <color rgba="0.917647 0.917647 0.917647 1.0"/>
+            </material>
+        </visual>
+    </link>
+    <!-- Joint from base to base_motorbox_bottom_3 -->
+    <joint name="base_motorbox_bottom_3_fixed" type="fixed">
+        <origin xyz="0.017376 -0.00310385 0.012" rpy="0 -0 -2.0944"/>
+        <parent link="base"/>
+        <child link="base_motorbox_bottom_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="10" velocity="10"/>
+    </joint>
+</robot>
