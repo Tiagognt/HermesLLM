@@ -101,6 +101,26 @@ def code_dir(category: str) -> Path:
 
 
 # --------------------------------------------------------------------------
+# Corpus fusionné (les trois catégories réunies)
+#
+# Vit à côté des catégories, jamais à l'intérieur de l'une d'elles : c'est
+# un LIVRABLE dérivé, régénérable, et les corpus par catégorie restent la
+# source de vérité.
+# --------------------------------------------------------------------------
+
+def full_dir() -> Path:
+    return DATA_DIR / "full"
+
+
+def full_corpus_path() -> Path:
+    return full_dir() / "corpus_full.jsonl"
+
+
+def full_stats_path() -> Path:
+    return full_dir() / "corpus_full_stats.md"
+
+
+# --------------------------------------------------------------------------
 # Journaux d'exécution (rapports .md) -- transverse aux catégories
 # --------------------------------------------------------------------------
 

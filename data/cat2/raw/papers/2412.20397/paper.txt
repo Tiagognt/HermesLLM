@@ -1,0 +1,472 @@
+Learning Policies for Dynamic Coalition Formation
+in Multi-Robot Task Allocation
+
+Lucas C. D. Bezerra  \orcidlink 0000-0002-3967-4374, Ataíde M. G. dos Santos  \orcidlink 0000-0003-2725-1734, and Shinkyu Park  \orcidlink 0000-0002-8643-404X
+The work was supported by funding from King Abdullah University of Science and Technology (KAUST).Bezerra and Park are with Electrical and Computer Engineering, King Abdullah University of Science and Technology (KAUST), Thuwal, 23955-6900, Kingdom of Saudi Arabia. {lucas.camaradantasbezerra, shinkyu.park}@kaust.edu.sa Santos is with the Department of Electrical Engineering, Federal University of Sergipe (UFS), São Cristóvão, Sergipe, 49107-230, Brazil. ataidegualberto.eng@gmail.com
+
+Abstract
+
+We propose a decentralized, learning-based framework for dynamic coalition formation in Multi-Robot Task Allocation ( MRTA ). Our approach extends MAPPO by integrating spatial action maps, robot motion planning, intention sharing, and task allocation revision to enable effective and adaptive coalition formation. Extensive simulation studies confirm the effectiveness of our model, enabling each robot to rely solely on local information to learn timely revisions of task selections and form coalitions with other robots to complete collaborative tasks. The results also highlight the proposed framework’s ability to handle large robot populations and adapt to scenarios with diverse task sets.
+
+I Introduction
+
+Coalition formation, widely observed in nature, such as in ant colonies and beehives, inspires researchers and engineers to design simple robots capable of strategic cooperation. In multi-robot systems, coalitions emerge when the collective actions of robots exceed what they could accomplish individually, as illustrated in Fig.  1 . In this work, we focus on developing policies for a team of robots capable of performing tasks that require coalition in dynamic environments. In such scenarios, robots must learn to coordinate by leveraging local information gathered from their own sensors and shared data from neighboring robots to effectively execute tasks.
+
+Multi-Robot Task Allocation (MRTA) is a research theme directly relevant to our work, focusing on the challenge of assigning and executing multiple tasks across a team of robots to optimize a collective objective over an extended time horizon. We focus on MRTA problems where:
+
+(i) each robot is capable of executing only one task at a time,
+
+(ii) tasks may require multiple robots to collaborate simultaneously for completion,
+
+(iii) robots must be adjacent to a task to execute it, necessitating movement to the task location beforehand, and
+
+(iv) completed tasks are removed, and new tasks continuously spawn in the environment.
+
+This problem formulation falls under the Single-Task robots, Multi-Robot tasks, Time-extended Assignment (ST-MR-TA) category of MRTA , as defined by the taxonomy in [ 1 ] . Relevant applications include transportation [ 2 ] and
+service dispatch scenarios [ 3 , 4 ] such as firefighting and large-scale disaster response.
+
+Figure 1 :
+The firetruck dispatch as an illustrative example of a dynamic coalition formation problem: a team of firetrucks must form coalitions to extinguish fires that cannot be accomplished individually. In the event of a catastrophe that disrupts communication infrastructure, firetrucks may need to independently determine which fires to prioritize.
+
+We focus on developing a decentralized solution where each robot observes only its immediate surroundings. With such partial observability in MRTA , robots only identify tasks within their sensor range, causing the set of perceived tasks to change as they move. Additionally, we consider dynamic environments where new tasks continuously emerge over time. Well-established approaches to partially observable task allocation problems rely on inter-robot communication, where robots share their observations, internal state, and decision with their neighbors. Market-based approaches [ 5 , 6 ] are among the most popular frameworks due to their robustness and scalability. However, these methods often rely on high-frequency communication between robots to reach agreement before task assignments are made [ 6 , 7 , 8 ] . Although this strategy is efficient in some restricted cases, it becomes impractical in dynamic environments.
+
+We propose a learning-based framework for multi-robot dynamic coalition formation to address problems within the ST-MR-TA MRTA category. In this framework, each robot utilizes a receding horizon-type planning strategy to generate a long-term plan for task execution, which is repeatedly revised as necessary in subsequent time steps. Each robot shares its plan with other robots that are within its communication range. This combination of task reassessment and sharing of the task execution plan enables dynamic coalition formation. Our contributions are summarized as follows:
+
+(i)
+
+To the best of our knowledge and based on a recent survey article [ 9 ] , the problem of decentralized dynamic coalition formation under partial observability has not been previously addressed. To facilitate coalition, we extend a Multi-Agent Reinforcement Learning (MARL) algorithm by integrating
+spatial action maps, robot motion planning, intention sharing, and task allocation revision. Compared to existing MARL approaches, such as [ 10 , 11 , 12 ] , the integration of these key components fosters coalition formation through decentralized decision-making in dynamic environments (see Table  II(c) for a comprehensive comparison).
+
+(ii)
+
+Each robot’s policy is modeled as an end-to-end convolutional neural network based on the U-Net architecture [ 13 ] . The network processes information on nearby tasks and other robots within the robot’s sensing range and integrates the intentions of neighboring robots. It is trained using the Multi-Agent Proximal Policy Optimization (MAPPO) algorithm with the parameter-sharing technique.
+
+(iii)
+
+Through extensive simulations, we demonstrate that our approach outperforms existing methods including a market-based approach, Project manager-oriented Coalition Formation Algorithm (PCFA) . We also demonstrate its scalability with up to 1000 robots and its generalizability across a wide range of task settings.
+
+This paper is organized as follows: § II reviews related work in MRTA and MARL . In § III , we formally define the problem of dynamic coalition formation as a Dec-POMDP . § IV outlines our proposed method as a solution to the problem. In § V , we evaluate the effectiveness, scalability, and generalizability of the proposed method through extensive simulations, comparing it to the baseline. § VI summarizes the paper and outlines future research directions.
+
+II Related Work
+
+MRTA is widely researched topic at the intersection of robotics and multi-agent systems [ 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 , 22 , 6 , 8 , 23 , 7 ] . Among the various problem settings, ST-MR-TA MRTA formulations are most relevant to our work.
+Solutions to ST-MR-TA MRTA include optimization-based [ 16 , 17 , 18 , 19 ] , trait-based [ 21 , 22 ] , and market-based [ 6 , 8 , 23 , 7 ] methods. Among decentralized solutions for MRTA , market-based approaches are particularly popular. Specifically, PCFA [ 8 ] is a market-based solution designed for coalition formation in homogeneous teams with dynamic tasks. Due to the similarity in problem formulation, we selected PCFA as the baseline for our simulations reported in § V .
+
+Reinforcement Learning (RL) focuses on learning a policy (i.e., a mapping from observation to action) that maximizes a robot’s total reward in a Markov decision process. It has been widely applied to various robotics problems, particularly in object manipulation [ 11 , 24 , 25 , 26 ] . While many approaches aim to directly control robot actuators, studies such as [ 11 , 24 , 27 ] propose the use of an abstract action map. In this framework, the policy selects a task at each time step, while a motion planner handles the low-level actuator control to navigate the robot to the task location. This abstraction alleviates the learned policy from handling low-level control, allowing it to concentrate on long-term planning.
+
+This approach is extended to the multi-robot domain in [ 12 ] , where robots not only select task locations but also communicate their chosen task locations to nearby robots. The authors show that this additional communication improves cooperation and enhances overall performance. However, their method does not address coalition formation. As demonstrated in § V , their approach, with appropriate adaptations, performs suboptimally compared to ours in scenarios that require effective coalition formation.
+MARL naturally extends the conventional RL framework to cooperative multi-robot scenarios, where instead of learning policies to maximize individual rewards, robots learn to maximize a global reward through coordination [ 28 ] . Several studies have adapted RL algorithms for the multi-robot domain [ 29 , 30 , 31 , 32 ] . A widely adopted approach is the Centralized Training and Decentralized Execution (CTDE) paradigm, where robots are trained using shared information [ 30 , 31 , 32 ] . CTDE offers faster training and addresses non-stationarity.
+
+Several studies have applied MARL to MRTA [ 31 , 33 , 10 , 12 ] . For example, [ 31 , 33 ] specifically address MRTA problems involving multi-robot tasks. The MRTA problem was introduced to the MARL community as a benchmark in [ 31 ] , where the authors released a Python package called Level-Based Foraging (LBF) . In LBF , each object is assigned a level, and it can only be picked up by a group of robots if the sum of the robots’ levels meets or exceeds the object’s level. Although LBF has become a popular MARL benchmark [ 34 , 35 , 36 ] , it lacks support for dynamic object spawning and abstract action spaces (e.g., selecting task positions on the grid). In [ 34 ] , several MARL algorithms were evaluated across popular benchmarks, including LBF (in fully observable scenarios only), and the EPyMARL package was released for community use. We expand their implementation by incorporating robot communication and additional features, which are detailed further in § IV .
+
+In [ 33 , 10 ] , MARL is applied to an extended version of MRTA , where robots must not only collect objects but also transport them. In [ 33 ] , which involves multi-robot tasks, the authors propose a novel inter-robot communication architecture. However, their approach assumes a fully observable environment. In [ 10 ] , the environment is defined using a multi-channel, grid-like observation space under partial observability, with the robots’ policy modeled using a convolutional neural network, similar to our approach. However, unlike our work, they do not employ an abstract action space and use a shallower policy architecture.
+
+Figure 2 : MRTA Environment-Robot Interaction: On the right, a depiction of the environment is shown along with the state representation used by the critic during training. Each robot receives an observation consisting of multiple channels. The observation is then fed into the policy and filtered to consider only visible tasks. A task is selected from the policy output, and the motion planner finds a feasible path to it.
+
+III Problem Description
+
+Consider a rectangular 2D grid environment of size , bounded by walls on all sides, where robots and tasks are distributed, as illustrated in Fig.  2 . Each cell in the grid belongs to the cell space and can be either empty or occupied by a robot, a task, or a wall. The grid contains a homogeneous team of robots, where the position of the -th robot at time step is denoted as . At each , a robot can either remain in its current position or move to an adjacent cell, including diagonal moves. Robots observe the cells within their view range, defined by cells, and communicate with others within a communication range of cells.
+
+Each task is associated with a positive integer , referred to as the task’s level , which represents the number of robots required to execute it. Here, denotes the maximum task level. We consider a dynamic task set: tasks are removed from the environment once completed by robots, and new tasks can appear at any time step in unoccupied cells. At time step , the set of available tasks is represented as , where denotes the location of the -th task, indicates its level, and represents the total number of tasks available.
+
+We consider two task spawn settings:
+
+(i) Bernoulli ( ) spawn : At each time step , a new task can appear in any unoccupied cell with probability . The level of each newly spawned task is sampled from a discrete uniform distribution .
+
+(ii) Instant respawn : When a task is completed, a new task of the same level immediately respawns in one of the unoccupied cells. This setting maintains a constant task density throughout the episode.
+
+To design a decentralized policy under partial observability, we model the problem as a Decentralized Partially-Observable Markov Decision Process (Dec-POMDP) [ 37 , 38 ] . A Dec-POMDP is defined by the tuple , where is the number of robots, represents the state space of the environment, and denote the action and observation spaces of individual robots, respectively. The state transition function is defined as , and the reward function as . 1 1 1 Here, we provide a general description of a Dec-POMDP ; implementation details specific to our framework are presented in § IV-A .
+
+Each robot receives an observation at time and independently selects an action based on its (stochastic) policy , i.e., .
+An observation is a function of the state and is defined as , where is the observation function.
+Given the state and the joint action , the next state is sampled according to the state transition function , i.e., . The transition function captures both deterministic dynamics (e.g., robot movement, task execution) and stochastic dynamics (e.g., task spawning) of the environment. For each state-action pair, a shared reward is computed for all robots.
+
+In a Dec-POMDP , state-action trajectories are represented as an episode . Given an initial state distribution and the episode likelihood , the performance of a policy can be evaluated using the expected episodic reward , where is the terminal time. When a sufficiently large number of episodes is available in a dataset , this expectation can be approximated as , thereby removing the need for explicit knowledge of and .
+
+IV Task Allocation Policy for Dynamic Coalition Formation
+
+We elaborate on the two main contributions of this work:
+
+(i) the design of decentralized task allocation policy structure, and
+
+(ii) the development of a learning-based algorithm within the Dec-POMDP framework to identify the optimal policy.
+
+Our proposed policies are designed to select tasks for execution, assess whether a robot’s current task allocation requires revision, and determine new task assignments based on the robot’s evolving local information. Once a task is assigned, each robot performs low-level control to move to a neighboring cell along a collision-free path within a single time step. In the subsequent time step, the policy reassesses the task allocation based on updated local information, redirecting the robot to a new task if necessary. This iterative process ensures that the overall collective objective is optimized.
+
+IV-A Dec-POMDP and Task Allocation Policy
+
+IV-A 1 Reward Function
+
+Higher-level tasks, which require coalitions of multiple robots, are more challenging to complete. To prevent robots from favoring lower-level tasks, we prioritize higher-level tasks by rewarding robots with a value equal to the square of the task level. Specifically, the reward at each time step is defined as , where represents the set of tasks completed at time step , and denotes the level of task  . 2 2 2 Once the coalition requirement is met, we assume that the robots can complete each task within a single time step.
+
+IV-A 2 State and Observation Spaces
+
+We adopt a 2D occupancy grid representation segmented into multiple channels (see Table I ), enabling the use of Convolutional Neural Network (CNN) architectures for policy design, similar to approaches in [ 10 , 11 , 12 ] . This differs from the representation used in LBF [ 31 ] , which encodes the state as a vector of robots and their positions. In our framework, the state is defined as multiple separate channels as , where . 3 3 3 To simplify the design and improve the efficiency of critic model training, our implementation consolidates into a single aggregated channel that combines the intention channels of all robots. Empirical studies indicate that this aggregation does not impact the training outcomes.
+
+The observation for robot  is derived by projecting and cropping onto areas centered around the robot’s position, determined by its view range and communication range . Specifically, the robot intention channel includes from robot  if is within cells of robot  . The other channels, , are obtained by cropping according to .
+
+TABLE I : Description of CNN input channels.
+
+Notation
+Space
+Description
+
+Robots
+
+Tasks (separated by level)
+
+Obstacles
+
+Robot  ’s intention map
+
+IV-A 3 Action Space, Motion Planner, and Intention Map
+
+Following a similar representation as in [ 11 , 24 ] , a robot’s action – determined by the task allocation policy – is defined as the location of its next task. Robots can select task locations only if they are within its view range; if no tasks are within view range, all grid locations within communication range are available for action selection. This constraint provides prior information, reducing training time while encouraging robots to commit to specific tasks.
+
+After selecting a task location, a motion planner computes the shortest collision-free path to that location while avoiding other robots, obstacles, and other tasks. We adopt the A* search algorithm for simplicity. The path is dynamically recomputed whenever a potential collision is detected. Robots follow these updated paths to their assigned task locations. To improve coalition formation for higher-level tasks, the policy assigns actions by considering the long-term task execution plans of neighboring robots.
+
+1
+
+2 Function   MotionPlanning( ) :
+
+3
+Using the A* algorithm, find a collision-free path where and .
+
+4          return
+
+5 Procedure   NextRobotPosition( ) :
+
+// draw a task location using the learned policy with local observation .
+
+6
+
+7          = MotionPlanning ( )
+
+8          Generate an intention map with and share it with neighboring robots.
+
+// assign as the robot’s next position to move to.
+
+9
+
+10          return
+
+Algorithm 1 Robot Motion Control
+
+We also employ an intention map [ 12 ] that encodes each robot’s task location and collision-free path. Inspired by the encoding scheme in [ 12 ] , we use an exponentially decaying path representation, where the -th position on the path is weighted by , with in our simulation, and embedded in the intention map. This intention map is shared among neighboring robots to facilitate coalition formation.
+Algorithm  1 outlines the motion control process for each robot guided by the learned policy .
+
+IV-B Optimal Task Allocation Policy
+
+IV-B 1 MAPPO
+
+To compute the optimal policy, we adopt MAPPO [ 30 ] , a CTDE algorithm designed for MARL. MAPPO enables robots to share experiences during the learning phase, which is particularly beneficial for training policies in teams of homogeneous robots. MAPPO is an Actor-Critic algorithm comprising two distinct networks: the actor and the critic . The actor outputs a distribution over actions based on each robot’s observations, formally defined by the policy , where represents the parameters of the policy network. These parameters are shared across all robots, a technique known as parameter sharing [ 39 ] , which improves training efficiency, especially in cooperative scenarios involving homogeneous robots. The critic computes an approximate value function , parameterized by , to estimate the expected discounted sum of future rewards .
+
+The critic is trained to accurately estimate future rewards, while the actor is trained to select actions that maximize the critic’s estimate. In our framework, both the actor and the critic are implemented using U-Nets [ 13 ] , a CNN -based architecture. For this implementation, the actor’s input (observations) and output (action distribution) as well as the critic’s input (state), are represented as images (3D arrays). The U-Net architecture is particularly advantageous due to its ability to capture both local spatial relationships and global context within the input image, making it well-suited for policy learning.
+
+TABLE II :
+
+(a) MAPPO Parameters.
+
+Parameter
+Value
+Description
+
+Learning rate
+
+0.95
+Discount factor
+
+5
+Adv. estimation steps
+
+-clip
+0.2
+Clipping in PPO loss
+
+0.01
+Entropy coefficient
+
+Batch size
+10
+
+Buffer size
+10
+
+Reward norm.
+Yes
+
+Return norm.
+No
+
+(b) Default environment settings.
+
+Parameter
+Value(s)
+
+Grid size
+20 x 20
+
+View range
+5
+
+Comm. range
+8
+
+3
+
+Task spawn
+
+Instant respawn /
+
+Bernoulli ( )
+
+Task distribution
+Random corner patch
+Homogeneous
+
+Number of agents
+10
+40
+
+Initial task setting
+
+(see Table III )
+
+M2
+4xM2
+
+(c) Model definitions and corresponding work.
+
+Name
+Components
+
+Related
+
+Work
+
+Action
+
+Filtering
+
+Spatial
+
+Actions
+
+Intention
+
+Sharing
+
+Task
+
+Revision
+
+PCFA
+✓
+
+✓
+✓
+[ 8 ]
+
+I
+✓
+
+[ 10 ]
+
+II
+✓
+✓
+
+[ 11 ]
+
+III
+✓
+✓
+✓
+
+[ 12 ]
+
+Ours
+✓
+✓
+✓
+✓
+–
+
+IV-B 2 Learning Task Allocation and Revision
+
+As shown in Fig.  2 , we design a task allocation policy that assigns a task location to each robot based on its local information: , where . In a partially observable environment with dynamically spawning tasks, a robot may encounter new tasks and other robots as it moves, which were previously unaccounted for. This dynamic nature makes it challenging for multiple robots to form coalitions for higher-level tasks. Consequently, the policy must allow robots to revise their task execution plans when necessary. However, frequent task revisions can disrupt coalition formation and hinder the completion of higher-level tasks.
+
+To address this challenge, we extend the MAPPO framework to train a policy capable of both task allocation and revision. Unlike existing approaches [ 12 , 27 ] , where task revisions occur only after a robot reaches its assigned task location and either completes it or fails due to the absence of a coalition, our trained policy proactively reallocates tasks as needed, based on evolving local observations and information shared by neighboring robots. As demonstrated in § V , this integrated approach enables our framework to concurrently learn task allocation and revision, ensuring optimization of the overall objective in the Dec-POMDP environment.
+
+V Evaluation
+
+We conducted a series of simulations to evaluate:
+
+(i) the performance of our proposed framework compared to existing methods, including the state-of-the-art market-based approach PCFA , 4 4 4 The original PCFA [ 8 ] was modified to accommodate robots with limited view and communication ranges and to enable task reassignment. Details of these modifications are provided in the appendix.
+
+(ii) its scalability with respect to the number of robots, and
+
+(iii) its generalizability across a range of task allocation scenarios with varying task difficulties.
+
+Furthermore, we present an ablation study to underscore the critical role of task revision in dynamic coalition formation.
+
+V-A Simulation Setup and Performance Metric
+
+To evaluate our proposed method, we developed GyMRTA , a Gym environment for discrete-space, discrete-time MRTA , and extended the existing MAPPO implementation from the EPyMARL [ 34 ] package. Our extensions include features such as task revision, action filtering, multi-dimensional observation and action spaces, support for custom state space, and tailored actor and critic Neural Network (NN) architectures.
+The hyperparameters of MAPPO , presented in Table  II(a) , remain constant across all simulations. Each episode is limited to 100 time steps ( ) to ensure a finite episodic reward.
+
+At the start of each episode, the initial positions of robots and tasks are randomly sampled. Table III details on the initial number of tasks per level across various task settings used in the simulations. The environment is categorized based on task distribution as either homogeneous or non-homogeneous.
+
+TABLE III : Task settings.
+
+Setting
+
+Name
+
+Tasks
+
+Setting
+
+Name
+
+Tasks
+
+1
+2
+3
+1
+2
+3
+
+Easy
+
+Hard
+
+E1
+15
+-
+-
+H1
+-
+5
+5
+
+E2
+10
+-
+-
+H2
+-
+-
+10
+
+E3
+5
+5
+-
+H3
+-
+-
+5
+
+Medium
+
+Non-Homogeneous
+
+M1
+6
+4
+4
+M2
+4
+3
+3
+
+M2
+4
+3
+3
+Homogeneous
+
+M3
+2
+2
+1
+
+4 M2
+
+16
+12
+12
+
+In the homogeneous scenario, tasks are evenly distributed across the grid, maintaining a uniform density. Conversely, the non-homogeneous scenario features an uneven distribution of tasks, leading to variations in task density. To define non-homogeneous configurations, we adopt the random corner patch distribution : the grid is divided into four equal-sized corner patches, and at the start of each episode, one patch is randomly chosen to contain all tasks. Within the chosen patch, the task density is uniform, while the rest of the grid remains empty. These scenarios are used to evaluate whether the learned policy enables robots to form effective coalitions for task execution while efficiently locating tasks.
+
+The primary performance metric is the average episodic reward. We calculate the mean and standard deviation of the episodic reward across 480 episodes: 5 different seeds with 96 evaluation episodes per seed. Each seed initializes the policy and environment with different parameters ( , and initial locations of robots and tasks) to ensure results are not biased by any specific initialization.
+
+Computational Resources: The policies were trained for 4M steps over a period of up to 13 hours and up to 68 hours in the non-homogeneous and homogeneous settings, respectively. Each policy is trained using 16 CPU cores (Intel Xeon Platinum 8260) and one GPU (Nvidia V100). After training, however, each trained policy executes in just ms on a single CPU core of the same model.
+
+V-B Simulation Results
+
+(a) Non-homogeneous tasks.
+
+(b) Homogeneous tasks.
+
+Figure 3 : Setting-specific performance across various spawn configurations.
+
+Figure 4 : The graphs illustrate how task revision rates – defined as the average number of time steps between each robot’s task selection changes – evolve over the course of training, and how the average episodic reward improves as the robots learn optimal revision strategies. The dotted horizontal lines indicate the optimal revision rates.
+
+We conducted a series of simulations to evaluate the proposed framework and the baseline across various environment settings, characterized by different task spawn configurations and distributions, while keeping other parameters constant. A summary of all simulation parameters is provided in Table II(b) . In the homogeneous task distribution scenario, the task spawning area is four times larger than in the non-homogeneous case. To ensure consistent robot and task densities across both distributions, the number of robots and tasks in the homogeneous scenario is proportionally increased by a factor of four. For this purpose, we use the M2 and 4 M2 settings for the non-homogeneous and homogeneous scenarios, respectively, as described in Table  III .
+
+Fig.  3 compares the performance of our model, the baseline (PCFA), and various ablation studies on the components of our model across non-homogeneous and homogeneous task distributions and five task spawn configurations (Bernoulli spawn with probabilities and instant respawn), spanning 10 different settings. Table II(c) provides details of the models used in the ablation studies, highlighting their components and referencing relevant existing works associated with each model. 5 5 5 Spatial action refers to defining the action in Dec-POMDP as the location of a task. Consequently, in model I, which does not incorporate spatial action, an action is defined as a neighboring cell on the grid that a robot can move to within a single time step. Each model was trained and evaluated in every environment setting.
+
+Models I, II, and III in this study are closely related to existing works [ 10 ] , [ 11 ] , and [ 12 ] , respectively, but include the following necessary modifications:
+
+(i) All three models are trained using MAPPO within a Dec-POMDP framework, whereas the original references rely on the MDP assumption with individual rewards.
+
+(ii) While [ 11 ] focuses on individual-robot training scenarios, model II is trained for MRTA using our framework.
+
+(iii) In [ 12 ] , only level-1 tasks are considered, and a method similar to Independent Q-Learning (IQL) [ 40 ] , which encourages competition rather than cooperation among multiple robots, is used, while model III uses MAPPO.
+
+As shown in Fig.  3 , our method consistently outperforms PCFA in all configurations. Notably, as the spawn rate increases, PCFA’s performance declines, indicating its difficulty in coordinating robots to effectively prioritize and allocate tasks of varying difficulty levels. Moreover, we observe that task revision significantly improves performance, particularly in highly dynamic scenarios such as the instant respawn and Bernoulli spawn with . These results align with our expectation that in environments where tasks spawn frequently and dynamically, robots must continuously reassess and update their long-term task execution plans.
+
+While frequent adjustments to task execution plans might seem disruptive to coalition formation among multiple robots working on high-level tasks, our proposed method enables robots to learn an optimal task revision strategy, resulting in superior performance. Fig.  4 depicts how the robots improve their average episodic reward by learning optimal task revision strategies. Importantly, this behavior is not manually encoded – specifically, the task revision rate is not a learnable parameter – but rather emerges from the learning process within our framework. Through repeated training, the robots progressively refine their optimal task revision rates, leading to more effective coalition formation and consistent improvements in average reward.
+
+The ablation studies evaluate the impact of intention sharing and task revision on our model’s performance. Models without task revision are limited to selecting a new task only upon reaching assigned tasks, regardless of whether it executes the tasks or not. As shown in Fig.  3 , model II (without intention sharing or task revision) underperforms both model III (with intention sharing only) and our model (with both intention sharing and task revision), highlighting the importance of learning the optimal timing for task revision and its communication with neighboring robots.
+
+In the homogeneous task distribution case, model I performs comparably to our model across all Bernoulli spawn settings but underperforms in the instant respawn scenario. This outcome indicates that homogeneous task scenarios with Bernoulli spawn do not necessitate long-term planning. However, in the instant respawn scenario, the constant task density discourages simplistic approaches like those employed by model I, resulting in its reduced performance.
+
+V-C Scalability and Generalizability Evaluation
+
+To evaluate scalability, we first trained policies in a homogeneous task distribution environment ( ) with a fixed number of robots. The trained policy was then tested while progressively scaling the environment size and the number of tasks to maintain constant robot density and constant task density . To ensure is time-invariant, we focused on the instant respawn scenario, using the M2 task setting (see Table III ). Multiple robot densities were evaluated: .
+
+Fig. 5(a) illustrates the performance of trained policies as a function of . We observe that the policy’s performance scales linearly with for all robot densities evaluated. These results validate the scalability of our method, demonstrating its effectiveness in managing larger numbers of robots for task allocation while maintaining constant robot and task densities.
+
+(a)
+
+(b)
+
+Figure 5 : Scalability (a) and generalizability (b) results.
+
+To evaluate the generalizability of our method across environments with varying task settings, we train and evaluate our model on a diverse set of environments, each characterized by different task distributions and levels.
+As detailed in Table III , we designed nine task settings, categorized as easy, medium, or hard, each defined by a specific combination of task levels and quantities.
+
+To evaluate the performance of trained policies across different task settings, we introduce the generalizability score . This score is calculated as the average of normalized rewards achieved by each trained policy within a specific category. The normalized reward is defined as the policy’s average reward in a given setting, scaled by the maximum attainable reward. The maximum reward is estimated based on the average reward achieved by a policy trained specifically for that setting. Consequently, a policy with strong generalizability will achieve the score closer to 1.
+
+Fig.  5(b) shows the generalizability scores of policies trained in easy, medium, and hard task settings, as well as in a combined setting encompassing all three. The results demonstrate that the policy trained across all settings achieves better and more consistent generalization. This policy performs close to the highest performance attainable by setting-specific policies. These results indicate that our method enables trained policies to allow robots to achieve near-optimal performance across environments with varying task-level distributions when trained in diverse environment settings.
+
+VI Conclusions
+
+We introduced a learning-based framework to address decentralized dynamic coalition formation. By leveraging the MAPPO algorithm and incorporating spatial action maps, motion planning, task allocation revision, and intention sharing, our model demonstrated significant performance improvements over existing approaches.
+Future directions include conducting experiments with physical multi-robot systems, such as multiple mobile manipulators collaboratively transporting heavy objects, where sensor noise and communication delays may substantially impact the performance of the proposed framework. Additionally, we plan to explore fine-tuning our learning-based framework using data collected from these real-world experiments to further optimize its performance.
+
+Modifications to PCFA:
+We implemented PCFA and integrated it with GyMRTA  for the performance comparison. To ensure a fair comparison with our method, the following modifications are applied:
+
+(i) Utility Function :
+The utility function , associated with the -th task, was adjusted to align with the reward function used in our framework:
+
+where is the task level, is the estimated time of arrival, is the wait time, and is the task’s initial spawn time.
+
+(ii) Partial Observability : In PCFA , the utility function for a task is set to zero if the task lies outside the robot’s view range , preventing robots from forming coalitions for tasks they cannot observe. Additionally, the communication graph is updated at each time step, with links existing only between robots that are within the communication range .
+
+(iii) Task Assignment Revision : To align with our method, robots are allowed to revise their task assignments at every time step. This is achieved by recomputing all four stages of PCFA at every time step. While this modification increases communication overhead compared to the original PCFA , it allows a fair comparison in our simulation study.

@@ -1,0 +1,568 @@
+\setcopyright
+ifaamas
+\acmConference [AAMAS ’25]Proc. of the 24th International Conference
+on Autonomous Agents and Multiagent Systems (AAMAS 2025)May 19 – 23, 2025
+Detroit, Michigan, USAY. Vorobeychik, S. Das, A. Nowé (eds.)
+\copyrightyear 2025
+\acmYear 2025
+\acmDOI
+\acmPrice
+\acmISBN
+\acmSubmissionID ¡¡OpenReview submission id¿¿
+
+\affiliation
+\institution TCS Research
+\city Mumbai
+\country India
+
+\affiliation
+\institution TCS Research
+\city Mumbai
+\country India
+
+\affiliation
+\institution TCS Research
+\city Mumbai
+\country India
+
+Together We Rise: Optimizing Real-Time Multi-Robot Task Allocation using Coordinated Heterogeneous Plays
+
+AAAI Track
+
+Aritra Pal
+
+p.aritra@tcs.com
+
+,
+Anandsingh Chauhan
+
+anandsingh.chauhan@tcs.com
+
+and
+Mayank Baranwal
+
+baranwal.mayank@tcs.com
+
+Abstract.
+
+Efficient task allocation among multiple robots is crucial for optimizing productivity in modern warehouses, particularly in response to the increasing demands of online order fulfillment. This paper addresses the real-time multi-robot task allocation (MRTA) problem in dynamic warehouse environments, where tasks emerge with specified start and end locations. The objective is to minimize both the total travel distance of robots and delays in task completion, while also considering practical constraints such as battery management and collision avoidance. We introduce MRTAgent , a dual-agent Reinforcement Learning (RL) framework inspired by self-play, designed to optimize task assignments and robot selection to ensure timely task execution. For safe navigation, a modified linear quadratic controller (LQR) approach is employed. To the best of our knowledge, MRTAgent is the first framework to address all critical aspects of practical MRTA problems while supporting continuous robot movements.
+
+Key words and phrases:
+Multi-Robot Task Allocation; Self-Play; Reinforcement Learning; Linear Quadratic Controller
+
+1. Introduction
+
+Cooperative multi-robot systems are increasingly being utilized across various domains, including transportation and logistics  Farinelli et al . ( 2017 ) , search and rescue operations  Queralta et al . ( 2020 ) , environmental monitoring  Ma et al . ( 2018 ) , precision agriculture  Dutta et al . ( 2021 ) , construction  Sartoretti et al . ( 2019 ) , and warehouse automation  Kartal et al . ( 2016 ); Gini ( 2017 ) . These systems, characterized by the collaboration of multiple robots to achieve shared objectives, offer substantial benefits such as enhanced scalability & efficiency, and greater fault tolerance, making them indispensable in dynamic environments.
+
+Intricacies of Warehouse Management: Automating warehouse operations with multi-robot systems presents a unique set of challenges, stemming from the complexities of spatial layouts, diverse task demands, varying robot capabilities, and the critical need for safe robotic navigation  Bolu and Korçak ( 2021 ); Wilson et al . ( 2021 ) . These challenges can be broadly divided into three key objectives: (a) Task Allocation , (b) Real-Time Robot Assignment , and (c) Path Planning . While these objectives are interrelated, each introduces distinct sub-problems that must be resolved to achieve optimal warehouse performance. In a dynamic warehouse setting, real-time task generation is vital because tasks cannot be fully anticipated in advance. This unpredictability complicates the planning process, necessitating the prioritization of tasks based on their arrival times, required completion deadlines, and the need to minimize the total travel distances of robots while balancing the demands of ongoing tasks.
+
+Moreover, the immediate and continuous allocation of robots to tasks demands seamless coordination, regardless of whether the robots are currently available or occupied. This emphasizes the need for real-time synchronization across multiple objectives, all while adhering to various physical and operational constraints. For example, effective path planning requires the creation of collision-free routes that navigate around static obstacles and account for the movements of other robots. Furthermore, it is crucial to consider the physical dynamics of the robots, such as acceleration, deceleration, and maneuverability-along with other practical considerations, such as their state-of-charge (SOC). These factors, often overlooked in existing warehouse management literature, are essential to the planning process.
+
+The intricate interdependence of these challenges highlights the need for a sophisticated and adaptable multi-robot framework. Such a framework must systematically address the complexities of task allocation, real-time robot assignment, and path planning within the constantly changing environment of an automated warehouse. Neglecting the interconnected nature of these tasks often leads to sub-optimal performance and inefficiencies, undermining the overall effectiveness of warehouse operations.
+
+Figure 1. Self-play inspired bi-level reinforcement learning agent for assigning robots to tasks within a dynamic environment
+
+Statement of Contributions: In this study, we present a self-play inspired novel framework, MRTAgent , which employs a bi-level RL strategy inspired to tackle the challenges of multi-task selection and multi-robot allocation. MRTAgent is designed to handle real-time task selection, dynamically allocate tasks to robots, and ensure safe navigation, all while accounting for critical constraints such as robot dynamics, charging needs, and specific task requirements. MRTAgent consists of three key components: (a) Task selection agent (Planner) to prioritize a task queued in the task buffer, (b) Robot selection agent (Executor) to allocate a robot to the recommended task, and (c) Navigator to plan collision-free trajectories of robots while adhering to physical and SOC constraints. The framework is highlighted in Figure  1 . The primary contributions of our work can be summarized as follows:
+
+Coordinating RL agents for task and robot selections: Existing approaches for MRTA, such as in  Agrawal et al . ( 2022 ) , primarily emphasize task selection with the assumption that the chosen task will always be assigned to an available (unoccupied) robot. Although this assumption simplifies the problem, it is highly sub-optimal. For instance, a robot might become available at a location far from the selected task’s origin, while another robot in close proximity to the task origin may soon become available. We alleviate this by introducing heterogeneous RL agents, one each for task selection and robot allocation. These RL agents are trained concurrently in our framework in a self-play manner, gradually developing the coordination between the two.
+
+Collision-free, physics-constrained multi-robot navigation: Practical robots do not operate in a grid world environment, allowing for sudden grid changes in any of the feasible directions. However, robots have some underlying dynamics and navigate continuously. Instead of using collision-free navigation algorithms applicable to grid worlds, we model these robots as double integrator systems and use linear quadratic regulators (LQRs) with artificial potential field (APF) for collision-free multi-robot navigation.
+
+An end-to-end framework for MRTA: To the best of our knowledge, our approach is the first to consider multiple echelons of MRTA, requiring decision-making at each stage. We address every aspect of MRTA, including robot allocation even when robots are occupied, accounting for their SOC, underlying dynamics, and ensuring collision-free navigation under actuation constraints. We further validate our trained framework on datasets with distributional shifts, varying numbers of robots and tasks.
+
+2. Related Works
+
+Efficient MRTA and path planning are crucial for optimizing order fulfillment, resource management, and obstacle-free navigation in industrial environments such as automated warehouses and manufacturing plants. These processes ultimately enhance overall productivity, which has made MRTA a focal point of research over the past two decades. Research efforts in this area range from heuristic-driven approaches to contemporary learning-based methods  Khamis et al . ( 2015 ) . Early work by  Gerkey and Mataric ( 2003 ) provided a comparative analysis of state-of-the-art (SOTA) multi-robot coordination strategies within specific domain contexts. Current MRTA research primarily focuses on two key elements: (a) model-driven optimization, as demonstrated by  Wei et al . ( 2020 ) , and (b) communication-efficient decentralized algorithms, as seen in  Chen et al . ( 2021 ); Agrawal et al . ( 2022 ) .
+
+The problem can also be framed as a multi-agent pickup and delivery (MAPD) challenge, which has been studied through both distributed and centralized approaches  Ma et al . ( 2017 ); Liu et al . ( 2019 ); Salzman and Stern ( 2020 ); Xu et al . ( 2022 ) . However, most existing research in this area has concentrated on offline MAPD, whereas our approach emphasizes learning-based methods for online task allocation. This focus is driven by the need for reliable solutions in dynamic environments, where continually solving optimization problems can be computationally intensive.
+
+Recent advancements in reinforcement learning (RL) for solving complex dynamic challenges have led to a trend toward learning-based approaches for managing warehouse complexities  Yang et al . ( 2020 ); Agrawal et al . ( 2022 , 2023 ) . These learning strategies address various aspects of end-to-end warehouse management. For instance,  Yang et al . ( 2020 ) proposed a Q-learning framework to generate collision-free, secure paths for multi-robot systems. Conversely, the RL frameworks in  Agrawal et al . ( 2022 , 2023 ) focus on optimal task selection but neglect task-to-robot assignment, assuming constant robot availability post-selection. Additionally, these works leverage coupled with optimal reciprocal collision avoidance  Alonso-Mora et al . ( 2013 ) for collision-free navigation at the low-level path planning stage.
+
+However, as previously discussed, most SOTA learning-based warehouse management approaches, including those mentioned, overlook a key benefit of RL: the ability to integrate multiple levels of warehouse management, and consideration of robots’ constraints during the training phase of the RL agent. For instance, the learned policy in  Agrawal et al . ( 2022 , 2023 ) is limited in its applicability to realistic warehouse scenarios due to the neglect of constraints related to robot availability and SOC. Moreover, these approaches often aim for a seamless sequential flow of tasks without considering their generation times. Similarly,  Papoudakis et al . ( 2021 ) utilizes a cooperative multi-agent RL framework under the assumption that robots never collide. Much of the prior work also neglects the complexities of robot dynamics in MRTA for warehouse settings, often simplifying robots to point objects or solving problems in basic square grid environments, without accounting for robot acceleration, deceleration, and collision risks during path planning  Pal et al . ( 2024 ) .
+
+In our study, we address these gaps by incorporating task arrival times to ensure timely task execution while considering practical factors such as robot availability, SOC, robot dynamics, and collision-free path generation. Our framework also demonstrates robust performance under distribution shifts and with variable-sized fleets. Our MRTAgent addresses these limitations by integrating robot dynamics into the navigation planning process using a linear quadratic regulator (LQR)-based navigation path algorithm within the RL agent framework. This ensures that path planning is both effective and collision-free. Additionally, we design a reward structure that balances prompt task allocation with the shortest possible execution duration for allocated tasks. This approach ensures competitive runtime during the deployment phase, facilitating real-time task selection and robot allocation, and collision-free navigation considering physical dynamics through proposed MRTAgent .
+
+3. Preliminaries
+
+3.1. States, Actions and Rewards
+
+The problem of MRTA can be modeled as a Markov Decision Process (MDP)  Puterman ( 1990 ) . An MDP is denoted by the tuple , where and represent the finite sets of states and actions, respectively. For any , the transition probability from state to state under the action is denoted by . Finally, the step reward associated with each state-action pair is depicted by . Below, we summarize the set of all possible states, actions, and rewards in the context of the MRTAgent validated within warehouse environment settings.
+
+States :
+At each time step, the warehouse environment is characterized by a comprehensive state that includes detailed information about both tasks and robots. Incoming tasks are immediately stored in a buffer, forming a limited-size look-ahead (LA) queue in a First-In-First-Out(FIFO) manner. The Tasks RL agent, referred to as the Planner , is trained to optimally select tasks from this queue based on the current state of the environment. Simultaneously, the Robot RL agent, referred to as the Executor , responsible for executing tasks, selects most suitable robots to complete them.
+
+The states of the Planner and Executor consist of the features related to tasks in the LA (denoted by ) as well as the set of robots ( ). Each agent’s state, denoted as at time-step , encompasses the following components:
+(a) origin coordinates of tasks ,
+(b) destination coordinates of tasks ,
+(c) euclidean distance information between task origin and destination ,
+(d) timestamp of task appearance in the LA queue ,
+(e) robot coordinates ,
+(f) robot availability and the anticipated time for ongoing task completion ,
+(g) robot charge percentage . Features (a)-(d) are task-specific and collectively have a dimensionality of 6 for each task. Conversely, features (e)-(g) are linked to robot-specific attributes (dim. = 4 for each robot).
+
+Actions : The MRTAgent consists self-play inspired bi-level RL agent; planner and executor. The goal of the planner is to enhance task assignment, thereby minimizing total operational time. The planner’s actions involve systematically selecting tasks from the queue while the executor focuses on robot allocation, with the objective of optimally assigning robots to the selected tasks to reduce overall operational expenses, and task execution delays. Thus, the actions executed in the environment consist of the selected task and its corresponding robot pair.
+
+Rewards : The step reward attributed to a task-action pair encompasses two distinct components. The initial component is calculated based on the time it takes for the robot to travel from its current position to the task’s starting point, termed travel time to origin (TRTO). The second component is the time gap between task arrival in the LA and the robot’s initiation of execution, denoted as the total time gap for the task (TTGT). Let and represent the origin and destination coordinates of the -indexed task. Similarly, indicates the current position of robot , which can vary based on whether the robot is idle, performing tasks, or at a charging location for recharging if needed. Additionally, we introduce and to denote the time when task appears in the task allocation (referred to as LA) and the time at which its execution begins, respectively. In each decision-making step, we use the variable allotT to signify the index of the selected task which then gets assigned to a robot selR . Furthermore, we utilize the function to calculate the distance between two points and within our system. The step reward for training the PPO agent is as follows:
+
+(1)
+
+The coefficient represents positive constant. The first term in ( 1 ) corresponds to TRTO, while the second term is associated with TTGT. This reflects the principle that tasks should not remain unattended for too long.
+
+4. Our approach
+
+Figure 2. Self-Play Motivated Bi-level RL Agent Architecture with trainable weights denoted by
+
+In this section, we introduce MRTAgent , a novel self-play-inspired bi-level RL framework (see Figure  2 ) designed to optimize MRTA for various industrial tasks. The MRTAgent is validated in warehouse environments scenario and comprises two RL agents: (a) Planner, and (b) Executor. Tasks are generated in real-time and initially populate a main task buffer. The planner has access to a small LA queue of tasks. When a task from LA queue is assigned to a robot for execution, a new task from the buffer is moved into the LA queue, making it available for selection by the Planner. If no new tasks are available in the buffer to replenish the LA queue, task with the longest duration in the LA queue is duplicated to maintain a consistent queue length, thereby increasing its likelihood of being selected by the Planner in subsequent steps. In the exceptional scenario where both the LA queue and the task buffer are empty, MRTAgent waits for a task to appear in the environment. The action selection process operates across three hierarchical levels:
+
+Task Selection: At each instant , the Planner selects a task from the LA queue for assignment to one of the robots, guided by the current state of the environment.
+
+Robot Allocation: Upon task selection, the Executor identifies the most suitable robot for task execution. This decision considers the positions of all robots after completing their current assignments, availability and SOC. Notably, the Executor does not wait for robots to become available before making robot allocations, as the state information includes time markers indicating when robots will be free.
+
+Navigation: To guide the robots’ movement, a linear quadratic regulator (LQR) based controller, augmented with potential functions for coordinated collision avoidance, considering all its dynamics is employed. This algorithm directs the robot from its current position to the task’s starting point and subsequently to the destination, ensuring collision avoidance with moving obstacles.
+
+4.1. MRTAgent framework
+
+Both Planner and Executor agents of the MRTAgent utilize Proximal Policy Optimization (PPO) algorithm  Schulman et al . ( 2017 ) , with their architectures depicted in Figure  2 . Both the agents are trained using a self-play inspired strategy, where one agent is actively trained while the other operates in evaluation mode, alternating every 40 episodes. This concurrent training framework ensures coordination between the two agents, facilitating efficient convergence and optimization of both the task selection and robot allocation processes.
+
+4.2. Neural Network Architecture and Training
+
+Planner and executor both employs a similar novel PPO-based framework to facilitate online task selection and robot allocation. This model architecture inspired from  Agrawal et al . ( 2023 ) is distinctly structured into three core segments (see Figure  2 ). The first segment involves the procedure of feature extraction, particularly focusing on attributes related to robots and tasks. The embedding for robot attributes is created using a sequence of four linear layers of dimensions [4, 16, 16, 1]. Concurrently, embeddings related to task attributes are generated using a similar sequence of four linear layers of dimensions [6, 16, 16, 1].
+
+Let and represent the feature vectors for the robot and the th-task for the planner and executor, then the associated embeddings are defined as:
+
+The second module transforms the extracted embeddings by concatenating the embeddings of robots and tasks for both planner and executor. Subsequently, the concatenated feature is channelled through a linear layer consisting 48 input neurons and 8 output neurons with ReLU activation.
+
+Final layer comprising a linear layer, this element operates with 8 input neurons and 1 output neuron.
+
+Initialize Planner & Executor policy parameters , and value function parameters , respectively.
+
+for     do
+
+for   episodes   do
+
+Step t=0
+
+State
+
+Each robot is executing a task
+
+while   True   do
+
+Update using LQR with APF
+
+if     then
+
+if   threshold for some   then
+
+Robot navigates to nearest available charging dock for recharging.
+
+end if
+
+if   is even   then
+
+run Planner policy in the environment to select a task .
+
+Executor policy takes state as input and allots a robot .
+
+else
+
+Planner policy takes state as input and selects a task .
+
+run Executor policy to allocate a robot .
+
+end if
+
+end if
+
+end while
+
+if   is even   then
+
+Collect set of trajectories
+
+Compute rewards-to-go
+
+Compute advantage estimates based on the current value function
+
+Update policy by maximizing PPO-Clip obj.:
+
+via stochastic gradient ascent with Adam;
+
+Fit value function by regression on MSE:
+
+via gradient descent
+
+else
+
+Update as above
+
+end if
+
+end for
+
+end for
+
+Algorithm 1 MRTAgent
+
+4.3. Multi-Robot Navigation Algorithm: LQR with Artificial Potential Field
+
+Linear Quadratic Regulator (LQR) is an optimal control strategy used to determine the control inputs that minimize a quadratic cost function over time for a linear system. It is widely used in control engineering to stabilize systems and optimize performance by balancing different aspects of system behavior, like minimizing energy use, overshoot, or settling time  Kirk ( 2004 ) . When modeling robot dynamics, a common simplification is to treat the robot as a double-integrator system. This model is particularly relevant for systems where the primary concern is controlling the position and velocity of the robot  Spong et al . ( 2020 ) . Consequently, state of robot is typically represented by its position and velocity , with the equations of motion represented as:
+
+Here is the control input, which directly influences the acceleration. Here, complete state of the -robot is represented as: . Applying LQR to this model involves designing a controller that minimizes deviations from a desired trajectory while controlling the velocity and ensuring smooth acceleration.
+
+To extend LQR for multi-robot path planning and collision avoidance, the state and control matrices are expanded to accommodate multiple robots. Each robot is controlled using an individual LQR controller within this collective framework, allowing for the independent regulation of position and velocity while minimizing a global cost function that balances state deviations and control effort. For collision avoidance, an artificial potential field (APF) method is employed  Park et al . ( 2020 ) . This approach introduces repulsive forces between robots when they come into close proximity, ensuring safe inter-robot distances. These repulsive forces are integrated into the control law, enabling the robots to avoid collisions while continuing to track their desired trajectories. This combined LQR-APF approach provides an effective solution for coordinating multiple robots in dynamic environments. More formally, we consider a system with robots, each modeled as a double-integrator in 2D space. The dynamics of the overall system is given by:
+
+where is the identity matrix of size , and denotes the Kronecker product. The objective of LQR is to minimize the following quadratic cost function:
+
+where and are weighting matrices that penalize deviations from the desired state and control effort, respectively. The optimal control input that minimizes the cost function is given by , where is the LQR gain matrix, computed as , and represents the target positions and velocities. Here is the solution to the continuous-time algebraic Riccati equation (CARE):
+
+In addition, we employ APF method that introduces a potential field around each robot that creates repulsive forces to avoid collisions. The repulsive potential between robots and is given by:
+
+where is a positive constant, is the Euclidean distance between robots and , and is the minimum allowable distance between robots. The final control input for each robot, incorporating both LQR control and APF-based collision avoidance, is given by:
+
+This ensures that the robots not only follow their intended paths but also avoid collisions by adjusting their trajectories dynamically in response to nearby robots.
+
+5. Experiments
+
+5.1. Datasets and Experimental Setup
+
+Table 1. Cost evaluation on test dataset with 5 tasks in LA, 10 robots & 505 episodic tasks (the lower the better)
+
+Test distibution
+Uniform distribution data
+Gaussian distribution data
+
+MRTAgent
+BFO
+FIFO
+MRTAgent
+BFO
+FIFO
+
+Similar
+13.49 0.44
+16.03
+16.69
+18.23 0.47
+18.60
+19.08
+
+14.85 0.15
+17.72
+18.35
+18.66 0.06
+19.06
+19.43
+
+13.72 0.16
+15.75
+16.49
+19.10 0.01
+19.77
+20.41
+
+14.83 0.26
+16.97
+17.21
+18.40 0.01
+19.83
+20.67
+
+14.47 0.18
+15.95
+16.40
+18.67 0.09
+19.04
+19.73
+
+Totally
+
+Different
+
+18.89 0.12
+19.06
+19.43
+15.84 0.56
+17.72
+18.35
+
+19.50 0.67
+20.15
+20.56
+14.84 0.44
+17.25
+17.83
+
+18.88 0.13
+19.04
+19.73
+13.98 0.43
+15.75
+16.49
+
+18.77 0.24
+19.58
+19.65
+14.37 0.38
+16.92
+17.31
+
+18.53 0.42
+20.43
+21.03
+14.82 0.38
+15.95
+16.40
+
+The MRTAgent framework has been validated within warehouse environment settings, operating under several key parameters to ensure efficient functioning. Due to the absence of publicly accessible real-world datasets for similar problem scenarios, synthetic data has been employed to evaluate our MRTAgent framework. Each episode spans time units, and the synthetic datasets used for both training and evaluation are structured as square-shaped 2D continuous spaces ranging from , with task origins, destinations, and robot locations confined within this range.
+
+In our experiments, task concentration varies to reflect specific periods of the day when the majority of tasks accumulate. Accordingly, datasets are generated using Gaussian distributions with varying means and standard deviations.The task’s starting and ending coordinates, along with the task generation times, are provided to the planner through a limited-size LA. This MRTAgent framework is evaluated under two configurations:
+
+•
+
+Normally distributed task arrival times
+
+•
+
+Uniformly distributed task arrival times.
+
+For each configuration, datasets containing  500 tasks per episode are generated according to the corresponding distributions. For instance, in the case of normally distributed tasks, the task generation times adhere to , where 600 represents the mean task generation time. For training, we considered a fleet of 10 robots, with the LA window length fixed at 5. The robots’ charging threshold is set at 30%, meaning robots with a SOC below 30% must dock for recharging before resuming task execution. The steady charging rate is calibrated to be the discharging rate.
+
+The planner and executor agents are implemented using the PyTorch library in Python 3.8, with an Adam optimizer  Kingma and Ba ( 2014 ) , a discount factor of 0.99, a lambda value of 0.95, a learning rate of 0.0003, an entropy coefficient of 0.001, a value function coefficient of 0.0002, and a batch size of 32. The policy networks for both the planner and executor are trained using the cross-entropy loss function, while the value networks are fine-tuned using the mean squared error loss metric.
+
+5.2. Baselines
+
+To the best of our knowledge, no existing work in the literature concurrently addresses multiple aspects of MRTA simultaneously. In light of the absence of established approaches, we propose two suitable baselines.
+
+Brute-force optimal (BFO) : In this approach, all task-robot pairs (within the LA) undergo an exhaustive brute-force evaluation of time duration required for task execution by the robots, determined using standard Euclidean distance. The algorithm then selects the robot-action pair that minimizes this time duration. While brute-force optimal approach represents a locally optimal solution, the exhaustive evaluation significantly amplifies the run-time, posing practical challenges. Despite, this baseline is frequently adopted in the literature as a reference point for evaluating decoupled task allocation and navigation methodologies  Mosteo and Montano ( 2007 ); Agrawal et al . ( 2022 ) .
+
+FIFO : The FIFO baseline employs a dual-tiered decision framework. The initial allocation involves selecting the task that entered the LA queue first, aiming to reduce pending tasks within the queue and allocating the robot that can complete it earliest to minimize TTGT   Humbert et al . ( 2015 ); Hassin and Nathaniel ( 2021 ) . Due to its simplicity, the FIFO approach requires the least execution time among all the considered approaches.
+
+Table 2. Cost comparison on Gaussian dist. dataset with 5 tasks in LA, 10 robots & 505 tasks/episode
+
+Avg TRTO
+Avg TTGT
+
+MRTAgent
+
+BFO
+
+FIFO
+
+MRTAgent
+
+BFO
+
+FIFO
+
+8.44
+
+8.48
+
+8.63
+
+11.38
+
+11.68
+
+11.93
+
+8.03
+
+8.59
+
+8.93
+
+11.09
+
+11.18
+
+11.48
+
+7.59
+
+8.62
+
+9.11
+
+10.79
+
+11.20
+
+11.56
+
+7.70
+
+8.08
+
+8.30
+
+10.90
+
+10.96
+
+11.43
+
+8.20
+
+8.49
+
+9.22
+
+10.70
+
+10.81
+
+11.25
+
+Table 3. Cost evaluation on Gaussian dist. dataset with 5 tasks in LA, 30 robots & 505 episodic tasks
+
+MRTAgent
+
+BFO
+
+FIFO
+
+Gaussian dist. data
+8.41
+8.64
+8.81
+
+8.93
+9.27
+9.63
+
+8.19
+8.34
+9.05
+
+7.49
+7.63
+8.53
+
+8.19
+8.43
+9.61
+
+Table 4. Cost evaluation on Gaussian dist. dataset with 5 tasks in LA, 25 robots & 505 episodic tasks
+
+MRTAgent
+
+BFO
+
+FIFO
+
+Gaussian dist. data
+9.25
+9.56
+9.76
+
+10.05
+10.37
+10.44
+
+9.34
+9.57
+9.92
+
+8.95
+9.42
+9.69
+
+8.70
+9.13
+9.32
+
+Table 5. Cost evaluation on Gaussian dist. dataset with 5 tasks in LA, 10 robots & 2005 episodic tasks
+
+MRTAgent
+
+BFO
+
+FIFO
+
+Gaussian dist. data
+223.44
+237.2
+279.38
+
+215.81
+229.54
+274.59
+
+218.44
+230.08
+277.88
+
+217.31
+232.45
+276.56
+
+214.67
+227.45
+274.31
+
+5.3. Training Details
+
+Figure 3. Learning curves of the MRTAgent
+
+The MRTAgent is trained through a self-play approach. Initially, the planner undergoes training for 40 episodes, while the executor remains in evaluation mode. After every 40 episodes, the roles of the planner and executor are reversed: the planner is switched to evaluation mode, and the executor is trained. This cycle is repeated 24 times, leading to a total of 960 training episodes. Each episode consists of 505 tasks, with 10 robots in the environment and a LA length of 5. Both the Planner and Executor agents are trained using the PPO algorithm  Schulman et al . ( 2017 ) . The model is implemented using the PyTorch library in Python 3.8. Key hyperparameters include the Adam optimizer  Kingma and Ba ( 2014 ) , a discount factor of 0.99, a lambda value of 0.95, a learning rate of 0.0003, an entropy coefficient of 0.001, a value function coefficient of 0.0002, and a batch size of 32. The policy network for both agents is trained with the cross-entropy loss function, while the value network is optimized using mean squared error (MSE) loss.
+
+5.4. Experiments and Results
+
+We now present a thorough comparative analysis of our proposed learning-based framework, MRTAgent , against baseline methods, namely the BFO approach and the FIFO strategy. Our experiments are designed to include scenarios that incorporate charging considerations, thereby addressing realistic operational challenges. The results consistently demonstrate the superiority of MRTAgent over the baseline methods.
+
+Figure   3 presents the average training curve for the bi-level RL agents. This average is derived from four independent runs with different random seeds. The RL model is trained over 960 episodes, each comprising 505 tasks with 10 robots in the environment, and a look-ahead (LA) length of 5. The training process utilizes the PPO-based RL algorithm within the PFRL framework  Fujita et al . ( 2021 ) . To simulate real-world task profiles, the training procedure employs task lists generated randomly from a Gaussian distribution, alongside uniformly sampled task lists. The reward plots indicate that MRTAgent achieves stable convergence towards an optimal policy. The improvements in rewards from their initial values suggest effective task selection and robot allocation, leading to reduced task waiting times within the LA window. It is worth noting that the RL agent is periodically trained with different random task lists, which prevents it from simply memorizing the performance on a specific task list. Instead, the agent learns to adapt to various scenarios, which explains the minor fluctuations in rewards across episodes as the agent refines its policy.
+
+After the training phase, the model’s performance is evaluated on different test datasets. For the model trained on task lists following a specific Gaussian distribution, the evaluation is performed on two distinct datasets:
+
+•
+
+Instances that are similar to the training data with the same mean and variance specifically with distributed data,
+
+•
+
+A dataset generated entirely from a uniform distribution specifically with distributed data.
+
+This evaluation assesses MRTAgent ’s ability to handle distributional shifts. Conversely, the model trained on uniformly generated task lists is evaluated on:
+
+•
+
+A dataset sampled from the same uniform distribution specifically with distributed data,
+
+•
+
+A dataset generated from a Gaussian distribution pecifically with distributed data,
+
+offering insights into its performance under distributional shifts.
+
+Table  1 provides a detailed comparison of the test results. The total number of tasks in each episode, the number of robots, and the LA queue length remain consistent with the training setup 505 tasks, 10 robots, and an LA length of 5. The results clearly demonstrate MRTAgent ’s consistent outperformance over the brute-force optimal and FIFO-based methods across almost all test scenarios. The MRTAgent framework outperforms the baselines in all instances, and for a completely different dataset, it performs significantly better compared to the baselines.
+
+To further analyze MRTAgent ’s superiority over other baselines, we examine the individual reward components of all approaches, as shown in Table  2 . The total cost (reward) consists of two primary components: (a) TRTO, which aims to minimize robot travel distance, and (b) TTGT, which seeks to reduce task execution delays. As shown in Table  2 , MRTAgent achieves value, in the TRTO component lesser than the brute-force optimal approach signifying its ability to minimize travel distance for the tasks in the look-ahead queue, as well as in the TTGT component because the brute-force optimal approach does not prioritize minimizing delays for tasks already in the look-ahead. On the other hand, the FIFO approach, despite assigning tasks sequentially, does not effectively reduce the TTGT component. This is because the task endpoints may be far from the starting locations of subsequent tasks in the look-ahead, potentially causing delays in task execution. As a result, the TRTO component is typically larger than in the brute-force.
+
+Variable number of robots : To assess MRTAgent ’s generalizability, we run experiments with varying numbers of robots during inference. Initially, the executor is trained with a fleet of 10 robots and 5 tasks in the LA, and the results are presented in Table  1 . We then retrain the executor for a fleet of 30 robots, while keeping the planner in evaluation mode, to observe MRTAgent ’s performance and scalability. The results for the 30-robot scenarios are shown in Table  3 . As expected, performing the same tasks with more robots incurs lower costs, as the TRTO and TTGT components reduce significantly. Nevertheless, MRTAgent consistently outperforms the baseline methods in all scenarios.
+
+The separation of Tasks ( Planner ) and Robot ( Executor ) agents in our framework enables scalability with varying task and robot counts. This setup also allows upgrading the Executor without retraining the entire system. Scenarios like robot failures—which reduce available robot count—can be managed by extending robot availability time ( , a feature in MRTAgent ) to a large value, excluding the failed robot from selection. For instance, MRTAgent trained with 30 robots (see Table  3 ) is evaluated with only 25 available, without retraining in Table  4 . This is achieved by assigning large values to
+for the extra 5 robots, effectively preventing task allocation and enabling our framework to adapt to different robot counts without retraining.
+
+Variable number of tasks : To evaluate the MRTAgent framework’s generalizability, the planner and executor, initially trained for a fleet of 5 robots and 505 tasks (see Table  1 ), are tested on a larger number of tasks, specifically 2005 (see Table  5 ). As observed, MRTAgent consistently outperforms the baselines across a variable number of tasks without requiring retraining.
+
+In Tables  1 - 5 , the different rows represent the use of various datasets for evaluation. Specifically, in Table  1 , the standard deviations reported for MRTAgent indicate slight fluctuations in performance when the model is evaluated using different random seeds. It is crucial to note that MRTAgent is trained with a periodically updated random task list, which prevents the agent from simply memorizing performance on a fixed set of tasks. Instead, this approach enables the agent to learn to adapt effectively to a wide range of scenarios. This is why there are small variations in the rewards across episodes, even as the agent gradually develops a consistent policy.
+
+A note on the baselines : While FIFO is known for its simplicity and computational efficiency; BFO, despite common intuition, is one of the strongest baselines which, given a look ahead (LA), evaluates all task-robot pairs and selects the one with earliest possible execution. In fact, BFO is an optimal task allocation and assignment approach given the current state of the LA received in an online fashion. The reason why MRTAgent is able to outperform it is due to the fact that MRTAgent exploits the underlying distribution defining task generation to plan for tasks to appear in future despite it having access to the same causal information as the BFO.
+
+6. Conclusion and Future Work
+
+This study introduces MRTAgent , a self-play motivated bi-level RL framework designed to enhance MRTA in modern warehousing environments. By optimizing operational costs and efficiency, MRTAgent addresses the increasing demands associated with online order fulfillment. The framework employs an optimal sequential task and robot selection process, coupled with a LQR based collision-free navigation algorithm. It effectively manages critical constraints such as robot dynamics, charging needs, and specific task requirements. Our approach demonstrates significant improvements over baseline methods across various test datasets. The validation of MRTAgent over datasets with distributional shifts and varying numbers of robots and tasks highlights its generalizability.
+
+While our MRTAgent algorithm presents a promising approach, it is essential to acknowledge certain limitations that warrant attention in future research endeavors:
+
+1. Single-Task Assumption : The algorithm currently assumes that robots are engaged in one task at a time, potentially limiting its applicability in scenarios where multitasking is prevalent.
+
+2. No Contingency for Sudden Breakdowns : The model does not account for the sudden breakdown of a robot during operation. Once a task is allocated, our algorithm lacks the capability to reconsider or revert the decision in the event of an unforeseen robot malfunction.
+
+3. Homogeneous Robots : We have made the simplifying assumption that all robots in the system are homogeneous, sharing identical values of characteristics such as velocity, acceleration, and load capacity. This assumption may not reflect the diversity present in real-world robot fleets.
+
+4. Negligible Load/Unload Time Assumption : The algorithm assumes negligible time for loading/unloading operations after a robot reaches the task origin/destination. In reality, this may not hold true, and accounting for realistic loading and unloading times is a consideration for future enhancements.
+
+Future work will focus on enabling robots to handle multiple tasks simultaneously, incorporating load/unload times, integrating heterogeneous robots, and implementing learning-based navigation, all of which will enhance the algorithm’s effectiveness and applicability in diverse, practical scenarios.

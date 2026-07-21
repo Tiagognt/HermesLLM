@@ -53,6 +53,28 @@ def _write_metadata_row(row: dict) -> None:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def _drop_metadata_rows(source_ids: set) -> int:
+    """
+    Retire des métadonnées les lignes des sources sur le point d'être
+    recollectées. Sans cela, `--only` AJOUTE une seconde ligne pour la même
+    source, la phase 2 adapte deux fois les mêmes fichiers, et le
+    dédoublonneur écarte tout le second passage.
+    """
+    if not METADATA_PATH.exists():
+        return 0
+    kept, dropped = [], 0
+    for line in METADATA_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        if json.loads(line)["source_id"] in source_ids:
+            dropped += 1
+            continue
+        kept.append(line)
+    METADATA_PATH.write_text("\n".join(kept) + ("\n" if kept else ""),
+                             encoding="utf-8")
+    return dropped
+
+
 def _copy_selection(files, repo_root: Path, dest_root: Path) -> int:
     """Copie en préservant l'arborescence relative (utile pour la diversité)."""
     if dest_root.exists():
@@ -169,8 +191,13 @@ def main() -> None:
     report.info("Cache git", f"`{paths.to_relative(GIT_CACHE_DIR)}`")
 
     paths.ensure_dirs(METADATA_PATH.parent, GIT_CACHE_DIR)
-    if not args.only and METADATA_PATH.exists():
-        METADATA_PATH.unlink()
+    if not args.only:
+        if METADATA_PATH.exists():
+            METADATA_PATH.unlink()
+    else:
+        n = _drop_metadata_rows({s.source_id for s in selection})
+        if n:
+            print(f"[metadonnees] {n} ligne(s) remplacee(s)\n")
 
     for source in selection:
         try:

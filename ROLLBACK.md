@@ -118,3 +118,45 @@ Supprimer (ou commenter) son entrée dans `src/cat1/sources.py`, puis :
 python3 src/cat1/collect_docs.py     # réécrit les métadonnées
 python3 src/cat1/build_corpus.py
 ```
+
+---
+
+# Retour arrière — catégorie 2 et corpus fusionné (2026-07-21)
+
+Point de restauration : **tag git `pre-cat2`** = commit `d628764`
+(pilote cat1). Il précède : les ajouts de sources à cat1 et cat3, toute la
+catégorie 2, et le corpus fusionné.
+
+## Tout annuler
+
+```bash
+cd /home/tiago/HermesPerso/HermesLLM
+git reset --hard pre-cat2
+git clean -fd data/cat2 data/full logs/
+rm -rf data/cat2/raw/_cache        # cache de clones, non suivi par git
+```
+
+## Annuler seulement une partie
+
+| Ce que vous voulez retirer | Comment |
+|---|---|
+| Toute la catégorie 2 | `rm -rf src/cat2 data/cat2` puis relancer `merge_corpus.py` (il ignore une catégorie absente et le signale) |
+| Les articles de recherche uniquement | Vider `PAPER_CATALOG` dans `src/cat2/sources.py`, relancer les deux phases de cat2 |
+| Les 10 robots ajoutés à cat3 | `git checkout pre-cat2 -- src/cat3/sources.py`, puis relancer les deux phases de cat3 |
+| Les 3 sources ajoutées à cat1 | `git checkout pre-cat2 -- src/cat1/sources.py`, puis relancer les deux phases de cat1 |
+| Le corpus fusionné | `rm -rf data/full` — les corpus par catégorie sont intacts, ils sont la source de vérité |
+| La promotion de `text_clean`/`quota` dans common | `git checkout pre-cat2 -- src/common/ src/cat1/` (casse cat2, pas cat1) |
+
+## Rééquilibrer le mélange sans rien recollecter
+
+`merge_corpus.py` sort en code 1 si une bande est violée. Le levier est
+`--budget-scale` sur la catégorie à ajuster :
+
+```bash
+python3 src/cat1/build_corpus.py --budget-scale 0.85   # cat1 plus petit
+python3 src/cat2/build_corpus.py --budget-scale 1.10   # cat2 plus gros
+python3 src/common/merge_corpus.py
+```
+
+Aucune phase 1 n'est rejouée : les bruts et les articles téléchargés
+restent sur le disque.

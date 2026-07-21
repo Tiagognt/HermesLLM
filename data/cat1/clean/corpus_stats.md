@@ -1,24 +1,24 @@
 # Corpus catégorie 1 — statistiques
 
-- Généré le : 2026-07-21T09:18:40.445754+00:00
+- Généré le : 2026-07-21T11:08:10.885037+00:00
 - Racine projet : `/home/tiago/HermesPerso/HermesLLM`
 - Tier : A
-- Enregistrements : 876
-- Tokens totaux : 1507283 (Qwen3 exact)
+- Enregistrements : 966
+- Tokens totaux : 1648225 (Qwen3 exact)
 - Contrôle de contamination : PASSÉ — 0 recoupement (3 règles sur 1 scénario(s) : subway_station_fire)
-- Déduplication : 23 doublons exacts, 34 quasi-doublons retirés (MinHash 128 permutations, 16 bandes x 8 lignes, seuil 0.85)
-- Rapport d'exécution : `logs/20260721-091520-cat1-build-corpus.md`
+- Déduplication : 25 doublons exacts, 39 quasi-doublons retirés (MinHash 128 permutations, 16 bandes x 8 lignes, seuil 0.85)
+- Rapport d'exécution : `logs/20260721-110343-cat1-build-corpus.md`
 
 ## Par famille de sources
 
 | Famille | Documents | Tokens | Part |
 |---|---:|---:|---:|
-| ros_docs | 357 | 644,844 | 42.8 % |
-| sim_docs | 153 | 356,415 | 23.6 % |
-| algorithms | 100 | 214,190 | 14.2 % |
-| examples | 210 | 166,142 | 11.0 % |
-| planning_code | 40 | 79,384 | 5.3 % |
-| interfaces | 16 | 46,308 | 3.1 % |
+| ros_docs | 357 | 644,844 | 39.1 % |
+| sim_docs | 187 | 429,517 | 26.1 % |
+| examples | 266 | 233,982 | 14.2 % |
+| algorithms | 100 | 214,190 | 13.0 % |
+| planning_code | 40 | 79,384 | 4.8 % |
+| interfaces | 16 | 46,308 | 2.8 % |
 
 ## Par source
 
@@ -32,16 +32,19 @@
 | `mujoco_docs` | sim_docs | 24 | 90,660 | 90,000 | 48 |
 | `webots_docs` | sim_docs | 43 | 81,736 | 80,000 | 209 |
 | `python_robotics` | algorithms | 35 | 80,752 | 80,000 | 169 |
+| `px4_user_guide` | sim_docs | 34 | 73,102 | 70,000 | 828 |
 | `drake_docs` | sim_docs | 27 | 67,197 | 60,000 | 108 |
 | `ros2_demos` | examples | 53 | 61,629 | 60,000 | 91 |
 | `ros2_examples` | examples | 91 | 50,272 | 50,000 | 17 |
 | `ompl` | algorithms | 24 | 47,627 | 45,000 | 101 |
+| `py_trees` | examples | 24 | 46,330 | 45,000 | 45 |
 | `unified_planning` | planning_code | 29 | 36,288 | 50,000 | 0 |
 | `pinocchio` | algorithms | 16 | 35,824 | 35,000 | 65 |
 | `code_as_policies` | planning_code | 5 | 30,873 | 30,000 | 7 |
 | `ros2_controllers` | examples | 38 | 30,446 | 40,000 | 0 |
 | `modern_robotics` | algorithms | 8 | 29,661 | 35,000 | 0 |
 | `moveit_task_constructor` | examples | 28 | 23,795 | 40,000 | 0 |
+| `behaviortree_cpp` | examples | 32 | 21,510 | 35,000 | 0 |
 | `robotics_toolbox` | algorithms | 17 | 20,326 | 50,000 | 0 |
 | `common_interfaces` | interfaces | 10 | 19,843 | 40,000 | 0 |
 | `ros2_control_docs` | ros_docs | 16 | 19,332 | 40,000 | 0 |
@@ -51,25 +54,25 @@
 | `nav2_msgs` | interfaces | 2 | 7,096 | 25,000 | 0 |
 
 ## Par nature de contenu
-- code : 345 documents
-- docs : 510 documents
+- code : 401 documents
+- docs : 544 documents
 - interfaces : 16 documents
 - notebooks : 5 documents
 
 ## Par licence
 - Apache-2.0 : 414
 - BSD-2-Clause : 16
-- BSD-3-Clause : 143
-- CC-BY-4.0 : 237
-- MIT : 66
+- BSD-3-Clause : 167
+- CC-BY-4.0 : 271
+- MIT : 98
 
 ## Documents écartés
 
 | Motif | Nombre |
 |---|---:|
-| hors quota | 1255 |
-| doublon near | 34 |
-| doublon exact | 23 |
+| hors quota | 2128 |
+| doublon near | 39 |
+| doublon exact | 25 |
 
 ## Secrets masqués
 - aucun secret détecté dans les sources retenues

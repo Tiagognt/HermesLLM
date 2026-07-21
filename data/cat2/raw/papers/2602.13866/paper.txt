@@ -1,0 +1,705 @@
+\setcopyright
+ifaamas
+\acmConference [AAMAS ’26]Proc. of the 25th International Conference
+on Autonomous Agents and Multiagent Systems (AAMAS 2026)May 25 – 29, 2026
+Paphos, CyprusC. Amato, L. Dennis, V. Mascardi, J. Thangarajah (eds.)
+\copyrightyear 2026
+\acmYear 2026
+\acmDOI
+\acmPrice
+\acmISBN
+\orcid 0000-0002-0318-2562
+\affiliation
+\institution Georgia Institute of Technology
+\city Atlanta
+\state GA
+\country USA
+
+\orcid 0000-0002-6635-2637
+\affiliation
+\institution Georgia Institute of Technology
+\city Atlanta
+\state GA
+\country USA
+
+\orcid 0000-0002-3949-6061
+\affiliation
+\institution Northeastern University
+\city Boston
+\state MA
+\country USA
+
+Modeling and Optimizing the Provisioning of Exhaustible Capabilities for Simultaneous Task Allocation and Scheduling
+
+Jinwoo Park
+
+jinwoop@gatech.edu
+
+,
+Harish Ravichandar
+
+harish.ravichandar@cc.gatech.edu
+
+and
+Seth Hutchinson
+
+s.hutchinson@northeastern.edu
+
+Abstract.
+
+Deploying heterogeneous robot teams to accomplish multiple tasks over extended time horizons presents
+significant computational challenges for task allocation and planning.
+In this paper, we present a comprehensive, time-extended, offline heterogeneous multi-robot task allocation framework,
+TRAITS , which we believe to be the first that can cope with the provisioning of exhaustible traits under battery and temporal constraints.
+Specifically, we introduce a nonlinear programming-based trait distribution module that can optimize the trait-provisioning rate of coalitions to yield feasible and time-efficient solutions.
+TRAITS provides a more accurate feasibility assessment and estimation of task execution times and makespan by leveraging trait-provisioning rates while optimizing battery consumption—an advantage that state-of-the-art frameworks lack.
+We evaluate TRAITS against two state-of-the-art frameworks, with results demonstrating its advantage in satisfying complex trait and battery requirements while remaining computationally tractable.
+
+Key words and phrases:
+Heterogeneous Multi-Robot Systems; Task Allocation; Scheduling
+
+doi:
+NGQQ5993
+
+1. Introduction
+
+Given their ability to collectively execute tasks, Multi-Robot Systems (MRSs) enhance productivity and robustness dias2004robust , leading to their increasing deployment in logistics, agriculture, and manufacturing.
+Heterogeneous MRSs , composed of robots with different traits (capabilities), offer greater flexibility and efficiency in multi-agent coordination, particularly when tasks involve complex requirements that cannot be satisfied by homogeneous agents shehory1998methods .
+Such systems must simultaneously reason about the intertwined problems of task allocation ( who ), scheduling ( when ), and motion planning ( how ) while satisfying multidimensional task requirements neville2023ditags .
+However, identifying even a feasible plan for this problem is NP-hard due to its combinatorial nature messing2022grstaps .
+
+While prior works have proven effective in handling challenges associated with coordinating heterogeneous MRSs , they ignore crucial practical considerations that exacerbate computational challenges.
+See Figure 1 for an illustrative example.
+First, robot traits may be either exhaustible (e.g., deployable resources) or inexhaustible (e.g., sensing radius). Ignoring the exhaustible nature of traits can lead to overly optimistic solutions that fail to achieve adequate throughput.
+Second, tasks might require that exhaustible traits be provisioned at a particular rate (e.g., chemical dispensing). Ignoring provisioning can lead to suboptimal task performance or failures.
+Third, it is necessary to account for energy consumption (e.g., battery drain).
+Plans that ignore energy considerations risk being overly optimistic and violating important constraints such as battery capacity or fuel supply.
+Together, these factors considerably expand the search space, increase the computational burden, and complicate modeling and optimization.
+
+Figure 1 .
+A motivating scenario: An autonomous warehouse with heterogeneous robots (top), characterized by traits that have provisioning and exhaustibility attributes (bottom), collaborating on complex tasks subject to temporal and battery constraints.
+
+\Description
+
+A motivating scenario figure.
+
+In this work, we introduce
+TR ait Throughput and A llocation I nformed T eam S cheduling ( TRAITS ), a new modeling and algorithmic framework that extends the capabilities of existing heterogeneous Multi-Robot Task Allocation (MRTA) approaches to include the dynamics of exhaustible traits and their allocation within teams operating under battery constraints.
+Introducing trait-provisioning rates and battery optimization facilitates more accurate estimation of task durations and sustained robot operations.
+To this end, TRAITS simultaneously solves the trait-provisioning problem to generate a plan that satisfies multiple constraints.
+
+In summary, we contribute
+
+(i)
+
+a novel modeling framework that formalizes the provisioning problem for exhaustible traits, while maintaining compatibility with existing approaches to trait-based task allocation,
+
+(ii)
+
+a comprehensive time-extended task allocation algorithm capable of handling traits with attributes of exhaustibility, provisioning, and varying forms of aggregation,
+
+(iii)
+
+an offline MRTA framework that models battery usage by linking trait provision to current draw, incorporating Peukert’s law to optimize robot utilization.
+
+We evaluated the performance of TRAITS across various scenarios in simulated warehouse environments with different trait requirements.
+We compared TRAITS against two state-of-the-art heterogeneous MRTA frameworks that can only handle a subset of traits that TRAITS can manage and do not incorporate battery considerations.
+The results show that TRAITS can effectively handle a broader range of traits and generate battery-optimized, feasible plans with computational tractability.
+The source code is publicly available at https://github.com/GT-STAR-Lab/TRAITS .
+
+2. Related Work
+
+The robot coordination problem is typically categorized into instantaneous allocation (IA) and time-extended allocation (TA) gerkey2004formal . Numerous IA frameworks for heterogeneous task allocation have demonstrated high computational efficiency in coordinating robots under various compounding factors, such as energy mayya2021resilient ; notomista2022resilient , distributed optimization shorinwa2023distributed , differing capabilities and resources shiroma2009comutar ; xu2022resource , making them well-suited for online computation and practical deployment.
+However, these approaches lack the ability to reason about task execution order and are incapable of producing viable solutions when the number of robots is fewer than the number of tasks.
+In contrast, many TA frameworks simultaneously address the combinatorial coordination problem while additionally accounting for uncertainties fu2023robust ; neville2023ditags ; messing2023sampling , tighter temporal constraints park2023ritags ; zhang2025energy alongside the increased complexity of scheduling in a higher-dimensional search space.
+Nevertheless, these frameworks typically assume time-invariant resource availability.
+
+MRTA architectures must cope with numerous criteria, such as competence, energy, resource, spatial, and temporal constraints.
+The market-based koenig2006power ; choi2009consensus ; choi2010decentralized and optimization-based prorok2017impact ; gombolay2018tercio ; leahy2022scratches ; aswale2023heterogeneous approaches have effectively addressed task allocation problems.
+Furthermore, probabilistic choudhury2022dynamic , game-theoretical chen2023game , and learning banfi2022hierarchical ; srikanthan2022resource methods were proposed to tackle interdependent subproblems simultaneously.
+Despite their novelties and capability of finding feasible solutions, both resource and energy management were outside the scope of their research.
+
+Resource management under energy constraints for MRS has been the focus of various research efforts. However, the methods that account for energy either involve instantaneous allocations without scheduling dressler2005energy ; notomista2022resilient , or abstract energy consumption in terms of time calvo2024optimal .
+Moreover, the resource constraint problem addressed in beynier2007decentralized ; schillinger2017multi ; chen2011resource has either been demonstrated only with a small set of robots or does not account for energy constraints.
+A decentralized, auction-based approach lee2018resource effectively managed resources and battery consumption, though it was limited to homogeneous robots.
+In contrast, the algorithm for heterogeneous coalitions wu2017gini does not require all tasks to be completed.
+
+Recent works ravichandar2020strata ; neville2021interleaved ; fu2023robust ; neville2023ditags ; park2023ritags ; ito2025energy ; liu2026ijrr leverage the notion of traits to address coordination problems in heterogeneous multi-robot systems.
+However, these approaches have modeled only traits that are inexhaustible and instantaneously provisioned.
+In particular, studies neville2021interleaved ; neville2023ditags ; park2023ritags ; fu2023robust ; ito2025energy ; liu2026ijrr consider only inexhaustible traits that are either non-provisioned or provisioned instantaneously.
+Although fu2023robust and gosrich2023multi formulate task allocation as a network-flow problem, task duration is still treated as constant.
+The concept of resource-spending velocity , or resource burn rate was introduced in kaminka2010adaptive from a game-theoretic perspective, employing reinforcement learning to address decentralized, time-extended multi-robot foraging problem.
+However, all robots were assumed to be homogeneous and relied solely on fuel as their resource.
+The concept of a dynamic trait model, where trait values can change, was introduced in neville2020approximated ; however, traits are ultimately transformed into constant values for computational purposes.
+The approach in ito2025energy incorporates robot capabilities, collision avoidance, and energy constraints; however, it does not account for scheduling and trait exhaustibility.
+While this trait-based MRTA research has introduced novel approaches to address challenging spatio-temporal constraints, these studies still assume traits to be constant, without incorporating time-dependent rates.
+A shortcoming of assuming constant traits is that such solutions cannot capture the reduction in task duration that occurs when additional robots are added to a coalition.
+
+3. TRAITS: Modeling Framework
+
+Our problem of interest is a variant of XD [ST-MR-TA]:SP and TW problems, defined by the established MRTA taxonomies gerkey2004formal ; korsah2013comprehensive ; nunes2017taxonomy .
+We consider scenarios with tasks and robots.
+Each robot’s capabilities are defined by a distinct trait composition, drawn from a total of
+traits, where the set and magnitude of traits vary across robots.
+Let us define the index sets for robots , tasks , and traits as
+, and ,
+respectively.
+
+Problem Statement :
+Given a set of robot traits, desired provisioning rates, battery capacities, and operational constraints, the objective is to determine a feasible plan that specifies how traits should be provisioned across tasks in a way that minimizes overall task execution time and satisfies task specifications while honoring battery constraints.
+
+To address the above problem, we first introduce our comprehensive new modeling framework in this section. We begin with formal definitions of fundamental quantities to capture the notion of trait provisioning (Sec. 3.1 ), then discuss our new model and expanded taxonomy of traits (Sec. 3.2 ), followed by a discussion of how our model influences trait aggregation (Sec. 3.3 ) and scheduling (Sec. 3.4 ), and conclude the section with a model of how battery consumption can impact task allocation (Sec. 3.5 ).
+
+3.1. Modeling Trait Provisioning
+
+While past research has treated traits as irreducible quantities that can be instantly deployed messing2022grstaps ; prorok2017impact ; ravichandar2020strata , we reformulate them as dynamic quantities that need to be regulated over time and optimized based on task-specific constraints.
+
+We denote the initial traits (e.g., resource, sensing radius) and the maximum trait-provisioning rates of the -th robot by and , respectively.
+The scalar entries and represent the initial amount and the maximum provisioning rate of the -th trait, respectively.
+
+Let the team be collectively responsible for completing tasks.
+The desired trait matrix and desired trait-provisioning rate matrix specify the minimum trait quantities and provisioning rates required to successfully execute all tasks, respectively.
+We use and to denote the required -th trait and its provisioning rate for the -th task, respectively.
+
+The core of our problem is to determine how each trait should be provisioned by each robot, subject to the definitions above.
+Let
+represent a decision variable denoting how much of -th robot’s -th trait should be provisioned for the -th task, yielding a decision vector for each robot:
+
+for continuous or discrete traits, and for binary traits.
+If the robot lacks the trait, then .
+
+Similarly, we define a trait-provisioning rate vector as a decision variable which represents the rate at which the -th robot must provide its traits for the -th task.
+The provisioning rate is positive only when the trait can be provisioned gradually; otherwise, it is zero.
+
+3.2. A New Trait Taxonomy
+
+Multi-robot tasks (MR) require multiple traits, where some traits support cooperative contribution from the coalition, while others demand a minimum level of proficiency from each individual robot.
+Additionally, the total contribution from any robot across tasks may be limited by its initial trait capacity.
+Despite their practical significance, no existing taxonomy or model captures these considerations ravichandar2020strata ; neville2021interleaved ; fu2023robust .
+
+Figure 2 .
+The proposed model captures various trait aspects and the framework handles all categories in the diagram.
+
+\Description
+
+Figure demonstrates different branches of trait types.
+
+Based on the definitions in Sec. 3.1 , we propose a new taxonomy for traits (see Figure 2 ):
+
+3.2.1. Exhaustible Traits
+
+The exhaustibility attribute of a trait indicates whether the total provision of a robot’s traits across multiple tasks is limited by its initial trait levels.
+An inexhaustible trait (IET) is not depleted through use and typically represents inherent properties or infinitely replicable entities.
+In contrast, an exhaustible trait (ET) is consumed with each task and generally corresponds to quantitatively measurable, finite resources carried by the robot.
+Examples of IETs include maximum payload capacity, monitoring capability, and sensor range, whereas examples of ETs include the volume of chemicals, battery level, and other consumable resources.
+Thus, the following constraint must hold:
+
+(1)
+
+where is the set of task indices allocated to the -th robot.
+
+3.2.2. Provisioning Traits
+
+A provisioning attribute of a trait indicates whether it can be provisioned and, if so, defines the feasible provisioning rate.
+As such, we categorize traits into three groups:
+
+(i)
+
+Non-provisioning traits (NPTs) : These traits represent constant or qualitative properties (e.g., robot type, regulation compliance) that cannot be provisioned.
+
+(ii)
+
+Instantaneous-provisioning traits (IPTs) : These traits can be transferred instantaneously
+(i.e., ),
+such as occupying a seat, engaging an emergency stop, and transferring a token. They are generally discrete, single, or one-time-use in nature.
+
+(iii)
+
+Gradual-provisioning traits (GPTs) : These traits require time to be transferred, i.e., , and typically represent continuous processes such as gas refueling or water provisioning for fire suppression.
+
+To make the problem tractable, we define
+the gradual provisioning rate as the constant rate at which the -th robot provides the -th trait to complete the -th task during its execution.
+The desired trait-provisioning rate is set to zero for all NPTs and IPTs.
+
+Whether a trait is continuous or discrete depends on the level of granularity in its definition—such as whether it is considered a distinct unit, a flow, or a bulk entity.
+Moreover, certain traits, such as the LiDAR scanning angle, exhibit an inexhaustible nature yet may impose temporal requirements, such as the scanning frequency.
+These can be modeled through gradual provisioning rates, indicating that trait provision is not necessarily constrained by exhaustibility.
+
+We define to be the time required for the -th robot to apply the -th trait to the -th task
+
+(2)
+
+3.3. Trait Aggregation
+
+To enhance adaptability across diverse task requirements, we define aggregation functions that determine how multiple robots can make partial contributions to a collective task, using decision variables that enable task-specific adaptation.
+For instance, certain tasks may necessitate the aggregation of traction force at the team level, whereas others may require ensuring a minimum traction capability at the individual level, highlighting the importance of task-specific aggregation strategies.
+
+A cumulative attribute of a trait indicates whether a task’s required characteristic must be individually satisfied by each robot within a coalition or can be collectively achieved through the combined output of the team. We define the former as a noncumulative trait (NCT) , which pertains to individual robot capabilities, and the latter as a cumulative trait (CT) , which pertains to team-level capabilities. Examples of NCTs include monitoring capability, emergency stop functionality, and the number of manipulator arms per robot. In contrast, examples of CTs include traction force and storage volume, though such traits can also be modeled as NCTs depending on the task requirements.
+
+Hence, if the -th task involves both cumulative and noncumulative traits, then for every -th trait in the -th task, we define the aggregation function
+
+(3)
+
+where is the set of indices of robots allocated to the -th task.
+The time required to fulfill the -th trait of the -th task
+by robot coalition is given by
+
+Accordingly, the simultaneous trait-provisioning rate of the coalition for the -th trait in the -th task is defined as
+
+(4)
+
+Non-gradual, inexhaustible provisioning traits (NPT, IPT, and IET) have been used in prior works neville2021interleaved ; messing2022grstaps ; park2023ritags to represent volume, water capacity, and maximum sensor range.
+In contrast, TRAITS is, to the best of our knowledge, the only framework that models ET and GPT, enabling more accurate makespan estimation and the formation of meaningful coalitions under resource and temporal constraints.
+
+3.4. Task and Transition Durations
+
+The duration of the -th task is defined , where is the user-defined static task duration representing additional task duration unrelated to trait provisions,
+is the lower bound on the time required for all trait provisions of the -th task, and is the intra-task transition duration from the initial position to terminal position of the -th task.
+Furthermore, the initial transition duration for the -th task, , represents the lower bound on the time required for all robots allocated to the -th task
+to travel from their respective initial positions to .
+The inter-task transition duration is the lower bound on the time required for all robots assigned to both the -th and -th tasks to travel from to .
+
+3.5. Battery Consumption
+
+Battery consideration is essential in identifying a feasible task allocation and schedule, as robots must have enough energy to execute their assigned tasks.
+A plan that considers only trait fulfillment, without accounting for energy constraints, may lead to unrealistic outcomes—such as robots being assigned an infinite number of tasks.
+Rather than modeling energy as an additional -th trait, the proposed framework explicitly defines the relationship between trait values ( ), electrical current [A], and battery consumption [J].
+Inspired by mei2005energy , which models power linearly with sensor frequency and motor speed, we instead model current as proportional to trait values and provisioning rates, while capturing the nonlinear relationship between current and power.
+In our framework, battery current during trait delivery is modeled as a function proportional to the trait quantities and the rates at which they are provided.
+
+The electrical current drawn by the -th robot to provide the -th trait for the -th task varies as a function of the trait value and its provisioning rate
+
+(5)
+
+where and are independent coefficients representing the relationships between current draw and trait value, and between current draw and trait-provisioning rate, respectively.
+The coefficient values can be determined with domain expertise, guided by robot specification sheets (e.g., motor efficiency, torque constants, and sensor/actuator power characteristics).
+Either coefficient may be set to zero, and both may be zero when the corresponding effects are negligible.
+In this paper, the coefficients in the battery current model are derived from the battery’s maximum deliverable current, as specified by its C-rating, and the maximum provisioning rates or magnitudes associated with each trait.
+This ensures that current estimates remain grounded in the physical constraints of the hardware.
+In our experiments, we compute these coefficients based on specifications of real-world robot platforms clearpath_husky_specs .
+
+Battery current is drained even when the robot is idle as well as when it is moving while executing a task.
+The speed of this movement is referred to as the intra-task transition speed of the coalition for the -th task, that must hold
+
+(6)
+
+The speed of -th robot while executing the -th task is denoted by , and represents the relationship between battery current and robot speed.
+Therefore, the average current drawn by the -th robot to accomplish the -th task can be modeled as
+
+(7)
+
+where it must hold that as the current must not exceed the maximum current that the battery can supply based on the C-rating, .
+
+The Peukert exponent of the -th robot is a power coefficient that characterizes how battery drain accelerates as electrical current increases.
+This current increase is driven by higher trait values, greater provisioning rates, and the additional energy required for faster transitions.
+Hence, the total battery consumption [J] by the -th robot must satisfy
+
+(8)
+
+where is the robot’s initial battery capacity, is the energy consumed during inter-task transitions, is its operating voltage, and is the duration of the -th task.
+
+4. TRAITS: Optimization Framework
+
+Figure 3 .
+High-level architecture of the TRAITS framework.
+
+\Description
+
+A figure shows the high-level overview of our TRAITS framework.
+
+The high-level overview of the TRAITS framework is shown in Figure 3 (refer Algorithm 1 ), consisting of four different layers.
+The task allocation layer incrementally adds robots to tasks and conveys allocation to trait distribution and scheduling layers.
+The trait distribution layer computes feasible trait provisions under battery constraints and communicates the estimated task durations, obtained from the nonlinear program (NLP), to the scheduling layer.
+The scheduling layer queries the motion planning layer for feasible paths and their corresponding transition durations, and computes an efficient makespan schedule using a mixed-integer linear program (MILP).
+This section provides an in-depth examination of each layer and its components.
+Collision avoidance is abstracted away in our framework and is assumed to be handled by a low-level control layer at deployment.
+
+Input:
+
+Output:
+
+1
+
+2
+while pq not empty do
+
+3
+
+4
+if and then
+
+5
+return
+
+6
+
+7       for do
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+16
+
+17
+.push( )
+
+18
+
+19
+
+20 return Null
+
+21
+
+Algorithm 1 TRAITS
+
+4.1. Heuristic-based Task Allocation
+
+The task allocation layer performs a greedy best-first search that incrementally assigns robots to tasks based on a heuristic evaluation.
+The search employs the following three heuristics.
+The Allocation Percentage Remaining (APR) is defined as
+
+(9)
+
+where
+is a user-defined hyperparameter that balances trait and trait-provisioning rate mismatches.
+The variables and represent the total trait and trait-provisioning rate mismatches, respectively, and are defined as
+
+(10)
+
+(11)
+
+A trait (provisioning rate) mismatch is defined as the non-negative shortfall between the required and provided trait (provisioning rate), with any surplus treated as zero mismatch.
+
+The Normalized Schedule Quality (NSQ) is defined as
+
+(12)
+
+where is the makespan of the given schedule, , and
+where is the distance of the longest possible path in the map and is the slowest robot’s speed.
+
+The Time-Extended Task Allocation Quality (TETAQ) is the heuristic with user-defined hyperparameter , which is defined as
+
+(13)
+
+The task allocation layer returns a solution when allocation satisfies and ; otherwise, the search continues until a feasible solution is found or the user-defined timeout is reached.
+
+4.2. Incorporating Battery Consumption
+
+While many existing heterogeneous multi-robot task allocation approaches assume that robots always travel at their maximum speeds neville2021interleaved ; liu2026ijrr , we relax this assumption by computing each robot’s maximum transition speed based on its initial battery capacity.
+The distance function returns the length of a traversable path from the initial position to the terminal position for robot .
+
+4.2.1. Consumption during task execution
+
+This paper assumes the coalition moves at a uniform speed during the task execution.
+Accordingly, the intra-task transition speed for robots assigned to the -th task is obtained by maximizing it subject to Constraint ( 6 ).
+We further assume that the path is constrained by the robot with the widest bounding radius, denoted as .
+Thus, the intra-task transition duration of the -th task is defined as
+
+(14)
+
+4.2.2. Consumption during task transitions
+
+The two inter-task transitions of concern are:
+(i) from a robot’s initial position to its first task , and
+(ii) between consecutive tasks .
+The average inter-task transition speed is the highest feasible speed under the battery constraint.
+Robots may use all remaining energy after task execution, as shown in Constraint ( 8 ), as long as their speed does not exceed their maximum limit .
+To this end, let denote the total battery energy consumed by -th robot during inter-task transitions over its schedule. Then
+
+(15)
+
+where is the total inter-task transition duration of the -th robot.
+
+Nonetheless, determining the exact value of is computationally intractable, as the precise total traveling distance depends on task orderings—an NP-hard combinatorial problem.
+Therefore, TRAITS employs an overestimation of inter-task transition distance
+, where
+
+(16)
+
+that is the sum of distances between the robot’s initial position and its assigned tasks’ start and end positions.
+Once is obtained from Constraint ( 15 ), the initial transition duration for the -th task is calculated as
+
+while the inter-task transition duration between
+the -th and -th tasks is given by
+, effectively establishing the lower bounds on the time required for robot transitions.
+
+4.3. Temporal Constraints
+
+The temporal relationship between tasks can be modeled using synchronization and precedence (SP) constraints, as well as time window (TW) constraints nunes2017taxonomy .
+This framework incorporates three forms of temporal constraints: precedence , mutex , and deadlines , .
+A precedence constraint specifies that the -th task must be completed before the -th task begins.
+A mutex constraint , with , ensures that the two tasks cannot be executed concurrently.
+An absolute deadline constraint requires the task’s start or finish time to fall within a specified bound.
+A relative deadline constraint enforces that the time difference between two specified time points— of -th task
+and of -th task—must be less than , assuming .
+The values of and can represent either the start or end time of their respective tasks.
+
+4.4. Nonlinear Programming (NLP) Trait Distributor
+
+A key contribution of our work is that, unlike prior frameworks relying on simple matrix operations, TRAITS formulates trait provisioning jointly per task and per robot, incorporating both provisioning rate and battery constraints into the allocation process.
+The problem of determining robot-to-task trait provisions is formulated as a nonlinear program with hierarchical objectives and constraints.
+
+(17a)
+
+(17b)
+
+(17c)
+
+(17d)
+
+(17e)
+
+(17f)
+
+(17g)
+
+(17h)
+
+(17i)
+
+(17j)
+
+(17k)
+
+(17l)
+
+where the hierarchical objective is to:
+minimize in Equation ( 9 ),
+minimize task duration , and
+maximize transitions velocities
+.
+This formulation facilitates the identification of feasible solutions that satisfy trait requirements while minimizing the makespan, subject to battery constraints.
+Objectives with higher priority (i.e., those indicated by smaller numbers inside circles) must not be compromised to improve lower-priority objectives.
+
+4.4.1. Trait Provision
+
+Constraints ( 17a )–( 17d ) define the trait provision requirements.
+Constraint ( 17a ) ensures that a robot’s trait provision does not exceed its individual capacity, while
+( 17b ) limits total use of exhaustible traits to the robot’s initial levels.
+Constraints ( 17c ) and ( 17d ) enforce the coalition’s trait provision for NCT and CT, respectively.
+
+4.4.2. Trait-Provisioning Rate
+
+Constraints ( 17e )–( 17g ) address trait-provisioning rates across assigned robots.
+Constraint ( 17e ) enforces each robot’s maximum rate limit, while
+( 17f ) ensures that the team-level capability for an NCT is determined by the least capable robot in the team.
+The coalition-level simultaneous provisioning rate model, consistent with Equation ( 4 ), is enforced by
+( 17g ).
+
+4.4.3. Task Duration and Energy
+
+Constraints ( 17h )–( 17k ) establish task durations based on trait provision and intra-transition durations, and ( 17l ) ensures that energy consumption does not exceed the robot’s initial battery capacity.
+
+4.5. Mixed-Integer Linear Programming (MILP) Scheduler
+
+Once the NLP -based trait distributor determines and ,
+the MILP scheduler computes and as part of the scheduling process
+and searches for a schedule that minimizes the makespan as follows:
+
+(18a)
+
+(18b)
+
+(18c)
+
+(18d)
+
+(18e)
+
+(18f)
+
+(18g)
+
+(18h)
+
+(18i)
+
+The makespan of the schedule is defined as the finish time of the last task ( 18a ).
+Each task must finish at least after it begins execution ( 18b ).
+A task may commence only after the initial robot transitions have completed ( 18c ).
+If a precedence constraint applies, it may commence only after the transitions from its predecessor tasks have also completed ( 18d ).
+The Boolean indicator ( 18g ) encodes a mutex constraint reduced to , and otherwise.
+This introduces combinatorial complexity, making the scheduling problem an instance of an NP-hard class.
+Finally, ( 18h ) and ( 18i ) enforce absolute and relative deadline constraints, respectively.
+
+4.6. Solution
+
+A solution is considered feasible when the following three conditions are satisfied:
+(i) the trait mismatch , (ii) the trait-provisioning rate mismatch , and (iii) the makespan .
+If these conditions are met, the solution is represented as the tuple , where:
+is the task allocation matrix, where if the -th robot is assigned to the -th task, and 0 otherwise.
+and denote the optimized trait values and provisioning rates, respectively, for every trait of each robot assigned to each task.
+is the task schedule, containing each task’s start time and finish time .
+contains the motion plans for all robots, including both inter- and intra-task transitions.
+
+5. Evaluation
+
+We evaluate proposed framework across three different aspects.
+First, we compare TRAITS against two state-of-the-art trait-based MRTA frameworks, ITAGS neville2021interleaved and CTAS fu2023robust (see Table 1 ).
+Second, we conduct stress tests by varying the number of tasks and robots .
+Third, we analyze the impact of hyperparameters on search performance.
+The evaluation is based on 400 randomized experiments across various scenarios in a simulated warehouse environment with diverse trait requirements. In each trial, parameters are sampled as follows: , , and .
+Additionally, are sampled relative to each robot’s respective maximum values.
+Each experiment includes at least one instance of precedence , absolute deadline , and relative deadline constraints.
+
+Table 1 .
+Comparison of TRAITS , ITAGS , and CTAS across key attributes.
+While uncertainty is not the focus of this work, it is considered exclusively in CTAS.
+
+Considerations
+
+TRAITS (ours)
+
+ITAGS neville2021interleaved
+
+CTAS fu2023robust
+
+Uncertainty control
+✗
+✗
+✓
+
+Motion planning
+✓
+✓
+✗
+
+Time-varying trait
+✓
+✗
+✗
+
+Trait-provisioning rate
+✓
+✗
+✗
+
+Variable task duration
+✓
+✗
+✗
+
+Battery depletion
+✓
+✗
+✗
+
+Deadline constraint
+✓
+✗
+✗
+
+All experiments were designed such that robots possess sufficient traits and battery to handle assigned tasks while forming meaningful coalitions.
+Each scenario includes both exhaustible and gradual-provisioning traits, and each task requires at least one cumulative or one non-cumulative trait.
+To observe the hyperparameter effects, the robots were diversified to include low trait-provisioning rate with large capacity, standard, and high trait-provisioning rate with limited capacity.
+Battery current coefficients were modeled using technical specifications from Clearpath Robotics’ Husky clearpath_husky_specs .
+It is often difficult to even establish the existence of a solution.
+To address this, we incorporated a necessary condition into the framework: the initial set of robot teams must collectively possess sufficient trait to cover the requirement of the tasks.
+If this condition is not satisfied at the outset, the problem is immediately declared infeasible.
+TRAITS framework leverages off-the-shelf libraries for motion planning sucan2012the-open-motion-planning-library and optimizations gurobi .
+All experiments were conducted on an AMD Ryzen 5950X CPU and 128 GB of RAM.
+
+5.1. Comparison with Baselines
+
+Table 2 .
+Performance comparison of TRAITS , ITAGS , and CTAS .
+Values are .
+Bold indicates the best performance, which improves in the direction of the arrow.
+Results are based on 300 experiments with tasks and robots.
+
+TRAITS (ours)
+
+ITAGS neville2021interleaved
+
+CTAS fu2023robust
+
+Plan feasibility [%]
+
+Task trait insufficiency [%]
+
+Provisioning rate insufficiency [%]
+
+Under-resourced robots [%]
+
+C-rating violations [%]
+
+Battery-capacity violations [%]
+
+Deadline violations [%]
+
+Computation time [s]
+
+We evaluated TRAITS against two state-of-the-art trait-based MRTA frameworks CTAS fu2023robust and ITAGS neville2021interleaved .
+Specifically, we chose CTAS-O, a deterministic variant of the framework proposed in fu2023robust .
+As shown in Table 2 and Figure 4 , TRAITS outperforms both CTAS and ITAGS across multiple metrics, largely because they do not model trait exhaustibility, provisioning rates, battery constraints, and deadline constraints.
+Since CTAS and ITAGS lack trait-provisioning rates, their trait-provisioning durations are computed as
+.
+Moreover, CTAS is an anytime algorithm, meaning its solution quality improves as computation time increases. To accommodate this, the experiment was structured so that CTAS returns a solution upon finding the optimal one, returns the best solution found at the TRAITS timeout if a feasible one exists, or continues running until a solution is found.
+
+TRAITS incurs greater computation time due to its modeling of rate-dependent trait provision, deadlines, and battery-aware scheduling.
+ITAGS and CTAS achieve 51.7% and 63.6% plan feasibility, respectively, often generating solutions that TRAITS rejects due to constraint violations—such as trait and provisioning rate insufficiencies, under-resourced robots, C-rating violations, and battery-capacity violations—which are rigorously handled by our proposed TRAITS framework.
+Figure 4 corroborates that TRAITS consistently avoids overcommitment by ensuring that robots have sufficient traits to execute their assigned tasks, unlike ITAGS and CTAS , which tend to assign tasks beyond the robots’ capabilities.
+
+Figure 4 .
+Fraction of under-resourced robots (robots assigned to tasks without sufficient traits).
+Lower values (green) indicate better performance.
+TRAITS consistently avoids assigning robots to tasks that exceed their trait capacities, whereas ITAGS and CTAS tend to assign insufficiently resourced robots as the task load grows for a fixed team size.
+This behavior partly stems from the assumption of irreducible traits in ITAGS and CTAS .
+Under-resourcing declines with increasing team size.
+
+\Description
+
+figure shows the fraction of under-resourced robots across various combination of tasks and robots for different frameworks.
+
+5.2. Scalability and Hyperparameter Sensitivity
+
+Stress tests were conducted to analyze computation time as a function of the number of tasks and robots .
+As shown in Figure 5 , the number of tasks has a significantly greater impact on computation time than the number of robots, with differences reaching up to an order of magnitude.
+In general, computation time increases as both and grow, primarily due to the expansion in the number of variables in the trait distribution and scheduling modules.
+Owing to its NP-hard combinatorial structure, computational effort grows rapidly with the instance size, making increased runtime unavoidable as the problem scales.
+Furthermore, when the task-to-robot ratio is high—meaning each robot is assigned to more than one task—computation time further increases.
+This is attributed to the scheduling layer, which requires more time to resolve mutex constraints under high task-load conditions.
+
+Figure 5 .
+Computation time as a function of the number of tasks (left) and the number of robots (right).
+Solid dots indicate the mean, and the shaded regions represent the standard error computed from 120 experiments.
+The results highlight that computation time increases with both parameters, with task count having a more pronounced impact.
+
+\Description
+
+Stress tests result figures.
+
+In this experiment, we also observed that the hyperparameters and both affect the makespan and computation times, but in distinct ways.
+influences total task duration by favoring faster-provisioning robots as , which shortens task execution times.
+It also significantly impacts computation time: smaller values broaden the search over robot coalitions, increasing runtimes, while larger values lead to greedier solutions with shorter computation times by prioritizing feasibility over optimality—a trade-off noted in prior work neville2021interleaved .
+affects transition durations by favoring robots closer to the tasks as and reduces trait-provisioning durations as increases.
+Although generally less impactful on computation time than , extreme values can increase runtimes due to an imbalance in satisfying the trait mismatch and the trait-provisioning rate mismatch .
+If one is satisfied significantly earlier than the other, additional robot assignments may be needed, increasing search effort.
+
+6. Conclusion
+
+This paper presents an offline heterogeneous time-extended multi-robot task allocation and scheduling framework that addresses the provision of exhaustible traits under battery constraints.
+We introduce the notions of trait provision and exhaustibility, which capture the temporal dynamics of traits and enable more expressive categorization of traits.
+Experimental results demonstrate our framework’s enhanced comprehensiveness and superior performance compared to state-of-the-art baselines, while also analyzing trade-offs between search efficiency and solution quality as influenced by two hyperparameters.
+Despite these strengths, our framework assumes constant trait-provisioning rates and presumes that paths remain collision-free regardless of the number of robots—limitations we aim to address in future work.
+Overall, the proposed approach effectively manages a broader range of traits while maintaining computational tractability.
+
+{acks}
+This work was supported in part by the Army Research Lab under Grant W911NF-17-2-0181 (DCIST CRA).
+We gratefully acknowledge Lae Young Kim for visualizing the motivating scenario.
+
+References

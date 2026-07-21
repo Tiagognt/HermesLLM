@@ -347,6 +347,51 @@ CATALOG: List[RepoSource] = [
               "proche, côté manipulation, de ce que cat2 apportera pour "
               "l'allocation multi-robots.",
     ),
+    # -- ajouts 2026-07-21 : les arbres de comportement sont le modèle
+    #    d'EXÉCUTION de la planification par robot (Nav2 s'en sert pour son
+    #    BT Navigator). Aucune source ne les couvrait, alors que c'est
+    #    exactement l'étape (3) « per-robot task planning » de la cible.
+    RepoSource(
+        source_id="behaviortree_cpp", display_name="BehaviorTree.CPP",
+        family="examples", kind=KIND_CODE,
+        repo_url="https://github.com/BehaviorTree/BehaviorTree.CPP.git",
+        repo_ref="master", license_spdx="MIT",
+        include_globs=["examples/**/*.cpp", "sample_nodes/**/*.cpp",
+                       "sample_nodes/**/*.h", "README.md"],
+        exclude_globs=COMMON_EXCLUDES,
+        token_budget=35_000,
+        url="https://www.behaviortree.dev/",
+        notes="Bibliothèque d'arbres de comportement utilisée par le BT "
+              "Navigator de Nav2. La documentation prose vit sur un site "
+              "séparé (pas de dépôt source public) : on prend les exemples, "
+              "qui sont écrits pour être lus.",
+    ),
+    RepoSource(
+        source_id="py_trees", display_name="py_trees",
+        family="examples", kind=KIND_CODE,
+        repo_url="https://github.com/splintered-reality/py_trees.git",
+        repo_ref="devel", license_spdx="BSD-3-Clause",
+        include_globs=["docs/*.rst", "py_trees/**/*.py", "README.md"],
+        exclude_globs=COMMON_EXCLUDES + ["tests/*"],
+        token_budget=45_000,
+        url="https://py-trees.readthedocs.io/",
+        notes="Versant prose des arbres de comportement : terminologie, "
+              "idiomes, composites, décorateurs. Complète BehaviorTree.CPP, "
+              "qui n'apporte que du code.",
+    ),
+    RepoSource(
+        source_id="px4_user_guide", display_name="PX4 Autopilot User Guide",
+        family="sim_docs", kind=KIND_DOCS,
+        repo_url="https://github.com/PX4/PX4-user_guide.git",
+        repo_ref="main", license_spdx="CC-BY-4.0",
+        include_globs=["en/**/*.md"],
+        exclude_globs=COMMON_EXCLUDES,
+        token_budget=70_000,
+        url="https://docs.px4.io/",
+        notes="Volet DRONE, absent de cat1 alors que la flotte cible en "
+              "comporte un. Modes de vol, missions, sécurité, simulation SITL "
+              "— le pendant aérien de ce que Nav2 apporte au sol.",
+    ),
     RepoSource(
         source_id="ros2_controllers", display_name="ros2_controllers",
         family="examples", kind=KIND_CODE,

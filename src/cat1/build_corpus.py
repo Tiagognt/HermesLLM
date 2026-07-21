@@ -43,6 +43,7 @@ from common import paths
 from common.contamination import ContaminationChecker
 from common.corpus_assembler import DocumentDraft, assemble_record, validate_record
 from common.dedup import DuplicateIndex
+from common.quota import select_within_budget
 from common.run_report import RunReport
 from common.secret_scrubber import scrub
 from common.tokenizer_utils import TokenCounter
@@ -54,51 +55,6 @@ TIER = "A"          # tier A dans la taxonomie du projet (cf. consignes)
 METADATA_PATH = paths.metadata_path(CATEGORY)
 CORPUS_PATH = paths.corpus_path(CATEGORY)
 STATS_PATH = paths.stats_path(CATEGORY)
-
-
-# --------------------------------------------------------------------------
-# Sélection sous quota, répartie sur les sous-arbres
-# --------------------------------------------------------------------------
-
-def select_within_budget(candidates: List[DocCandidate], budget: int):
-    """
-    Retient des documents jusqu'au plafond, en tourniquet sur les
-    sous-arbres d'origine.
-
-    Prendre simplement les N premiers par ordre alphabétique concentrerait
-    tout le quota de `ros2_documentation` sur `source/Concepts`, et le
-    corpus ne verrait jamais les tutoriels. Le tourniquet garantit qu'on
-    prélève un peu partout avant d'approfondir.
-
-    Déterministe : groupes triés, documents triés dans chaque groupe.
-    """
-    if budget <= 0:
-        return [], list(candidates)
-
-    groups: "OrderedDict[str, List[DocCandidate]]" = OrderedDict()
-    for c in sorted(candidates, key=lambda c: (c.group, c.rel_path)):
-        groups.setdefault(c.group, []).append(c)
-
-    kept: List[DocCandidate] = []
-    total = 0
-    cursors = {g: 0 for g in groups}
-    exhausted = False
-    while total < budget and not exhausted:
-        exhausted = True
-        for g, docs in groups.items():
-            if total >= budget:
-                break
-            i = cursors[g]
-            if i >= len(docs):
-                continue
-            exhausted = False
-            cursors[g] = i + 1
-            kept.append(docs[i])
-            total += docs[i].n_tokens
-
-    kept_ids = {c.doc_id for c in kept}
-    dropped = [c for c in candidates if c.doc_id not in kept_ids]
-    return kept, dropped
 
 
 # --------------------------------------------------------------------------

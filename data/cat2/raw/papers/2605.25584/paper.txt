@@ -1,0 +1,710 @@
+Acting on the Unseen: Communication-Free Collaborative
+    Filtering for Decentralized Multi-Robot Task Allocation
+                  Alexander Apartsin a , Yigal Meshulam b , Yehudit Aperstein b
+                        a
+                          Holon Institute of Technology, Holon, Israel.
+            b
+                Afeka Tel Aviv Academic College of Engineering, Tel Aviv, Israel
+
+Abstract. Multi-robot task allocation usually assumes some combination of communication, known task
+models, or a coordinator. We study the opposite extreme, a regime common in practice but overlooked in
+theory, which we name Zero-Knowledge MRTA (ZK-MRTA): a robot team with no prior knowledge
+(no task models, not even the latent rank), no communication (no messages, no parameter sharing, no
+coordinator), and only a partial and privately-noisy view of a public stream of teammates' outcomes. A
+hidden low-rank structure governs which robot suits which task, and there are far more tasks than rounds,
+so most (robot, task) pairs are never attempted. Yet each robot can act well on tasks it never attempted, and
+onboard new tasks, by running online low-rank collaborative filtering over the broadcast (SwarmCF). The
+advantage over any structure-free learner is categorical, not a constant factor: a structure-free learner is
+provably at the prior-mean error floor on unseen pairs. We prove a matching per-robot sample complexity
+(Θ(𝑑) versus Θ(𝑛), in the rank 𝑑 and the task count 𝑛), an anytime (cumulative-reward) separation under
+task scarcity, and a deterministic condition under which decentralized recovery from the masked broadcast
+is exact (validated empirically). Experiments quantify the value of the broadcast, a positive scaling law
+(per-robot unseen-pair skill rises with team size), and the strongest masking-robustness and anytime profile
+among low-rank methods, recovering most (about 80% on earned skill) of a centralized full-communication
+ceiling, and holding under capacity-1 contention and in a robotics-grounded sensing instance.
+Keywords: multi-robot task allocation; decentralized learning; collaborative filtering; low-rank matrix
+completion; communication-free coordination; swarm robotics.
+
+1. Introduction
+Consider a team of autonomous robots, for example aerial vehicles, that must repeatedly decide which task
+to engage: which area to inspect, which target to service, which sensor reading to pursue. Whether a given
+robot does well on a given task depends on a match between the robot's capabilities (sensor modalities,
+payload, effector type, endurance, remaining consumables) and the task's requirements. This capability-
+requirement view is the basis of trait-based task allocation [1], and the match is typically governed by only
+a few underlying factors, so the full robot × task reward is low-rank. That a few factors suffice is borne
+out in practice: learned low-dimensional capability and task-requirement models predict real robotic task
+performance to within a few percent [2], and the analogous two-sided affinity matrix is empirically low-
+rank in large matching datasets [3].
+Most multi-robot task allocation (MRTA) methods obtain coordination from at least one of three resources:
+explicit communication (auctions, consensus, message-passing), known task models or utilities, or a
+central coordinator / centralized training. In many real deployments none of these is available:
+communication is jammed, bandwidth-limited, or deliberately withheld for stealth; the task structure is
+unknown a priori; and there is no coordinator. What a robot can often still do is passively sense some of
+what its teammates are doing and how it turned out, imperfectly, at a distance, and differently from every
+
+                                                     1
+other robot. This is documented, not hypothetical: fielded drone swarms already coordinate from purely
+onboard, range- and line-of-sight-limited mutual perception with no inter-robot messaging [4,5], and
+heterogeneous teams routinely operate under denied or degraded communication, as across the DARPA
+Subterranean Challenge [6,7]. This is the regime we formalize and solve: a robot observes a partial (range-
+limited) and privately-noisy slice of a public outcome stream, never the same slice as a teammate.
+The technical crux is generalization to the unseen. There are far more tasks than rounds (𝑛 ≫ 𝑇), so each
+robot personally attempts only a vanishing fraction of tasks. A learner that estimates each task only from
+its own attempts (a structure-free learner: independent per-task bandits, tabular value tables) has, on any
+task it never attempted, nothing better than the prior mean, the error floor, which dominates exactly because
+tasks outnumber rounds. The opportunity is that the shared low-rank structure links tasks: outcomes a robot
+observes teammates obtain (even noisily and partially) constrain that structure, and a few observations then
+determine the robot's reward on tasks it has never touched. We show a single, simple estimator turns this
+opportunity into a categorical capability.
+The gap. To our knowledge no prior method targets this cell. Every established paradigm relaxes at least
+one of its defining constraints (no prior knowledge, no communication, decentralized decisions, and partial
+and privately-noisy observation) by assuming communication, known utilities/traits, a coordinator or
+centralized training, or clean/shared observation (Section 2, Table 1). The regime is not exotic: it is the
+default when communication is jammed, bandwidth-limited, or withheld for stealth, and when task structure
+must be discovered in the field. We close it.
+Relation to collaborative filtering. Low-rank collaborative filtering is itself classical; our contribution is
+not the estimator but the demonstration, with theory, that it works at all in this regime, fully decentralized,
+communication-free, and under a persistent, per-observer-private observation mask where standard
+uniform-sampling completion guarantees do not apply, together with the recovery condition that says
+exactly when it works and the collective-speedup law that says why a swarm helps. The categorical floor
+against structure-free learning, the decentralized recovery condition under a structured private mask, and
+the value-of-broadcast / positive-scaling results are, to our knowledge, new.
+Contributions.
+     1. We formalize and name Zero-Knowledge MRTA (ZK-MRTA): communication-free MRTA
+         under partial, privately-noisy observation and zero prior knowledge, a most-restrictive but
+         practically common regime that prior MRTA and decentralized-learning work does not address
+         (Section 2, Table 1).
+     2. We propose SwarmCF, a decentralized, online, low-rank collaborative filter that each robot runs
+         over the passive broadcast, with a constant-time fold-in (an 𝑂(𝑑̂ 3 ) ridge solve in the guessed rank
+         𝑑̂ , independent of the task count 𝑛; Section 4) that lets it act on unseen tasks and onboard new tasks.
+     3. We prove the advantage is categorical: a structure-free learner is at the error floor on unseen pairs
+         and the broadcast is provably uninformative to it, whereas SwarmCF attains a per-robot sample
+         complexity of Θ(𝑑) versus Θ(𝑛), with a matching anytime separation under task scarcity (Section
+         5).
+     4. We give a deterministic condition under which decentralized recovery of the shared structure
+         from the privately-masked broadcast is exact, with a coverage-time bound that improves as the
+         team grows, and validate the condition empirically (Section 5, Appendix C).
+     5. We quantify the value of the broadcast, a positive scaling law (per-robot competence rises with
+         team size), and the strongest masking-robustness and anytime profile among low-rank methods
+         under limited observability, recovering most of a centralized full-communication ceiling on earned
+         (anytime) skill; and we show the advantage persists under capacity-1 contention (Section 6.5)
+
+                                                       2
+       and in a robotics-grounded instance with heterogeneous sensing traits and a range-limited line-
+       of-sight mask (Section 6.7).
+    6. We release LatentSwarm, an open, modular Python package for ZK-MRTA, covering the masked-
+       broadcast setting used for our headline results and its capacity-1 contention extension; with it we
+       show the separation survives contention and that SwarmCF's heterogeneous per-robot models
+       implicitly de-conflict where structure-free learners instead collide, isolating communication-free
+       de-confliction as the main open problem (Section 6.5, Appendix E).
+
+2. Related work
+Swarm robotics seeks collective competence from simple local rules [8,9], and coverage and patrolling
+control coordinate where robots move [10]; we instead address which task each robot should engage when
+the capability-to-task match is unknown and there is no communication.
+Multi-robot task allocation. The taxonomies of Gerkey and Matarić [11], Korsah et al. [12], and Nunes et
+al. [13] organize MRTA by single/multi-task robots, single/multi-robot tasks, and instantaneous/time-
+extended assignment with interrelated utilities and temporal constraints. Classical solvers, market and
+auction mechanisms [14], consensus-based bundle algorithms (CBBA) [15], and distributed constraint
+optimization achieve coordination through communication and assume known task utilities or costs
+(surveys: [16]); even work that explicitly limits communication still relies on auctions and messages [17],
+and a recent review underscores how central communication remains to multi-robot systems [18]. Trait-
+based and heterogeneity-aware MRTA [1,19,20] matches robot capability vectors to task requirement
+vectors, but takes the traits as given. Our setting keeps the trait/low-rank view but makes the traits unknown
+and learned online, with neither communication nor known utilities; recent surveys [21] document the
+rapid growth of learning-based MRTA, but the prior-free, communication-free regime we study remains
+unaddressed.
+Decentralized and learning-based coordination. Communication-free multiplayer bandits (musical
+chairs [22], SIC-MMAB [23], game-of-thrones [24]) break symmetry without messages but are structure-
+free (per-arm), so they cannot generalize to unseen arms. Cooperative multi-agent RL (CTDE: MAPPO
+[25], QMIX [26], VDN [27], MADDPG [28]) and learned-communication methods (CommNet [29],
+TarMAC [30], DIAL [31]) rely on centralized training or message passing; recent learning-based
+decentralized assignment (graph neural networks for goal assignment [32] and scheduling [33]) likewise
+presumes communication or centralized training. Federated and gossip collaborative filtering [34], and
+federated learning more broadly [35], coordinate by exchanging model parameters or gradients; we
+exchange nothing but a passively-sensed outcome stream. Decentralized partially-observable control (Dec-
+POMDPs [36]) addresses long-horizon coordination under shared latent-state dynamics; our rounds are
+one-shot offered-set choices with no shared state, so the challenge is cross-task generalization from a
+privately-masked stream rather than long-horizon credit assignment.
+Low-rank estimation and bandits. Matrix completion gives centralized recovery guarantees under (near-
+)uniform sampling [37,38,39,40], with practical factorization estimators (matrix factorization [41],
+Bayesian PMF [42], soft-impute [43], implicit-feedback ALS [44], ranking CF [45]); low-rank and bilinear
+bandits (explore-then-spectral [46], bilinear [47], generalized-linear [48], clustering-of-bandits [49]) are
+centralized and/or phase-structured. Decentralized matrix completion [50] distributes the factorization
+across nodes but still exchanges factors or residuals over a connected communication graph; we forbid all
+such exchange and recover from passive observation alone. We make estimation decentralized, online,
+broadcast-only, and robust to a structured (non-uniform) per-robot observation mask, with the unseen-pair
+error floor turning the gap into a categorical, rather than constant -factor, separation.
+
+                                                      3
+Table 1 places the major paradigms on the four axes that define our problem; each established family relaxes
+at least one axis we hold fixed, and our cell, low-rank with only a guessed rank, no communication,
+decentralized, masked and noisy, is the one left open.
+
+    Table 1. Established paradigms versus our regime across prior knowledge, communication, decision locus, and
+                 observation; the final column names the constraint each relaxes (ours relaxes none).
+      Paradigm             Prior         Communication         Decisions       Observation         Constraint it
+                          knowledge                                                                relaxes vs. ours
+     Auction /          task utilities      message-         decentralized    full task info          needs
+      consensus /           or costs          passing                                              communication
+    DCOP MRTA                                                                                        and known
+        [14,15]                                                                                        utilities
+   Cooperative              none         central training    central train,      full (in        needs a central
+   MARL (CTDE)             (learned)        or messages         decentral.        training)           critic or
+        [25,26]                                                   exec                                messages
+        No-              none (per-            none          decentralized     own pulls +      structure-free: no
+   communication             arm)                                                collisions            unseen
+      multiplayer                                                                                  generalization
+   bandits [22,23]
+     Low-rank             low-rank         centralized        centralized         partial      centralized and/or
+     completion /                                                                 (uniform)        explore-then-
+   bandits [37,46]                                                                                     commit
+ Federated / gossip       low-rank          parameter        decentralized        partial      shares parameters,
+      CF [34,35]                              exchange                                             not a passive
+                                                                                                        stream
+ Trait-based MRTA       known traits          varies         decentralized         full         traits given, not
+         [1,20]                                                                                        learned
+ Ours: ZK-MRTA           low-rank,        none (passive      decentralized      masked +       none: the open cell
+      (this paper)          guessed          sensing)                               per-                (most
+                           rank only                                             observer          constrained)
+                                                                                   noisy
+
+3. Problem setting: Zero-Knowledge MRTA (ZK-MRTA)
+(The term “zero-knowledge” here denotes the absence of any prior task knowledge, no task models and not
+even the latent rank; it is unrelated to the cryptographic notion of zero-knowledge proofs.)
+Reward. A team of 𝑚 robots faces 𝑛 tasks. Robot 𝑖 has a hidden capability vector 𝑝𝑖 ∈ ℝ𝑑 and task 𝑗 a
+hidden requirement vector 𝑢𝑗 ∈ ℝ𝑑 ; the expected reward of robot 𝑖 engaging task 𝑗 is their inner product
+                  𝑅𝑖𝑗 = ⟨𝑝𝑖 , 𝑢𝑗 ⟩,       𝑅 = 𝑃𝑈 ⊤ ∈ ℝ𝑚 ×𝑛 , rank(𝑅) = 𝑑 ≪ min(𝑚, 𝑛).
+The low rank 𝑑 encodes that only a few traits govern fit. The team does not know 𝑃, 𝑈, or even 𝑑 (it uses
+a guessed rank 𝑑̂ , drawn at random per run, to which the method is robust; Figure 7). We take the reward
+in normalized form, scaling the latent traits so that 𝑅𝑖𝑗 is bounded and zero-mean across tasks; this is the
+bounded, normalized reward referenced by Proposition 1. Zero-mean makes the no-information prior-mean
+predictor the correct control against which the categorical floor is measured; the degenerate 𝑑 = 1 case,
+where a shared popularity/bias baseline already suffices, is treated in Section 6.8.
+Interaction. Each round 𝑡 = 1, … , 𝑇 every robot 𝑖 is offered a menu 𝑆𝑖𝑡 ⊆ [𝑛] of tasks (the model permits
+the full menu of all 𝑛 tasks; to control scarcity the body experiments offer a uniform random size-𝑐 subset,
+𝑐 = 20, with the all-tasks menu 𝑐 = 𝑛 studied in Appendix F), selects one 𝑎𝑖𝑡 ∈ 𝑆𝑖𝑡, engages it, and earns
+
+                                                         4
+𝑅𝑖,𝑎𝑖𝑡 . The operating regime is task-scarce: 𝑛 ≫ 𝑇, so each robot personally engages only 𝑂(𝑇) of the 𝑛
+tasks.
+The observation channel (central to the setting). There is no communication. Each robot instead
+passively senses a public stream of engagement outcomes, but only partially and noisily, and privately:
+(persistent partial visibility) robot 𝑖 observes teammate 𝑘's engagements only if 𝑀𝑖𝑘 = 1, where 𝑀𝑖𝑘 ∼
+Bernoulli(𝜌) is fixed for the whole mission (𝑀𝑖𝑖 = 1); (private per-observer noise) when 𝑖 observes the
+outcome of action 𝑎𝑘𝑡 it reads 𝑅𝑘,𝑎𝑘𝑡 + 𝜂𝑖𝑘𝑡 with 𝜂𝑖𝑘𝑡 ∼ 𝒩(0, 𝜎 2 ) drawn independently per observer, so
+the same action is read differently by different robots. A robot reads its own engaged outcome with a smaller
+own-observation noise 𝜎own < 𝜎 (Section 6 uses 𝜎own = 0.1 and broadcast noise 𝜎 = 𝜎obs = 0.3). No
+robot ever sees the clean stream, and no two robots see the same stream. We take this persistent mask as
+the primary case: an i.i.d., per-round mask reduces to standard uniform sampling, so the persistent
+(structured) mask is the harder regime where our recovery condition (Theorem 2) applies; the released suite
+supports both, and Appendix F confirms the headline results are unchanged under the i.i.d. mask.
+This channel is the formal counterpart of physical sensing: a robot perceives a teammate's engagement and
+its outcome only when the teammate is within range (the persistent partial mask) and reads it with a fidelity
+that degrades with distance and with its own sensor (the per-observer noise), so it is physically realizable
+rather than a convenient abstraction: onboard, range-limited mutual perception without communication
+already drives real drone swarms [4,5]. Concretely, a robot can often assess a teammat e's outcome by direct
+observation (for example, seeing whether a surveilled area was in fact covered, or whether a serviced target
+stopped emitting) without any message from the teammate; where only the teammate's action (which task
+it engaged), and not its scalar outcome, is observable, an action/choice channel is the natural fallback, which
+we develop in a follow-up. It is strictly weaker than the shared, clean broadcast usually assumed, and it
+makes decentralization real: persistent blind spots give every robot a permanently different view, and the
+private per-observer noise means even commonly-visible outcomes are read differently by each robot, so
+there is no shared, clean signal to average toward agreement and the robots cannot converge to a common
+model by symmetry. Figure 1 illustrates the setting.
+
+                                                      5
+ Figure 1. The setting. The robot × task reward is hidden and low-rank, 𝑅 = 𝑃𝑈 ⊤ (capability traits 𝑝𝑖 , requirement traits
+𝑢𝑗). A focal robot (blue row) must act on its whole row, including the many pairs it never engaged ('?'), using only its own
+clean engagements (blue circles), a partial and per-observer-noisy view of the teammates it can sense (black dots; greyed
+                               rows are persistently invisible to it), and no communication.
+Objective and metric. We measure decision quality by the normalized skill (a Murphy skill score [51] /
+normalized return),
+                                                  earned − random
+                                         skill =                    ,
+                                                  oracle − random
+where for an offered set the oracle picks argmax𝑗∈𝑆 𝑅𝑖𝑗 and random picks uniformly; skill = 0 is the no-
+information floor and 1 is omniscient (a policy worse than random scores below 0). We report unseen-pair
+skill (restricted to tasks the robot never engaged, the generalization test), and the anytime (cumulative-
+reward) skill over the mission.
+
+4. Method: SwarmCF
+Each robot independently maintains low-rank factor estimates 𝑃̂ ∈ ℝ𝑚×𝑑̂ , 𝑈  ̂ ∈ ℝ𝑛 ×𝑑̂ and updates them
+online from whatever it senses, using noise-weighted alternating least squares (weighted ridge ALS
+[40,44], a standard estimator for low-rank completion) on the observed entries. The key design choice for
+masking-robustness: an unobserved entry receives zero weight, never an imputed zero value. The robot then
+acts greedily (with a small 𝜀 for exploration) on its completed reward row, which is defined for every task,
+including ones it never engaged.
+Algorithm 1: SwarmCF (run independently by each robot 𝑖)
+init 𝑃̂ , 𝑈
+          ̂ small-random; observed set Ω𝑖 ← ∅
+for round 𝑡 = 1, … , 𝑇:
+   offered 𝑆𝑖𝑡 ; act 𝑎𝑖𝑡 ← argmax𝑗 ∈𝑆𝑖𝑡 ⟨𝑝̂𝑖 , 𝑢̂𝑗 ⟩ (w.p. 1 − 𝜀, else random); engage, earn 𝑅𝑖,𝑎𝑖𝑡
+  sense broadcast: for each visible teammate 𝑘 (i.e. 𝑀𝑖𝑘 = 1) record
+     (𝑘, 𝑎𝑘𝑡 , 𝑟̃ = 𝑅𝑘,𝑎𝑘𝑡 + 𝜂𝑖𝑘𝑡 ) with weight 𝑤 = 1/𝜎 2 (uniform 𝑤 = 1 in our runs) into Ω𝑖
+     (own outcome recorded with its own, lower, noise)
+  every 𝜏 rounds: refit by weighted ridge ALS sweeps over Ω𝑖 :
+
+                                                             6
+     𝑢̂𝑗 ← (∑(𝑘,𝑗)∈Ω𝑖 𝑤 𝑝̂𝑘 𝑝̂𝑘⊤ + 𝜆𝐼)−1 ∑𝑤 𝑟̃ 𝑝̂𝑘 ; symmetric update for 𝑝̂𝑖
+predict full row 𝑅̂𝑖⋅ = 𝑈
+                        ̂𝑝̂𝑖 (defined on EVERY task, seen or not)
+
+New-task onboarding (fold-in [52]). Because the swarm already holds the robot-factor basis, a new task
+𝑗⋆ is absorbed without retraining: its hidden vector is the ridge least -squares solution of its few observed
+engagements against the corresponding known robot factors, an 𝑂(𝑑̂ 3 ) computation, after which every
+robot can score 𝑗⋆ . The same fold-in lets a robot predict any unseen pair once it has recovered the basis
+(Algorithm 2). A new robot is different: it arrives with no memory, and with no communication it cannot
+be handed the basis, so it must first recover the task factors from the passive broadcast (the coverage time
+of Theorem 2) and only then fold in its own ≥ 𝑑̂ engagements; its onboarding is bounded by recovery, not
+by the 𝑂(𝑑̂ ) fold-in.
+
+Algorithm 2: Fold-in (solve a new entity's 𝑑̂ -vector from a few observations against a known basis 𝐵)
+given basis 𝐵 (the 𝑑̂ -dim factors of the entities the newcomer has been observed against)
+and observations 𝑦 (the few rewards seen for the newcomer), with weights 𝑊:
+   𝑥̂ ← (𝐵 ⊤ 𝑊𝐵 + 𝜆𝐼)−1 𝐵 ⊤ 𝑊𝑦 // 𝑂(𝑑̂ 3 ) ridge solve
+predict reward on any other entity with factor 𝑏 as ⟨𝑏, 𝑥̂⟩
+What SwarmCF does and does not assume. It is fully decentralized (one estimator per robot, no shared
+state), communication-free (it only reads the passive stream), and prior-free beyond a guessed rank 𝑑̂
+(which it does not need to be exact, and which can itself be removed by a rank-adaptive variant we defer to
+follow-up work). It does not assume the noise level is known: uniform weighting suffices and is what we
+use for the headline results.
+Computational cost. SwarmCF is light enough to run on each robot. Acting is 𝑂(𝑐𝑑̂ ) per round (score the
+offered set). A periodic refit is a few alternating ridge sweeps, each solving 𝑂(𝑚 + 𝑛) linear systems of
+size 𝑑̂ × 𝑑̂ , i.e. 𝑂 (sweeps ⋅ (𝑚 + 𝑛)𝑑̂ 3 + |Ω𝑖 |𝑑̂ 2 ) time, with 𝑂((𝑚 + 𝑛)𝑑̂ + |Ω𝑖 |) memory; since 𝑑̂ is a
+small guessed rank this is small for swarm-scale 𝑚, 𝑛. Folding a new task (or an unseen pair) into the
+recovered basis is a single 𝑂(𝑑̂ 3 ) ridge solve. There is no inter-robot computation: each robot updates only
+its own factors and reads the passive stream.
+
+5. Theory: the categorical separation from structure-free learning
+We formalize the separation between structure-free learning and SwarmCF, give the per-robot sample
+complexity, and state the conditions under which decentralized recovery from the masked broadcast
+succeeds. Proofs are in Appendix A; here we give the statem ents and the intuition. We use the term
+Proposition for a self-contained structural fact, Lemma for an intermediate result that a theorem builds on,
+and Theorem for a main separation or recovery guarantee. A learner is structure-free if its estimate of 𝑅𝑖𝑗
+depends only on robot 𝑖's own past engagements of task 𝑗 and equals a fixed prior on any task it never
+engaged (the per-arm class: Independent-UCB, tabular).
+Proposition 1 (structure-free floor). For a structure-free learner and any task 𝑗 that robot 𝑖 never engaged,
+the estimate is the prior constant, so its expected unseen-pair skill is exactly 0 and its squared error is at
+least the row variance Ω(1) (under the bounded, normalized reward of Section 3). Moreover the broadcast
+is provably uninformative to it: its per-task estimate is by definition not a function of any other task or
+robot.
+
+                                                       7
+Lemma 1 (CF row completion, Θ(𝑑) versus Θ(𝑛)). If the task factors 𝑈 are known (rank 𝑑) and robot 𝑖
+observes its true rewards on any set Ω with |Ω| ≥ 𝑑 whose factors span ℝ𝑑 , then 𝑝𝑖 is the unique least-
+squares solution and 𝑅𝑖𝑗 = ⟨𝑝𝑖 , 𝑢𝑗 ⟩ is recovered exactly for all 𝑗. Per-robot sample complexity is therefore
+Θ(𝑑), versus Θ(𝑛) for any structure-free learner.
+Theorem 1 (anytime separation under task scarcity). Offers are uniform random size-𝑐 subsets of the 𝑛
+tasks. (a) Every structure-free learner has expected anytime (cumulative-reward) skill at most 𝑐(𝑇 −
+1)/(2𝑛) ≤ 𝑐𝑇/(2𝑛), which is 𝑜(1) whenever 𝑐𝑇 = 𝑜(𝑛), even with a full broadcast. (b) Once the shared
+basis is recovered (Lemma 1, available per Theorem 2 after 𝑇rec = 𝑂((𝑛𝑑/𝜌𝑚 )log𝑛) rounds), SwarmCF
+plays the recovered-row greedy policy and earns per-round skill 1 in the noiseless case (and 1 −
+𝑂(𝜎 √𝑑/|𝐸𝑖 (𝑗)|) under noise), so for 𝑇 = 𝜔(𝑇rec ) its anytime skill is Ω(1). Hence whenever the team is
+large enough to recover within the scarce-offer horizon (𝜌𝑚 = 𝜔(𝑐𝑑log𝑛), giving a non-empty window
+𝜔(𝑛𝑑/𝜌𝑚 log𝑛) = 𝑇 = 𝑜(𝑛/𝑐) ) the separation is categorical: structure-free anytime skill → 0 while
+SwarmCF stays Ω(1).
+Proposition 1, Lemma 1, and Theorem 1 make the separation categorical (zero versus nonzero) and
+operational (it shows up in reward earned while learning). The zero side is by construction: a structure-
+free learner is defined to fall back on the prior off its own engagements, so its floor on unseen pairs
+characterizes that class (independent per-task bandits, tabular value tables) rather than reflecting a contest;
+the weight of the claim rests on the nonzero side, that SwarmCF can in fact recover and act, which is not
+automatic. Since Lemma 1 still assumes 𝑈 is known, the remaining question, the central problem of the
+decentralized setting, is whether each robot can recover the shared structure from its own privately-masked,
+noisy stream. Because the mask is over robot pairs, robot 𝑖's observations form a structured (non-uniform)
+sub-sample, exactly where off-the-shelf uniform-sampling completion does not apply. We give a
+deterministic condition instead.
+Theorem 2 (decentralized masked recovery). Let 𝐸𝑖 (𝑗) be the set of robot 𝑖's visible teammates that
+engaged task 𝑗, with factor matrix 𝐵 = 𝑃𝐸𝑖 (𝑗) , and suppose 𝑖's observation graph contains a 𝑑̂ × 𝑑̂ fully-
+observed invertible anchor block (fixing the global factor frame, i.e. the rotation gauge). Then robot 𝑖
+predicts the pair (𝑖, 𝑗) exactly (noiseless) iff 𝑝𝑖 ∈ span{𝑝𝑘 : 𝑘 ∈ 𝐸𝑖 (𝑗)}; the full task vector 𝑢𝑗 is recovered
+when those factors span ℝ𝑑 . Under per-observation noise the prediction error is 𝑂(𝜎 √𝑑/𝜎min (𝐵)), where
+𝜎min (𝐵) is the smallest singular value of the engager factor matrix 𝐵; since 𝜎min (𝐵) grows with the number
+of engagers (generically Θ(√ |𝐸𝑖 (𝑗)|) ) the error decreases as 𝑂(𝜎√𝑑/|𝐸𝑖 (𝑗)|) . Conversely, if 𝑝𝑖 ∉
+span{𝑝𝑘 : 𝑘 ∈ 𝐸𝑖 (𝑗)} the pair is non-identifiable and the learner is at the prior floor. Under non -adaptive
+exploration the condition holds for all tasks, with high probability, after 𝑇 = 𝑂 ( 𝑛𝑑 ⁄𝜌𝑚 log𝑛) rounds, a
+rate that improves as the team grows.
+Theorem 2 turns the previously-cited completion step into a self-contained, checkable condition: a pair
+(𝑖, 𝑗) is predicted exactly when robot 𝑖's own factor lies in the span of the visible teammates that engaged
+𝑗, and not otherwise, with the threshold reached faster the larger the team. The coverage condition needs
+𝜌𝑚 > 𝑑 on average, so at very low broadcast (𝜌𝑚 < 𝑑, e.g. 𝜌 = 0.1 with 𝑚 = 30, 𝑑 = 5) recovery is only
+partial and the low-𝜌 skill in Figure 2 is correspondingly reduced. Appendix C validates it directly: on the
+actual observation patterns the swarm produces, reconstruction error collapses from the prior floor to
+(numerically) zero exactly at the spanning threshold.
+Theorem 3 (collective speedup, why a swarm). (a) Necessity. An isolated robot (𝜌 = 0) observes only
+its own row; for rank 𝑑 > 1 a single row does not identify the column space, so its unseen -pair skill stays
+at the floor of Proposition 1 and sharing is necessary. (b) Speedup. For 𝜌 > 0 the recovery time of
+
+                                                       8
+Theorem 2 is 𝑇rec = 𝑂(𝑛𝑑 ⁄𝜌𝑚 log𝑛) , which decreases as 1/𝑚 as the team grows (at constant broadcast
+𝜌 = Θ(1), 𝑇rec = 𝑂((𝑛𝑑/𝑚)log𝑛)); a lone learner never recovers. The broadcast makes recovery possible
+and a larger team makes it proportionally faster, with no communication.
+Theorems 2-3 are, to our knowledge, the first results that pin decentralized low-rank recovery from a
+persistent, private, per-robot mask to an explicit condition and tie its rate to team size; they are what make
+the categorical claim self-contained rather than imported from centralized theory. Full proofs are given in
+Appendix A.
+Relation to the experiments. Theorems 1-3 are worst-case sufficient guarantees: they certify when
+recovery and the categorical gap are achievable and how the rate improves with team size, and Appendix
+C confirms the governing spanning condition directly on the swarm's actual coverage. SwarmCF then
+realizes the advantage sample-efficiently: acting well requires only correct ranking of each offered set, not
+exact reconstruction of the entire row, and recovery is graded in the local spanning rank (Appendix C), so
+a robot scores a task accurately as soon as a few similar teammates have engaged it. The headline horizon
+𝑇 = 50 is therefore the natural operating point: the theory establishes feasibility and the team -size scaling,
+and the experiments show the method reaches strong skill comfortably within that envelope.
+
+6. Experiments
+Setup. Unless noted, 𝑚 = 30 robots, 𝑛 = 240 tasks, true rank 𝑑 = 5, guessed rank 𝑑̂ drawn at random in
+[𝑑, 2𝑑] per run (no method is given the true rank; robust to the guess, Figure 7), horizon 𝑇 = 50, partial
+broadcast 𝜌 swept, private noise on own (𝜎own = 0.1) and observed (𝜎obs = 0.3) outcomes (Appendix D),
+16 random seeds, bootstrap 95% confidence intervals. A robot may in principle select any of the 𝑛 tasks;
+the body sweeps restrict each offer to a uniform random size-𝑐 subset (𝑐 = 20) to control scarcity and to
+supply the per-round engagement diversity the online estimator relies on. This is a moderate scarcity (each
+task is offered about 𝑐𝑇/𝑛 ≈ 4 times); Theorem 1's strict scarce-offer regime ( 𝑐𝑇 = 𝑜(𝑛) ) is shown
+separately in Appendix F (Figure 11a). Appendix F reports the unrestricted all-tasks menu (𝑐 = 𝑛) as a
+robustness check: the categorical low-rank separation is unchanged, while the online method's lead over
+batch completion narrows. Because no existing benchmark instantiates the ZK-MRTA regime (a hidden
+low-rank robot-task reward seen only through a persistent, per-observer-private, masked and noisy
+broadcast under communication-free, task-scarce decentralized choice), we built and openly released the
+LatentSwarm simulator and run every experiment on it (Section 6.5 adds capacity-1 contention; Appendix
+E details the simulator).
+How to read the comparison. The setting itself is new, so this is a controlled sweep across the low-rank
+design space against the genuinely external structure-free paradigm and full-information reference ceilings,
+not a contest of rival systems. SwarmCF is our method; structure-free learners (Independent-UCB, a per-
+arm UCB1 [53]; tabular) are the external paradigm; standard low-rank estimators (online MF-SGD, batch
+spectral and Bayesian completion) are adapted to the setting for the low-rank comparison; the Oracle and a
+centralized full-communication matcher are upper bounds, not competitors. We emphasize that
+communication-based methods (auctions/CBBA, CTDE training, federated/gossip CF) are inadmissible
+by the problem definition, not omitted: they require messages or a coordinator, which our setting forbids,
+so they can appear only as the centralized ceilings. The admissible communication -free competitors are
+exactly the structure-free learners (Independent-UCB / tabular), which are the per-arm reductions of no-
+communication multiplayer-bandit methods. In our harness every method runs decentralized and
+communication-free (one estimator per robot); the low-rank methods differ only in the update rule. Table
+2 fixes each method's operating profile.
+
+                                                      9
+Table 2. Operating profiles of the methods compared; SwarmCF-family refinements are deferred to future work (column
+                                         abbreviations are defined in the key).
+Column key. Observability: full = every engagement seen noiselessly; ρ = a fraction ρ of engagements
+seen (masked); ρσ = masked and read with per-observer noise; fullσ = unmasked but noisy; self = own
+outcomes only. Prior: – = none; 𝑑̂ = a guessed rank; d = the true rank; U* = oracle factors. Computation:
+ETC = explore-then-commit. In our harness every method runs decentralized and communication -free (one
+estimator per robot on the passive broadcast); the low-rank methods differ only in the update rule, so the
+comparison is controlled. SwarmCF (our online method) and its batch variant SwarmCF-batch are ours
+(shaded); the rest are standard low-rank estimators we adapt, the structure-free paradigm, or reference
+ceilings (full communication, not competitors).
+     Method          Provenance       Distribution     Communication       Observability    Prior      Computation
+   SwarmCF              ours          decentralized          none               ρσ                𝑑̂     online
+   SwarmCF-             ours          decentralized          none               ρσ                𝑑̂      batch
+      batch
+    MF-SGD            standard,       decentralized          none               ρσ                𝑑̂     online
+                        adapted
+   BiasModel          standard,       decentralized          none               ρσ            –          online
+                        adapted
+     BPMF             standard,       decentralized          none               ρσ                𝑑̂      batch
+                        adapted
+     CLUB             standard,       decentralized          none               ρσ            –           batch
+                        adapted
+      ESTR            standard,       decentralized          none                ρ                𝑑̂      ETC
+                        adapted
+  Independent-     structure-free     decentralized          none               ρσ            –          online
+       UCB              baseline
+     Tabular       structure-free     decentralized          none               ρσ            –          online
+                        baseline
+    Random         structure-free     decentralized          none                –            –            –
+                        baseline
+   Centralized        reference        centralized           full               full              𝑑̂     online
+      (clean)            (upper
+                         bound)
+   Centralized        reference        centralized           full              fullσ              𝑑̂     online
+      (noisy)            (upper
+                         bound)
+     Oracle           reference        centralized           full               full         U*            –
+                         (upper
+                         bound)
+
+6.1 The categorical separation and masking robustness
+Figure 2 sweeps the broadcast rate 𝜌 and reports unseen-pair skill. SwarmCF acts well on tasks it never
+engaged at every broadcast rate, while the structure-free learners sit at the floor (≈ 0) by construction, the
+categorical separation of Proposition 1 and Lemma 1. Among low-rank methods, SwarmCF's online
+updates stay robust as the broadcast is masked, whereas the batch variant SwarmCF-batch (which imputes
+unobserved entries) decays; the two cross over near 𝜌 ≈ 0.6 and it leads only at full broadcast, where its
+one-shot factorization on a near-complete matrix is the best case for completion. The operationally relevant
+regime, partial observation, is exactly where the online estimator leads.
+
+                                                        10
+  Figure 2. Unseen-pair skill versus broadcast rate 𝜌. Structure-free learners are pinned at the floor at every broadcast
+  rate; SwarmCF acts on the unseen throughout and is robust under masking, while the batch variant SwarmCF-batch
+                 decays as observation becomes partial. Means with bootstrap 95% CIs over 16 seeds.
+
+6.2 The operational (anytime) separation
+Final-policy quality can overstate a method that explores cheaply. The operationally relevant measure is
+reward earned while learning. Figure 3 shows cumulative-reward skill over the mission: SwarmCF earns
+from the first rounds. Independent-UCB stays near the random floor: with 𝑛 ≫ 𝑇 arms its optimism keeps
+it exploring untried tasks. Phase-structured low-rank methods pay an explore-then-commit penalty early.
+An 𝜀-greedy tabular learner does earn some reward by re-exploiting tasks it has already engaged (each task
+recurs in offers about 𝑐𝑇/𝑛 ≈ 4 times here), but it stays well below SwarmCF and at the floor on unseen
+pairs (Table 3). The clean anytime collapse of Theorem 1 holds in the strict regime 𝑐𝑇 = 𝑜(𝑛)
+(demonstrated in Appendix F, Figure 11a); SwarmCF's early-earning advantage is broader, as seen here.
+
+                                                            11
+  Figure 3. Anytime cumulative-reward skill (𝜌 = 0.25). SwarmCF earns from round one; explore-then-commit pays a
+ probe phase; Independent-UCB stays near the random floor, while 𝜀-greedy tabular earns only by re-exploiting tasks it
+                         has already engaged. Means with bootstrap 95% CIs over 16 seeds.
+
+6.3 Why a swarm: the value of the broadcast and a positive scaling law
+Two experiments isolate what the team and the broadcast contribute (Figure 4). (a) Value of the broadcast.
+Sweeping from 𝜌 = 0 (each robot isolated, sees only its own outcomes) to 𝜌 = 1 (full passive sensing): a
+lone robot cannot recover the shared structure from its single matrix row, so isolated unseen skill is ≈ 0;
+the broadcast lifts SwarmCF by +0.39 unseen skill but a structure-free learner by ≈ 0, which has no model
+linking tasks and so cannot use it (Theorem 3). (b) Positive scaling. Holding 𝑛, horizon and 𝜌 fixed and
+growing the team from 𝑚 = 5 to 80, SwarmCF's unseen skill rises monotonically (0.13 → 0.43): more
+robots feed more observations into the one shared structure, so each robot's competence on tasks it never
+engaged grows with the team. The batch variant SwarmCF-batch rises even more steeply (Figure 4b),
+overtaking the online variant for large teams as the pooled observations sharpen its one-shot refit (mirroring
+the broadcast-rate crossover of Figure 2), so the positive scaling is a structural property of the shared low-
+rank reward, not specific to the online update. Structure-free learning is flat. A swarm whose per-robot
+competence rises with team size, the opposite of the usual interference penalty, is a direct consequence of
+sharing structure.
+
+                                                          12
+ Figure 4. (a) Value of the broadcast: unseen skill versus 𝜌 (left edge = isolated). (b) Positive scaling: unseen skill versus
+  team size 𝑚 at fixed broadcast rate 𝜌 = 0.5 (and fixed 𝑛, horizon 𝑇). In both panels our online SwarmCF and its batch
+variant SwarmCF-batch rise (the gain is structural), while structure-free learners stay flat. Means with bootstrap 95% CIs
+                                                       over 16 seeds.
+
+6.4 The cost of communication-free operation: a centralized ceiling
+Table 3 consolidates the masked-harness comparison across all methods, including two structured controls
+that bound the explanation of the advantage. A published clustering-of-bandits baseline (CLUB [49],
+which shares structure through discrete robot clusters rather than continuous factors) also generalizes well
+above the structure-free floor (unseen-pair skill 0.26 at 𝜌 = 0.25 ), so the categorical gap is structure-
+sharing versus none rather than an artifact of our particular estimator, though SwarmCF's continuous low-
+rank still leads it under masking (0.32 versus 0.26); an additive popularity model (BiasModel [41], rank
+≤ 2) captures only globally-good tasks and reaches just 0.09, so the advantage is personalized low-rank
+transfer, not a shared popularity ranking. Here we ask how far communication-free SwarmCF is from a
+centralized optimum that our constraints forbid. We add two reference ceilings (upper bounds, not
+competitors): a centralized full-communication matcher that sees every reward and computes the optimal
+one-to-one robot-task assignment by Hungarian matching [54], evaluated both with clean (noiseless)
+observation and under the realistic per-observer noise. Under limited observability (𝜌 = 0.25, matching-
+normalized anytime earned skill at the headline 𝑛 = 240 ) SwarmCF earns 0.42 against the clean full-
+communication ceiling's 0.53, recovering about 80% of it (Table 4); the same matcher under per-observer
+noise reaches a statistically indistinguishable 0.54, so observation noise costs the centralized matcher
+essentially nothing (the optimal assignment depends only on the ordering of rewards, which zero-mean
+observation noise rarely changes once reward gaps exceed the noise scale), and the price of the masked,
+privately-noisy observation is small on this operational metric: on earned (anytime) skill the estimator is
+nearly at the centralized ceiling (the harder unseen-pair generalization of Table 3 is naturally lower), so
+the residual gap to the centralized optimum is within-round coordination, not estimation. Coordination is
+therefore the binding constraint, which Section 6.5 isolates by adding capacity-1 contention.
+
+                          Table 3. Performance scorecard on one canonical masked harness.
+      Method            Provenance        unseen skill       unseen skill      cumulative regret                rounds to
+                                             (ρ=0.25,          (ρ=1, full)            (ρ=0.25,                      25%
+                                             masked)                               lower=better)                     of
+                                                                                                                   oracle
+    SwarmCF                 ours             0.316 [0.286,        0.386 [0.369,               41.1                  34
+                                                 0.346]               0.404]
+
+                                                             13
+     Method             Provenance           unseen skill         unseen skill       cumulative regret        rounds to
+                                                (ρ=0.25,            (ρ=1, full)            (ρ=0.25,               25%
+                                                masked)                                 lower=better)              of
+                                                                                                                 oracle
+   SwarmCF-                 ours           0.267 [0.241,          0.490 [0.455,             46.2                  never
+      batch                                     0.294]                0.524]
+    MF-SGD               standard,         0.007 [-0.006,         0.048 [0.035,             46.7                  never
+                           adapted              0.019]                0.060]
+      BPMF               standard,         0.136 [0.117,          0.219 [0.191,             49.7                  never
+                           adapted              0.157]                0.246]
+      ESTR               standard,         0.047 [0.034,          0.214 [0.189,             46.6                  never
+                           adapted              0.059]                0.243]
+      CLUB               standard,         0.258 [0.232,          0.436 [0.413,              –                      –
+                           adapted              0.284]                0.463]
+   BiasModel             standard,         0.094 [0.056,          0.131 [0.091,              –                      –
+                           adapted              0.134]                0.172]
+  Independent-        structure-free       0.000 [-0.004,        0.001 [-0.004,             50.4                  never
+       UCB                 baseline             0.005]                0.005]
+     Tabular          structure-free       0.001 [-0.004,        -0.000 [-0.005,            43.4                   46
+                           baseline             0.006]                0.004]
+     Random           structure-free       0.001 [-0.012,        -0.003 [-0.018,            50.1                  never
+                           baseline             0.013]                0.012]
+
+One canonical masked harness (m=30, n=240, 16 seeds); unseen -skill columns report the mean with a
+bootstrap 95% confidence interval in brackets, regret and time-to-competence are means from the anytime
+trajectories. SwarmCF leads the operational columns (lowest regret, fastest to competence) and is the most
+masking-robust; on masked unseen skill its margin over the batch variant SwarmCF-batch is within the 16-
+seed interval, and the batch and clustering baselines win only the full-broadcast column. Structure-free
+learners are at the floor on the unseen columns (intervals straddling zero); on the operational columns an ε-
+greedy tabular learner is competitive by re-exploiting already-engaged tasks, so the categorical separation
+is specifically an unseen-pair (generalization) phenomenon.
+
+  Table 4. The cost of communication-free operation: earned (anytime) skill against the centralized full-communication
+Hungarian ceiling with clean observation (matching-normalized, 𝜌 = 0.25, 𝑛 = 240, means with bootstrap 95% CIs over
+ 16 seeds). SwarmCF recovers about 80% of the ceiling with no communication, while the structure-free learner is near
+     the floor; the same matcher under realistic per-observer noise reaches a statistically indistinguishable 0.54, so
+                           observation noise costs the centralized matcher essentially nothing.
+                             Method                                        earned skill             fraction of the ceiling
+                                                                          (ρ=0.25, anytime)
+ Centralized full-communication, Hungarian (clean ceiling)             0.528 [0.505, 0.552]                1.00
+           SwarmCF (ours, communication-free)                          0.423 [0.407, 0.441]                0.80
+             Independent-UCB (structure-free)                          0.003 [-0.003, 0.009]               0.01
+
+6.5 Capacity-1 contention and communication-free de-confliction
+The experiments so far impose no contention: two robots may service the same target. We now turn on
+capacity-1 contention in LatentSwarm, where only the first robot to select a task each round succeeds and
+colliding robots waste the engagement, the within-round coordination cost Section 6.4 identified as the
+binding constraint. Nothing else changes: the same signed low-rank reward, the same persistent private
+mask, the same task scarcity and randomly guessed rank, with SwarmCF run as one policy under no
+contention handling.
+
+                                                            14
+(a) The categorical separation survives contention. SwarmCF earns the most of any learner (42% of the
+centralized capacity-1 ceiling, bootstrap 95% CI [40%, 44%] over 16 seeds; this capacity-1 ceiling is stricter
+than the full-communication ceiling of Section 6.4, so the drop from about 80% there to 42% here is the
+coordination gap that contention introduces), well above the MF-SGD baseline (20%) and the structure-
+free independent-UCB learner, which sits below the random floor (-17%) because under contention its
+persistent exploration collides without coordinating. On the categorical generalization metric, SwarmCF is
+the only method whose unseen-pair skill is significantly above the floor (0.58, CI [0.52,0.64]; MF-SGD,
+UCB, and random all have intervals straddling zero): the Proposition 1 separation holds under contention
+(Figure 5). This contention study uses 𝜌 = 0.5, the all-tasks menu, and the stricter capacity-1 Hungarian
+normalization, so its skill values run higher than, and are not directly comparable to, the masked-harness
+numbers of Table 3 (which use 𝜌 = 0.25 and a size-𝑐 menu); only the categorical above-floor-versus-at-
+floor pattern is meant to carry across settings.
+
+   Figure 5. The categorical separation under capacity-1 contention (LatentSwarm: signed low-rank reward, persistent
+ partial and private broadcast, task scarcity). Left: earned (anytime) skill, SwarmCF best among learners and far above
+ the structure-free floor (independent-UCB goes negative under contention). Right: unseen-pair skill, SwarmCF the only
+ method significantly above the floor. Bars are means with bootstrap 95% CIs over 16 seeds; the oracle is the centralized
+                                             capacity-1 (Hungarian) matching.
+(b) Why coordination is the binding constraint, and how SwarmCF already mitigates it. Because the
+all-tasks menu offers every robot the same full set, greedy policies tend to converge on the same few high -
+value tasks and collide. The effect is stark (Figure 6): the structure-free independent-UCB learner collides
+on almost every engagement (collision rate ≈ 0.97) and earns below random, whereas SwarmCF collides
+far less (rate ≈ 0.12) because its heterogeneous learned models send different robots to different tasks, an
+implicit de-confliction that emerges from the personalized low-rank estimate with no message passing.
+Restricting the offer to a size-𝑐 menu reduces collisions for every method (independent-UCB from 0.97 to
+0.25), one reason the body uses a size-𝑐 menu. An explicit communication-free de-confliction mechanism
+would close the remaining gap to the centralized ceiling: in a follow-up, a fixed, private per-robot offset
+(drawn once and never shared) roughly doubles earned reward at the most severe conten tion with no
+communication, exceeding communication-free reductions of auction-with-backoff and musical-chairs re-
+seating.
+
+                                                           15
+ Figure 6. The cost of no de-confliction under capacity-1 contention (LatentSwarm). (a) Earned skill versus collision rate
+ on the all-tasks menu: structure-free independent-UCB collides on almost every engagement and earns below random,
+ while SwarmCF spreads robots across tasks via its heterogeneous learned models and earns most. (b) Collision rate per
+  method under the all-tasks menu versus a size-𝑐 menu: restricting the menu reduces collisions. Means over 16 seeds.
+
+6.6 Robustness across configurations
+The separation is structural rather than tuned: it follows from the three scope conditions of Section 6.8 (an
+exploitable low-rank-but-personalized reward, task scarcity, and a shared channel), not from any particular
+team size or task count: Section 6.3 shows the separation widening with team size (Figure 4b), and
+additional sweeps over 𝑛, 𝑑, and reward heterogeneity in the released data show the same qualitative
+pattern. The categorical separation also degrades only gracefully when the reward is approximately rather
+than exactly low-rank (Appendix F, Figure 12). Two evaluation choices, the offer size and the masking
+model, are likewise robustness knobs rather than load-bearing assumptions: restricting the menu to a size-
+𝑐 subset versus offering all 𝑛 tasks, and a persistent versus an i.i.d. mask, both leave the categorical
+separation intact (Appendix F).
+Robustness to the guessed rank. Because the true rank is unknown, the guessed rank 𝑑̂ is drawn at random
+per run; we sweep it from 𝑑/2 (under-ranking) to 3𝑑 (over-ranking) at true rank 𝑑 = 5. SwarmCF degrades
+gracefully when the model is under-specified (𝑑̂ < 𝑑: unseen-pair skill 0.47 at 𝑑̂ = 2, rising to 0.52 at
+𝑑̂ = 4) and is flat once the rank is sufficient (𝑑̂ ≥ 𝑑: 0.58 to 0.64 up to 𝑑̂ = 3𝑑), because surplus directions
+are shrunk by the ridge; MF-SGD stays near the floor throughout. Over-guessing is therefore safe and the
+exact rank is not needed (Figure 7). The guess can even be removed entirely: in a follow-up, automatic
+relevance determination prunes the latent directions the masked design does not excite and recovers a stable
+effective rank independent of the guess (whether 𝑑̂ = 8 or 𝑑̂ = 20).
+
+                                                            16
+   Figure 7. Robustness to the guessed rank 𝑑̂ (true rank 𝑑 = 5). Under-ranking (𝑑̂ < 𝑑) is mis-specified and degrades
+  smoothly; over-ranking (𝑑̂ > 𝑑, up to 3𝑑) is regularized away and stays flat. Lines are means with bootstrap 95% CIs
+                                                       over 16 seeds.
+
+6.7 A robotics-grounded instance
+The experiments above use abstract latent traits and a Bernoulli visibility mask. To check the separation is
+not an artifact of that abstraction, we instantiate the Section 3 model in a physically-grounded form. Robot
+capability and task requirement vectors are non-negative profiles over 𝑑 sensing modalities (electro-
+optical, infrared, acoustic, LiDAR, range-endurance), so the reward 𝑅𝑖𝑗 = ⟨𝑝𝑖 , 𝑢𝑗 ⟩ is a modality match and
+is rank-𝑑 by construction (a capability-aggregation model in the style of trait-based heterogeneous MRTA
+[1,19,20]); and the observation mask is a range-limited line-of-sight graph induced by 2-D patrol positions
+(robot 𝑖 senses teammate 𝑘 only within a sensing radius), with per-observer noise that grows with distance
+(𝜎 2 ∝ 1 + (𝑟/𝑅𝑠 )2, the free-space sensing law of coverage control [10]). Positions are thus load-bearing
+rather than inert, and visibility is persistent because the patrol geometry is quasi-static. Under capacity-1
+contention and a randomly guessed rank, the categorical separation holds: SwarmCF reaches unseen-pair
+skill 0.19 (95% CI [0.15,0.24]) and earns 32% of the centralized ceiling, while structure-free Independent-
+UCB and MF-SGD sit at the floor (intervals straddling zero) and Independent -UCB earns below random
+by colliding (Figure 8). The absolute skill is lower than in the body because geometry-limited line-of-sight
+visibility is a harsher channel, so these values are a separate grounded instance rather than a restatement of
+Table 3; the separation itself is a property of the shared low-rank structure, not of the abstract trait or mask
+model.
+
+                                                          17
+  Figure 8. A robotics-grounded instance (LatentSwarm): non-negative sensing-modality traits and a geometry-induced
+range-limited line-of-sight mask with distance-dependent noise, under capacity-1 contention. (a) An example patrol layout
+   and its line-of-sight visibility graph; (b) earned (anytime) skill; (c) unseen-pair skill. SwarmCF stays well above the
+  structure-free floor, so the categorical separation survives a physically-motivated instantiation. Bars are means with
+                                                bootstrap 95% CIs over 16 seeds.
+
+6.8 Scope of the advantage
+The advantage is not universal, and we state its boundary precisely. It holds when three conditions co-occur:
+(i) low-rank but personalized structure (1 < 𝑑 ≪ min(𝑚, 𝑛)): at 𝑑 = 1 the reward reduces to a shared
+popularity order that a bias/pooling baseline already captures, so there is nothing personal to transfer; (ii)
+task scarcity (𝑛 ≫ 𝑇): if instead sample-rich, a tabular learner eventually measures every entry and the
+unseen advantage vanishes; (iii) a shared channel (𝜌 > 0): with no broadcast each robot has only its own
+row and collaborative filtering degenerates to tabular. These are exactly the conditions of the regime we
+target, and they delimit where structure-free methods remain competitive.
+
+7. Discussion, limitations, and future work
+What the results say. Under the least information (no prior, no communication, partial and privately-noisy
+observation), a single simple estimator gives a swarm a capability that structure-free learning provably
+cannot have: acting well on the unseen, getting more competent as the team grows, and, on earned (anytime)
+skill, recovering most of what a centralized, communicating system could achieve. The separation is
+structural (it is a property of exploiting the shared low-rank trait structure) and operational (it shows up in
+reward earned while learning, and in the operational anytime and contention metrics).
+Limitations. The reward is assumed (approximately) low-rank and stationary, the standard trait-based
+premise; the categorical advantage degrades gracefully as the structure becomes only approximately low-
+rank or the rank grows toward full, vanishing only when there is no exploitable structure (Appendix F,
+Figure 12). All our evidence is in simulation: as no existing benchmark captures this regime (Section 6) we
+evaluate on our own released LatentSwarm simulator, and the low-rank premise, though standard for trait-
+based MRTA, is an assumption rather than a measured property of any specific deployment; building a
+higher-fidelity or physical instantiation of the regime is itself an open problem. Rewards are real-valued
+and bilinear in latent traits; and the recovery rate of Theorem 2 is established for non-adaptive exploration,
+the finite-time rate under a strongly exploiting policy (which can starve low-reward tasks of coverage)
+remains open. The scope conditions for the advantage (low-rank but personalized structure, task scarcity,
+and a shared channel) are stated precisely in Section 6.8; outside them, structure-free methods are
+competitive.
+
+                                                           18
+Future work (a planned follow-up). The present paper deliberately keeps to a single core estimator. In a
+follow-up we plan to study the refinements that this foundation enables, each of which we have prototyped:
+(i) confidence-directed exploration via a Bayesian posterior over the factors (collective, information-
+directed probing through the shared broadcast); (ii) communication-free de-confliction under capacity-1
+contention via a fixed private offset, against no-communication auction and musical-chairs primitives; (iii)
+rank self-determination (removing the guessed 𝑑̂ ); (iv) the action/choice channel as a noise-immune
+alternative to cardinal rewards; and (v) non-stationarity and team churn. We also plan a tightening of the
+adaptive-policy coverage rate.
+
+8. Conclusion
+We formalized multi-robot task allocation in its most restrictive but practically common form (no prior
+knowledge, no communication, partial and privately-noisy observation), and showed that decentralized
+online collaborative filtering over the passive broadcast lets each robot act well on tasks it has never
+attempted. The advantage over structure-free learning is categorical and proven; the broadcast is what
+makes it possible and the team is what makes it fast; and the method recovers most of a centralized full-
+communication ceiling on earned (anytime) skill while assuming far less. We hope the setting, a swarm
+that must learn to coordinate from only what it passively senses, becomes a useful baseline regime for
+autonomous multi-robot systems.
+
+CRediT authorship contribution statement
+Alexander Apartsin: Conceptualization, Methodology, Formal analysis, Visualization, Writing - original
+draft. Yigal Meshulam: Software, Validation, Investigation. Yehudit Aperstein: Conceptualization,
+Supervision, Writing - review & editing.
+
+Declaration of competing interest
+The authors declare that they have no known competing financial interests or personal relationships that
+could have appeared to influence the work reported in this paper.
+
+Funding
+This research did not receive any specific grant from funding agencies in the public, commercial, or not -
+for-profit sectors.
+
+Data availability
+The source code, the per-seed data required to reproduce every figure and table, and the LatentSwarm
+simulator (the masked-broadcast setting and its capacity-1 contention extension) are openly available at
+github.com/ApartsinProjects/ZKDroneSwarm.

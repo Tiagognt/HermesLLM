@@ -1,0 +1,165 @@
+Hybrid Voting-Based Task Assignment in Modular Construction Scenarios
+
+Daniel Weiner
+
+Computer Science Department
+Graduate Center, City University of New York
+New York, United States
+dweiner@gradcenter.cuny.edu
+
+Raj Korpan
+
+Computer Science Department
+Hunter College and Graduate Center, City University of New York
+New York, United States
+raj.korpan@hunter.cuny.edu
+
+Abstract
+
+Modular construction, involving off-site prefabrication and on-site assembly, offers significant advantages but presents complex coordination challenges for robotic automation. Effective task allocation is critical for leveraging multi-agent systems (MAS) in these structured environments. This paper introduces the Hybrid Voting-Based Task Assignment (HVBTA) framework, a novel approach to optimizing collaboration between heterogeneous multi-agent construction teams. Inspired by human reasoning in task delegation, HVBTA uniquely integrates multiple voting mechanisms with the capabilities of a Large Language Model (LLM) for nuanced suitability assessment between agent capabilities and task requirements. The framework operates by assigning Capability Profiles to agents and detailed requirement lists called Task Descriptions to construction tasks, subsequently generating a quantitative Suitability Matrix. Six distinct voting methods, augmented by a pre-trained LLM, analyze this matrix to robustly identify the optimal agent for each task. Conflict-Based Search (CBS) is integrated for decentralized, collision-free path planning, ensuring efficient and safe spatio-temporal coordination of the robotic team during assembly operations. HVBTA enables efficient, conflict-free assignment and coordination, facilitating potentially faster and more accurate modular assembly. Current work is evaluating HVBTA’s performance across various simulated construction scenarios involving diverse robotic platforms and task complexities. While designed as a generalizable framework for any domain with clearly definable tasks and capabilities, HVBTA will be particularly effective for addressing the demanding coordination requirements of multi-agent collaborative robotics in modular construction due to the predetermined construction planning involved.
+
+Index Terms:
+
+Multi-Agent Systems, Task Assignment, Voting, Large Language Models, Modular Construction
+
+I Introduction
+
+The construction industry is increasingly exploring the potential of robotic automation to improve efficiency, safety, and scalability [ 1 ] . Modular construction, characterized by the off-site fabrication of components and their subsequent on-site assembly, is particularly well-suited to automated implementation [ 2 ] . Modular construction provides a scalable, robot-friendly method for building. Multi-agent systems (MAS) offer significant opportunities for construction tasks ranging from site preparation, such as push manipulation of loose materials for mapping, leveling, and shaping, to the intricate processes of prefabricated assembly [ 3 ] .
+
+Figure 1: Diagram of the HVBTA system. The Suitability Matrix is created from the Task Descriptions and Capability Profiles when all task requirements are well defined, otherwise, LLM integration is utilized to score suitability, then all scores are passed to voting methods for task allocation. Finally CBS plans paths to the tasks for each agent.
+
+However, effectively deploying and coordinating these MAS, especially when they are heterogeneous (composed of agents with different capabilities), presents substantial challenges. Coordinating a team of heterogeneous agents efficiently requires sophisticated planning and scheduling algorithms. Key tasks include organizing and ordering agent actions and resources, and ensuring seamless agent coordination. Commonly used planning and scheduling techniques include sequencing, bioinspired methods, and optimization. Task assignment, determining which agent should perform which task, is a critical precursor to successful coordination and execution [ 4 ] . In dynamic construction environments, agents must not only be assigned tasks appropriately based on their capabilities but also navigate the shared workspace efficiently and without conflict. Traditional task allocation methods may struggle to capture the nuances of agent capabilities and task requirements, deal with unexpected task requirements, or adapt to changing conditions on a construction site [ 5 ] .
+
+This paper introduces the Hybrid Voting-Based Task Assignment (HVBTA) framework, as shown in Figure 1 , as a solution to the complex task allocation and coordination challenges in multi-agent modular construction. HVBTA is a generalizable framework that draws inspiration from human reasoning in task delegation. It combines voting with Large Language Model (LLM)-based reasoning to determine which robots are best suited for which tasks. HBVTA is designed to handle well-defined multi-agent settings, making it particularly effective for the demanding coordination requirements of collaborative modular construction due to the predetermined construction planning involved. The next section describes related work, and subsequent sections describe the HVBTA framework in detail and consider how HVBTA may be applied to MAS in the construction sector.
+
+II Related Work
+
+Coordinating heterogeneous multi‑agent teams for structured tasks, such as modular construction, has inspired a range of allocation and planning techniques. Prior work can be grouped into four main paradigms: optimization‑based, market/auction methods, LLM augmentation, and decentralized path planning. In the following, we briefly survey each and highlight how HVBTA builds on and differs from these foundations.
+
+II-A Optimization-Based Approaches
+
+Optimization-based approaches model task allocation as a constrained optimization problem, often using mixed-integer programming (MIP), constraint satisfaction, or heuristic-based models to maximize efficiency metrics such as task coverage, makespan, or resource utilization [ 6 ] . Exact methods (e.g., greedy algorithms, local search, Simulated Annealing) trade solution quality for speed but provide no optimality bounds [ 6 ] . Metaheuristics (e.g., Genetic Algorithms, Particle Swarm Optimization, Ant Colony Optimization) explore large search spaces via population‑based or bio‑inspired strategies, yielding good solutions on mid‑sized problems yet often requiring significant parameter tuning [ 6 ] . Hybrid schemes combine clustering or graph partitioning with exact or metaheuristic solvers to decompose large instances into manageable subproblems [ 6 ] .
+
+While these approaches excel when full cost functions and agent–task compatibilities are known a priori, they often falter under partial, noisy, or semantically rich requirements. In contrast, HVBTA’s voting framework naturally accommodates incomplete suitability data and uses LLM tie‑breaking to handle unseen or context‑dependent demands.
+
+II-B Market and Auction‑Based Methods
+
+Market-based and auction algorithms have long dominated multi-agent task allocation, balancing agent bids against task priorities [ 7 , 8 ] . While these methods are scalable, they often cannot capture the complex, nuanced relationships between tasks and agents that occur in real situations, and may oscillate under dynamic environments, making them less suited to construction environments.
+
+II-C LLMs for Semantic Matching
+
+Our recent work proposed integrating LLMs to interpret high‑level or unstructured task descriptions and mapping them onto agent capabilities when numeric scores are insufficient in the context of role-playing games [ 9 ] . Some works claim LLMs act as in-context semantic ”reasoners” [ 10 ] . HVBTA advances this by embedding LLM reasoning directly into its multi‑rule voting pipeline, automatically generating concise prompts to adjudicate between top candidates and feeding the resulting “preference score” back into the assignment.
+
+II-D Multi-Agent Path Finding
+
+Multi‑Agent Pathfinding (MAPF) focuses on finding collision‑free paths for multiple agents moving simultaneously in a shared environment. Classical MAPF methods fall into three broad categories. Centralized search formulates the joint configuration space of all agents and applies global planners (e.g., A*, IDA*) to find an optimal solution. While providing completeness and optimality guarantees, centralized search scales exponentially with the number of agents and is impractical beyond small teams. Decoupled or prioritized planning (e.g., Priority‑Based Search) assigns each agent a priority ordering and plans paths sequentially, treating higher‑priority agents as moving obstacles. These methods run in polynomial time but may fail to find a solution even when one exists, due to priority conflicts. Conflict-Based Search and its bounded‑suboptimal variants (e.g., ECBS) combine the strengths of centralized and decoupled approaches. CBS performs low‑level single‑agent planning independently, then detects pairwise collisions and incrementally adds binary constraints to a high‑level search tree, resolving conflicts until all paths are conflict‑free. This yields optimal or bounded‑suboptimal solutions with dramatically better scalability than naïve centralized search. HVBTA relies on MAPF, in particular CBS, to translate its high‑quality task assignments into collision‑free execution plans. By front‑loading capability‑aware, voting‑driven allocation, HVBTA reduces the number of conflicts that MAPF must resolve, speeding overall coordination.
+
+III The HVBTA Framework
+
+The HVBTA framework represents a novel hybrid approach that integrates structured Task Descriptions and Capability Profiles with semantic reasoning from LLMs and dynamic path planning from Conflict-Based Search (CBS). While applicable to various domains, its structure is well-suited for the task allocation and coordination needs of multi-agent construction teams. Utilizing well-defined Task Descriptions and agent Capability Profiles , HVBTA can calculate the suitability of agents to tasks by generating a Suitability Matrix , it then votes on which agent should complete which task, and then guides that agent to the task using CBS. HVBTA also accounts for unseen tasks by taking advantage of the reasoning capabilities of a pretrained LLM to provide a suitability score through a previously assembled template prompt, thereby increasing adaptability. The core components of the HVBTA framework are as follows.
+
+III-A Task Descriptions and Agent Capability Profiles
+
+The framework begins by defining tasks and agents. Each construction effort, whether mapping a site, leveling ground using push manipulation, or placing a prefabricated module, is defined by a Task Description , a detailed set of requirements outlining what is necessary for successful execution. Concurrently, each agent is described through its Capability Profile , detailing its specific abilities, tools (e.g., general-purpose pushing tools), strengths (e.g., precision, lifting capacity, speed), and limitations. This dual representation allows for a rigorous comparison of agent competencies against task demands. Table I shows an example of two Task Descriptions and three Capability Profiles .
+
+TABLE I: Simple example of Task Descriptions and agent Capability Profiles
+
+Task
+
+Payload Size
+
+Terrain Type
+
+Reach Needed
+
+Place Wall Panel
+
+400 kg
+
+Flat
+
+2.0 m
+
+Transport Module
+
+300 kg
+
+Uneven
+
+2.5 m
+
+Agent
+
+Payload Capacity
+
+Terrain Capability
+
+Reach
+
+A
+
+500 kg
+
+Flat
+
+2.0 m
+
+B
+
+100 kg
+
+Fixed
+
+1.2 m
+
+C
+
+450 kg
+
+Uneven
+
+2.8 m
+
+III-B Suitability Matrix Generation
+
+HVBTA constructs a quantitative Suitability Matrix to evaluate the compatibility between agents and tasks. For every possible agent-task pair, the matrix assigns a score that reflects how well the agent’s capabilities align with the task’s requirements. Scores are calculated using a rule-based approach that compares the agent’s Capability Profile with the Task Description , resulting in higher scores for agents better suited to a task. For example, in Table I , while the suitability for both Agent A and Agent C would be very high for Place Wall Panel , only Agent C has the capability to Transport Module .
+
+III-C LLM Integration for Semantic Reasoning
+
+In cases where rule-based scoring cannot definitively determine the suitability of an agent-task pairing, particularly when the task is unclear or novel or a robot is introduced with new capabilities, HVBTA integrates a pre-trained LLM to prompt for a score to evaluate suitability more holistically. The LLM utilizes its semantic understanding to interpret subtle nuances within both the Task Descriptions and agent Capability Profiles , refining the suitability assessment. An automatically generated prompt focuses the LLM on the specific component(s) whose compatibility is in question, allowing for more flexible assessment of suitability.
+
+III-D Voting and Allocation Mechanism
+
+HVBTA employs a robust voting and allocation mechanism to resolve potential conflicts and balance assignments. This system leverages six distinct voting methods, such as Borda, approval, and majority voting, to aggregate and interpret the scores from the Suitability Matrix . This ensures that assignments are aligned with both the agents’ capabilities and the tasks’ requirements, while also considering the overall distribution of tasks across the heterogeneous team. Recognizing that a single, highly capable agent might be the best candidate (highest-scoring) for multiple tasks, HVBTA is capable of delegating tasks efficiently and not relying on the most capable agents. For example, in Table I , even though Agent C scores well on its suitability with both tasks, HVBTA would assign it to Transport Module because no other agent scored well on it. Agent A would be assigned to Place Wall Panel while Agent B would remain unassigned.
+
+III-E CBS for Path Planning
+
+After task assignments are finalized, HVBTA integrates CBS for path planning. It plans optimal paths for the agents from their start positions to their designated tasks while avoiding obstacles and collisions with other agents in the physical environment. Path planning finds an optimal sequence of states, locations on a map, to move a robot from one location to another. This integration ensures efficient, collision-free spatial coordination, which is critical for the safe and timely execution of tasks. CBS can dynamically update agents’ paths as the environment or an agent’s state changes. Although HVBTA does not address task execution, task planning algorithms could also be integrated.
+
+By automating decisions regarding task assignment and coordination that might previously require external intervention, HVBTA addresses key limitations of earlier approaches and enables the creation of efficient and dynamically managed automated workflows on a construction site.
+
+IV Applying HVBTA to Multi-agent Construction
+
+The challenges of coordinating heterogeneous MAS for modular construction and site preparation tasks are significant. These tasks require a wide range of capabilities and frequently involve unforeseen requirements that must be addressed through contextual reasoning. HVBTA is particularly well-suited to address these challenges.
+
+IV-A Handling Heterogeneity
+
+HVBTA’s emphasis on detailed agent Capability Profiles allows the framework to explicitly model the unique strengths, tools, and limitations of each heterogeneous agent in the team. Task Descriptions capture the specific requirements of different construction tasks. The Suitability Matrix quantitatively compares these profiles and descriptions, enabling the system to identify which agent is best equipped for a given task, whether it requires heavy lifting, fine manipulation, or robust pushing power. For example, a construction site with specialized robots for material transportation, dexterous manipulation, and site monitoring could use HVBTA to coordinate their behavior so that they are assigned to the tasks that each is best suited for, particularly when the robots have diverse skillsets and strengths.
+
+IV-B Efficient Task Assignment
+
+The combination of suitability scoring and multiple voting methods allows HVBTA to efficiently assign tasks across the entire team. This process considers not just the single best agent for a task, but how assignments can be balanced to utilize the entire team effectively, preventing bottlenecks where one agent is assigned multiple tasks while others are idle. The LLM integration provides the flexibility to resolve ambiguous suitability scores, leveraging contextual understanding to make more informed decisions based on subtle factors in agent capabilities or task needs that might not be captured by quantitative scores alone. For example, on a construction site with powerful winds, recently placed modules may need to be anchored to prevent them from becoming unmoored. Although the task lacks explicit physical requirements like in Table I , the LLM can infer that an agent with strong anchoring capability, weight, and size is going to be best suited for the task by leveraging contextual understanding of construction dynamics.
+
+IV-C Seamless Coordination and Path Planning
+
+The integration of CBS directly addresses the critical need for efficient and collision-free coordination on a busy construction site. Once tasks are assigned, CBS calculates optimal paths for agents to move to their work locations, considering the positions and planned movements of other agents and obstacles. This decentralized path planning component ensures that agents can operate in shared workspaces safely and efficiently, minimizing delays caused by congestion or collisions. CBS’s spatio-temporal path planning abilities are vital for automated construction on a busy work site with multiple active agents and obstacles.
+
+IV-D Adaptability
+
+Although construction planning often involves predetermined steps, the dynamic nature of a construction site (e.g., unexpected obstacles, changes in material distribution) requires adaptable agent behavior. HVBTA’s integrated approach, particularly with the LLM for nuanced suitability scoring and CBS for dynamic path re-planning, allows the system to delegate tasks efficiently while adapting to changing site conditions, task requirements, or the team of agents.
+
+We are confident that HVBTA will allow multi-agent construction teams to achieve efficient, conflict-free assignment and coordination. This has the potential to facilitate potentially faster and more accurate modular assembly.
+
+V Conclusion
+
+The increasing complexity of MAS and the structured demands of modular construction highlight the need for sophisticated task allocation and coordination frameworks. The Hybrid Voting-Based Task Assignment (HVBTA) framework draws inspiration from human reasoning to efficiently manage heterogeneous automated MAS. HVBTA manages this by rigorously defining agent Capability Profiles and Task Descriptions , leveraging a Suitability Matrix , employing robust voting mechanisms, using an LLM to resolve ambiguities, and incorporating CBS for efficient, collision-free spatio-temporal coordination. This framework is particularly well-suited for the challenges of modular construction and site preparation, enabling efficient task assignment and coordination of agents engaged in tasks like push manipulation and prefabricated assembly. Current work is focused on evaluating HVBTA’s performance across various simulated scenarios involving diverse robotic platforms and task complexities. Ultimately, HVBTA holds significant promise for enhancing the efficiency, safety, and scalability of multi-agent construction.

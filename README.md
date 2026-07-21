@@ -19,7 +19,7 @@ of the target model's reasoning.
 | Category | Tier | Content | Serves | Status |
 |---|---|---|---|---|
 | **cat1** — General Robot Data | A | ROS 2 / Nav2 / MoveIt 2 / ros2_control docs, simulator docs, interface definitions, robotics algorithms, planning-as-code | action functions, foundation for planning | **complete** |
-| **cat2** — HMRS Data | B | multi-robot decomposition / allocation / coordination text (RoCoBench, EMOS / Habitat-MAS, SMART-LLM, PARTNR) | task planning, allocation, per-robot planning | not started |
+| **cat2** — HMRS Data | B | multi-robot decomposition / allocation / coordination — HMRS frameworks, the Open-RMF multi-robot book, and 43 CC-BY research papers | task planning, allocation, per-robot planning | **complete** |
 | **cat3** — URDF & Robot Specs | D | physical capabilities: DOF, mass, joint limits, payload, reach — URDF/Xacro plus vendor manuals | embodiment-aware allocation, feasibility | **complete** |
 
 Tier letters follow the project's master corpus taxonomy; the absence of a
@@ -27,22 +27,20 @@ tier C is expected, not an error.
 
 ### Token budget
 
-The mandated mix is **cat1 60–70% · cat2 15–25% · cat3 10–15%**. With cat1
-and cat3 built, the remaining freedom is fully determined:
+The mandated mix is **cat1 60–70% · cat2 15–25% · cat3 10–15%**. All three
+categories are built and the mix is **verified at merge time**:
 
-| | Share | Tokens |
-|---|---|---|
-| cat1 (built) | 60–70% | **1 507 283** |
-| cat3 (built) | 10–15% | **236 604** |
-| **cat2 (to build)** | 15–25% | **410 000 – 581 000** |
-| Whole corpus | 100% | 2.15 M – 2.32 M |
+| Category | Tokens | Share | Target band | Verdict |
+|---|---:|---:|---:|---|
+| cat1 | 1 648 225 | 68.1% | 60–70% | OK |
+| cat2 | 518 597 | 21.4% | 15–25% | OK |
+| cat3 | 255 051 | 10.5% | 10–15% | OK |
+| **total** | **2 421 873** | 100% | | **CONFORME** |
 
-That cat2 window is the binding constraint for the next step: it is the
-only interval satisfying all three ratio bands at once. The dataset survey
-warns that clean multi-robot text is scarce, so **if cat2 falls short,
-shrink cat1 rather than pad cat2** — `cat1/build_corpus.py --budget-scale
-0.75` re-emits a smaller, still-balanced cat1 in one offline pass, with no
-re-collection.
+`merge_corpus.py` exits non-zero if any band is violated, so the check is
+usable in CI. The lever for rebalancing is `--budget-scale` on any
+category's `build_corpus.py`: it re-emits a smaller or larger corpus in one
+offline pass, with no re-collection.
 
 Tokens are counted with the **Qwen3 tokenizer** (`Qwen/Qwen3-8B`). If
 Hugging Face is unreachable the counter falls back to an approximation and
@@ -125,11 +123,20 @@ src/
     git_repo.py                  shallow/sparse clone + license cross-check
     dedup.py                     exact + near-duplicate (MinHash/LSH)
     secret_scrubber.py           API-key / credential redaction
+    text_clean.py                rst/md cleaning + long-document splitting
+    quota.py                     round-robin selection under a token cap
+    merge_corpus.py              MERGE entry point (the three categories)
   cat1/
     sources.py                   source catalogue (ONLY place with hard-coded repos)
     collect_docs.py              PHASE 1 entry point
     build_corpus.py              PHASE 2 entry point
     text_adapters.py             rst/md/code/interfaces/notebooks → DocCandidate
+  cat2/
+    sources.py                   repo catalogue + 43 verified arXiv papers
+    collect_hmrs.py              PHASE 1 entry point
+    fetch_arxiv.py               arXiv full text (HTML, PDF fallback)
+    build_corpus.py              PHASE 2 entry point
+    text_adapters.py             docs/code/papers → DocCandidate
   cat3/
     sources.py                   robot catalogue (ONLY place with hard-coded names)
     pdf_manifest.json            manual catalogue + recorded license decision
@@ -142,10 +149,15 @@ src/
     pdf_adapter.py               PDF path  → DocumentDraft
 
 data/<cat>/
-  raw/<kind>/<item_id>/          cat3: kind = urdf | manuals
-  raw/_cache/git/                clones, never part of the corpus
+  raw/<kind>/<item_id>/          cat1: docs|code|interfaces|notebooks
+                                 cat2: docs|code|papers
+                                 cat3: urdf|manuals
+  raw/_cache/git/                clones, never part of the corpus (gitignored)
   metadata/collection_metadata.jsonl
   clean/corpus_clean.jsonl + corpus_stats.md
+
+data/full/                       the merged deliverable
+  corpus_full.jsonl + corpus_full_stats.md
 
 logs/                            one Markdown report per run
 ```
@@ -164,10 +176,16 @@ recognition.)
 
 ### Extension principle
 
-Both paths produce the same intermediate `DocumentDraft`. Adding a source =
-adding an adapter, without touching the assembler or the output schema.
-Adding a category = creating `src/cat1/` on the same pattern;
-`src/common/` stays unchanged.
+Every path produces the same intermediate `DocumentDraft`. Adding a source =
+adding a catalogue entry; adding a *format* = adding an adapter, without
+touching the assembler or the output schema. Adding a category = creating
+`src/catN/` on the same pattern.
+
+`src/common/` grew as the categories were built — `git_repo`, `dedup`,
+`secret_scrubber`, `text_clean`, `quota` — but always by *promotion*: a
+module moves into `common/` the moment a second category needs it, never
+speculatively. Each promotion was checked byte-for-byte against the
+previous corpus.
 
 ### Imports
 
@@ -218,6 +236,14 @@ python3 src/cat1/build_corpus.py
 python3 src/cat1/build_corpus.py --budget-scale 0.75         # smaller corpus
 python3 src/cat1/build_corpus.py --dedup-threshold 0.9       # looser near-dup
 
+# ---- cat2 ----------------------------------------------------------
+# PHASE 1 — clone 6 repos + download 43 arXiv papers (~4 min, rate-limited)
+python3 src/cat2/collect_hmrs.py
+python3 src/cat2/collect_hmrs.py --only papers     # one of the two paths
+
+# PHASE 2 — corpus (fully offline)
+python3 src/cat2/build_corpus.py
+
 # ---- cat3 ----------------------------------------------------------
 # PHASE 1 — collection (needs network + git)
 python3 src/cat3/collect_pilot.py
@@ -234,9 +260,18 @@ python3 src/cat3/build_corpus.py --sources urdf,pdf --ocr
 # PHASE 2 — with an LLM writing the capability summaries
 python3 src/cat3/build_corpus.py --sources urdf,pdf --ocr --provider gemini
 
+# ---- merged deliverable ---------------------------------------------
+# Merges the three categories, cross-deduplicates, re-checks contamination
+# and VERIFIES the mandated mix. Exits non-zero if a band is violated.
+python3 src/common/merge_corpus.py
+python3 src/common/merge_corpus.py --shuffle       # deterministic shuffle
+
 # standalone contamination audit of an already-written corpus
-python3 src/common/contamination.py --corpus data/cat3/clean/corpus_clean.jsonl
+python3 src/common/contamination.py
 ```
+
+The merge never modifies the per-category corpora: they remain the source
+of truth, `data/full/` is a regenerable derivative.
 
 Every run writes a report to `logs/<timestamp>-<name>.md` listing successes,
 recorded exclusions, warnings and failures — with full tracebacks.
@@ -366,39 +401,90 @@ censored. Every redaction is counted and reported.
 
 | | |
 |---|---|
-| Source repositories | 25 (all licenses hand-verified) |
-| Corpus records | **876** |
-| Tokens | **1 507 283** (Qwen3, exact) |
-| Median / max document | 1 077 / 9 434 tokens |
+| Source repositories | 28 (all licenses hand-verified) |
+| Corpus records | **966** |
+| Tokens | **1 648 225** |
 | Contamination check | **passed** — 0 overlap |
-| Duplicates removed | 23 exact + 34 near |
+| Duplicates removed | 25 exact + 39 near |
 | Secrets redacted | 0 found (scrubber verified separately on known patterns) |
 
-Family mix: ros_docs 43% · sim_docs 24% · algorithms 14% · examples 11% ·
-planning_code 5% · interfaces 3%.
+Family mix: ros_docs · sim_docs · algorithms · examples · interfaces ·
+planning_code. Licenses: Apache-2.0, CC-BY-4.0, BSD-3/2-Clause, MIT — **no
+`no-license`, no `flagged:*`**.
 
-Licenses: Apache-2.0 419 · CC-BY-4.0 226 · BSD-3-Clause 144 · MIT 67 ·
-BSD-2-Clause 16. **No `no-license` and no `flagged:*` record.**
+Rejected after verification: ProgPrompt (NVIDIA License), slam_toolbox
+(LGPL-2.1), Instruct2Act / ros_tutorials / REP / gazebo_ros_pkgs (no LICENSE
+file). Two of the three planning-as-code sources named in the brief are
+therefore unusable; only Code-as-Policies survives.
 
-Sources rejected after verification: ProgPrompt (NVIDIA License),
-slam_toolbox (LGPL-2.1), Instruct2Act / ros_tutorials / REP / gazebo_ros_pkgs
-(no LICENSE file). Two of the three planning-as-code sources named in the
-brief are therefore unusable; only Code-as-Policies survives.
+### cat2 — HMRS Data (tier B)
+
+| | |
+|---|---|
+| Source repositories | 6 |
+| Research papers | **43**, every one CC-BY-4.0 |
+| Corpus records | **166** |
+| Tokens | **518 597** |
+| Contamination check | **passed** — 0 overlap |
+
+Three complementary paths, because no single one suffices — the project's
+dataset survey notes that RoCoBench is *"almost the only clean multi-robot
+text source"*:
+
+1. **HMRS frameworks** — EMOS/Habitat-MAS, RoCo/RoCoBench, PARTNR (all MIT).
+   These hold the negotiation prompts and task definitions.
+2. **The book** — *Programming Multiple Robots with ROS 2* (OSRF, CC-BY-4.0),
+   the only complete text on the subject, plus Open-RMF: heterogeneous fleet
+   management in production, where task allocation is a deployed system
+   rather than an experiment.
+3. **Research papers** — they carry the domain vocabulary (allocation,
+   coalition formation, decomposition, embodiment-aware) that neither code
+   nor documentation uses.
+
+**arXiv publishes each paper's license through its OAI-PMH interface**, so
+the barrier is enforceable rather than assumed. Of 148 relevant papers
+queried:
+
+| License | Count | Verdict |
+|---|---:|---|
+| arXiv default (`nonexclusive-distrib`) | 83 | **not redistributable** |
+| CC-BY-4.0 | 45 | conforming — 43 kept, 2 off-topic |
+| CC-BY-NC-ND-4.0 | 9 | outside allowlist |
+| CC-BY-NC-SA-4.0 | 4 | outside allowlist |
+| CC-BY-SA-4.0 | 4 | outside allowlist |
+| CC0-1.0 | 3 | outside allowlist |
+
+More than half of the relevant literature is simply not redistributable.
+CC-BY-SA and CC0 are excluded because the allowlist is `^CC-BY-\d\.\d$` —
+even though CC0 is *more* permissive than CC-BY, widening the allowlist is
+an explicit decision, not something to slip in. Potential gain: 7 papers.
+
+Rejected repositories: SMART-LLM and CoELA (no LICENSE file);
+`habitat-lab` was dropped for a different reason — EMOS is a full fork of
+it, so collecting both would have duplicated an entire simulator.
 
 ### cat3 — URDF & Robot Specs (tier D)
 
 | | |
 |---|---|
-| Catalogue | 52 robots |
-| Collected | 51 (1 excluded: TIAGo, CC-BY-NC-ND) |
-| Corpus records | **63** — 51 URDF + 12 PDF manuals |
-| Tokens | **236 604** (Qwen3, exact) |
+| Catalogue | 62 robots |
+| Collected | 61 (1 excluded: TIAGo, CC-BY-NC-ND) |
+| Corpus records | **73** — 61 URDF + 12 PDF manuals |
+| Tokens | **255 051** (Qwen3, exact) |
 | Contamination check | **passed** — 0 overlap on 63 documents |
 | OCR'd records | 2 (mean confidence 0.977 and 0.981) |
 | Outstanding | 1 — `unitree_h1`: the file on disk is an HTML page saved with a `.pdf` extension and must be re-downloaded |
 
-Class distribution: humanoid 12 · arm 12 · quadruped 10 · mobile
-manipulator 7 · biped 5 · drone 3 · wheeled 2 · dual-arm 1.
+Class distribution: arm 16 · humanoid 15 · quadruped 12 · mobile
+manipulator 7 · biped 5 · wheeled 3 · drone 3 · dual-arm 1.
+
+The ten robots added last were chosen for **morphological and vendor
+diversity, not volume**: a hydraulic quadruped (HyQ), a direct-drive one
+(Minitaur), a wheeled-legged biped (LimX), a heavy industrial arm (Fanuc),
+a low-cost open-source arm (SO-ARM100), and three humanoid makers absent
+from the catalogue. Forty-eight conforming modules were available; the
+near-duplicate families were deliberately skipped — 8 Kinova Jaco2 variants
+and 10 Universal Robots variants would have added tokens, not knowledge.
 
 Priority fleet (Unitree G1, Unitree Go2, AgileX Ranger Mini) is present on
 both the URDF and the manual path.
@@ -432,22 +518,31 @@ both the URDF and the manual path.
 
 ---
 
-## 9. Next steps
+## 9. Status and next steps
 
-1. **Build cat2** (HMRS, tier B) against the **410 k – 581 k token** window
-   in section 1, reusing `src/common/` unchanged. This is the scarce
-   category: RoCoBench, EMOS / Habitat-MAS, SMART-LLM and PARTNR are the
-   named candidates, and their licenses must be verified one by one before
-   anything is collected.
-2. Re-download the Unitree H1 manual (the current file is HTML).
-3. Propagate `robot_class` and `fleet_priority` from the cat3 collection
-   metadata into its corpus records — the brief asks to *tag the fleet
+**The dataset is complete.** All three categories are built, the mandated
+mix is verified, and `data/full/corpus_full.jsonl` is the deliverable:
+1 202 documents, 2 421 873 Qwen3 tokens, contamination check passed, zero
+non-allowlisted license outside the 13 hand-downloaded vendor manuals whose
+inclusion is recorded in `pdf_manifest.json`.
+
+What remains open, in order of value:
+
+1. **Re-download the Unitree H1 manual** — the file on disk is an HTML page
+   saved with a `.pdf` extension. It is the only outstanding collection
+   failure in the whole project.
+2. **Propagate `robot_class` and `fleet_priority`** from the cat3 collection
+   metadata into its corpus records. The brief asks to *tag the fleet
    robots*, and cat3 exists to serve embodiment-aware allocation. The
-   `extra=` hook in `assemble_record()` (already used by cat1) makes this a
-   small change.
-4. Run the cross-category deduplication pass once cat2 exists: `dedup.py`
-   currently runs within a category, and cat1/cat2 may overlap on
-   planning-as-code material.
-5. Decide the final mix and emit it: with all three categories built,
-   `--budget-scale` on cat1 is the lever that makes the three ratio bands
-   hold simultaneously.
+   `extra=` hook in `assemble_record()` — already used by cat1 and cat2 —
+   makes this a small change.
+3. **Decide on CC0 and CC-BY-SA.** Seven more research papers are available
+   under licenses that are arguably compatible (CC0 is strictly more
+   permissive than CC-BY), but the allowlist is `^CC-BY-\d\.\d$` and
+   widening it is an explicit decision.
+4. **An HTML adapter** would unlock Russ Tedrake's *Underactuated Robotics*
+   (BSD-3-Clause), a full textbook currently out of reach because the book
+   is published as raw HTML rather than Markdown.
+5. **Re-run the whole chain before training** so every `collected_at` is
+   consistent, and archive `data/full/corpus_full_stats.md` alongside the
+   trained model — it is the provenance record.

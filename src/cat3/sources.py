@@ -113,6 +113,14 @@ PILOT_CATALOG: List[RobotSource] = [
     _rd("unitree_go1", "Unitree Go1", "go1_description", "quadruped"),
     _rd("unitree_go2", "Unitree Go2", "go2_description", "quadruped", fleet_priority=True),
     _rd("solo", "Solo", "solo_description", "quadruped"),
+    # -- ajouts 2026-07-21 : actionnements réellement différents, pas des
+    #    variantes de ce qu'on a déjà (cf. note « diversité » en fin de fichier).
+    _rd("hyq", "HyQ (IIT)", "hyq_description", "quadruped",
+        notes="Quadrupède HYDRAULIQUE : efforts articulaires d'un tout autre "
+              "ordre de grandeur que les quadrupèdes électriques du catalogue."),
+    _rd("minitaur", "Minitaur (Ghost Robotics)", "minitaur_description", "quadruped",
+        notes="Pattes à entraînement direct, cinématique à 5 barres : "
+              "morphologie absente du reste du catalogue."),
 
     # ============ HUMANOÏDES (12) ============
     _rd("unitree_g1", "Unitree G1", "g1_description", "humanoid", fleet_priority=True),
@@ -126,6 +134,13 @@ PILOT_CATALOG: List[RobotSource] = [
     _rd("draco3", "Draco3 (Apptronik)", "draco3_description", "humanoid"),
     _rd("berkeley_humanoid", "Berkeley Humanoid", "berkeley_humanoid_description", "humanoid"),
     _rd("jvrc1", "JVRC-1 (AIST)", "jvrc_description", "humanoid"),
+    # -- ajouts 2026-07-21 : trois fabricants absents du catalogue.
+    _rd("bxi_elf2", "BXI Elf2", "elf2_description", "humanoid"),
+    _rd("fourier_n1", "Fourier N1", "n1_description", "humanoid",
+        notes="Famille Fourier GR, citée par l'enquête datasets (section 6.1)."),
+    _rd("sigmaban", "SigmaBan (Rhoban)", "sigmaban_description", "humanoid",
+        notes="Humanoïde de petite taille (RoboCup) : échelle et masses très "
+              "inférieures aux humanoïdes grandeur nature du catalogue."),
     # -- hors robot_descriptions.py : LICENSE lu directement -> BSD-3-Clause
     _git("robotera_star1", "RobotEra STAR1", "humanoid",
          repo_url="https://github.com/roboterax/models.git",
@@ -149,8 +164,14 @@ PILOT_CATALOG: List[RobotSource] = [
          notes="Xacro auto-contenu (aucune dépendance externe). LICENSE "
                "Apache-2.0 vérifié par lecture du fichier au root du dépôt."),
 
-    # ============ MOBILE À ROUES (1 + Ranger Mini ci-dessous) ============
+    # ============ MOBILE À ROUES (2 + Ranger Mini ci-dessous) ============
     _rd("rsk_omnidirectional", "RSK Omnidirectional", "rsk_description", "wheeled"),
+    # -- ajout 2026-07-21 : la classe « wheeled » n'avait que 2 entrées, la
+    #    plus faible du catalogue. Un robot à jambes ROULANTES est en outre
+    #    une morphologie hybride qu'aucune autre entrée ne couvre.
+    _rd("limx_wl_p311d", "LimX Dynamics WL P311D", "wl_p311d_description", "wheeled",
+        notes="Bipède à roues (wheeled-legged) : locomotion hybride, "
+              "pertinente pour l'allocation embodiment-aware."),
 
     # ============ BRAS MANIPULATEURS (12) ============
     _rd("franka_fer", "Franka FER", "fer_description", "arm"),
@@ -165,6 +186,19 @@ PILOT_CATALOG: List[RobotSource] = [
     _rd("xarm7", "UFACTORY xArm7", "xarm7_description", "arm"),
     _rd("agilex_piper", "AgileX PiPER", "piper_description", "arm"),
     _rd("unitree_z1", "Unitree Z1", "z1_description", "arm"),
+    # -- ajouts 2026-07-21 : quatre constructeurs et quatre gammes de charge
+    #    utile absents. Les variantes proches de bras déjà présents (8 Jaco2,
+    #    10 UR, 5 OMY) ont été volontairement ÉCARTÉES : elles ajouteraient du
+    #    volume quasi dupliqué, pas de la diversité.
+    _rd("comau_edo", "Comau e.DO", "edo_description", "arm"),
+    _rd("fanuc_m710ic", "Fanuc M-710iC", "fanuc_m710ic_description", "arm",
+        notes="Bras industriel lourd : Fanuc, premier fabricant mondial, "
+              "n'était représenté par aucune entrée."),
+    _rd("flexiv_rizon4", "Flexiv Rizon 4", "rizon4_description", "arm",
+        notes="Bras à retour d'effort (contrôle en impédance)."),
+    _rd("so_arm100", "SO-ARM100 (The Robot Studio)", "so_arm100_description", "arm",
+        notes="Bras open-source à bas coût : ordre de grandeur d'efforts et "
+              "de masses très différent des bras industriels du catalogue."),
 
     # ============ MANIPULATEURS MOBILES (7) ============
     _rd("fetch", "Fetch", "fetch_description", "mobile_manipulator"),
