@@ -1,28 +1,25 @@
-# Corpus catégorie 3 — statistiques
+# Category 3 corpus — statistics
 
-- Généré le : 2026-07-21T10:46:41.925895+00:00
-- Racine projet : `/home/tiago/HermesPerso/HermesLLM`
-- Enregistrements : 73
-- Tokens totaux : 255051 (Qwen3 exact)
-- Contrôle de contamination : PASSÉ — 0 recoupement sur 73 documents examinés (3 règles sur 1 scénario(s) : subway_station_fire)
-- Rapport d'exécution : `logs/20260721-104427-cat3-build-corpus.md`
+- Generated: 2026-07-21T12:35:17.663562+00:00
+- Project root: `/home/tiago/HermesPerso/HermesLLM`
+- Records: 73
+- Total tokens: 255012 (Qwen3 exact)
+- Contamination check: PASSED — 0 overlap over 73 documents examined (3 rules over 1 scenario(s): subway_station_fire)
+- Run report: `logs/20260721-123258-cat3-build-corpus.md`
 
-## Par type de source
-- pdf_manual : 12 enregistrements, 84414 tokens (moyenne 7034)
-- urdf : 61 enregistrements, 170637 tokens (moyenne 2797)
+## Per source type
+- pdf_manual: 12 records, 84402 tokens (mean 7033)
+- urdf: 61 records, 170610 tokens (mean 2796)
 
-## Par licence
-- Apache-2.0 : 18
-- BSD-2-Clause : 4
-- BSD-3-Clause : 28
-- MIT : 10
-- no-license : 13  ← hors allowlist, inclusion sur décision explicite
+## Per license
+- Apache-2.0: 18
+- BSD-2-Clause: 4
+- BSD-3-Clause: 28
+- MIT: 10
+- no-license: 13  <- outside allowlist, inclusion on an explicit decision
 
-## Qualité d'extraction
-- Extraction native : 71
-- Texte issu d'OCR : 2 (champ `ocr: true`, filtrable)
-  - `cat3-unitree_g1-pdf_manual` — confiance moyenne 0.977
-  - `cat3-unitree_b2-pdf_manual` — confiance moyenne 0.9813
-
-## Ignorés (1)
-- `unitree_h1` (pdf_manual) : ECHEC : h1_manual.pdf n'est pas un PDF : contenu réel détecté = HTML. Le fichier doit être re-téléchargé depuis la source officielle.
+## Extraction quality
+- Native extraction: 71
+- Text from OCR: 2 (`ocr: true` field, filterable)
+  - `cat3-unitree_g1-pdf_manual` — mean confidence 0.977
+  - `cat3-unitree_b2-pdf_manual` — mean confidence 0.9813

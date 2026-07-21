@@ -1,26 +1,27 @@
 """
-Fusion des trois catégories en un corpus unique -- livrable final.
+Merge the three categories into a single corpus -- final deliverable.
 
-Les corpus par catégorie restent la SOURCE DE VÉRITÉ : ce module ne les
-modifie jamais, il produit un dérivé régénérable dans `data/full/`. Toute
-correction se fait dans la catégorie concernée, puis on refusionne.
+The per-category corpora remain the SOURCE OF TRUTH: this module never
+modifies them, it produces a regenerable derivative in `data/full/`. Any
+correction is made in the category concerned, then the merge is re-run.
 
-La fusion n'est pas une simple concaténation. Elle applique les contrôles
-qu'aucune catégorie ne peut faire seule :
+The merge is not a plain concatenation. It applies the checks that no
+single category can perform on its own:
 
-  1. unicité des identifiants À TRAVERS les catégories ;
-  2. déduplication CROISÉE -- cat1 et cat2 puisent toutes deux dans
-     l'écosystème ROS, rien ne garantissait qu'un document n'apparaisse pas
-     des deux côtés ;
-  3. contamination, repassée sur le corpus assemblé (une ceinture de plus :
-     chaque catégorie l'a déjà fait, mais le livrable doit être vérifiable
-     seul) ;
-  4. vérification du MÉLANGE imposé par les consignes
-     (cat1 60-70 % · cat2 15-25 % · cat3 10-15 %), qui n'a de sens qu'ici.
+  1. identifier uniqueness ACROSS categories;
+  2. CROSS-category deduplication -- cat1 and cat2 both draw from the ROS
+     ecosystem, and nothing guaranteed a document would not appear on both
+     sides;
+  3. contamination, re-run over the assembled corpus (one more belt: each
+     category already checked, but the deliverable must be verifiable on
+     its own);
+  4. verification of the MIX mandated by the brief
+     (cat1 60-70% · cat2 15-25% · cat3 10-15%), which only means anything
+     at this level.
 
-Lançable depuis n'importe quel répertoire :
-    python3 /chemin/vers/src/common/merge_corpus.py
-    python3 .../merge_corpus.py --shuffle          # mélange déterministe
+Runnable from any directory:
+    python3 /path/to/src/common/merge_corpus.py
+    python3 .../merge_corpus.py --shuffle          # deterministic shuffle
     python3 .../merge_corpus.py --no-cross-dedup
 """
 
@@ -33,7 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-if __name__ == "__main__":  # exécution directe : src/ doit être dans sys.path
+if __name__ == "__main__":  # direct execution: src/ must be on sys.path
     import sys as _sys
     _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -43,7 +44,7 @@ from common.corpus_assembler import validate_record
 from common.dedup import DuplicateIndex
 from common.run_report import RunReport
 
-# Bandes imposées par les consignes, par catégorie.
+# Bands mandated by the brief, per category.
 TARGET_MIX: Dict[str, Tuple[float, float]] = {
     "cat1": (0.60, 0.70),
     "cat2": (0.15, 0.25),
@@ -70,7 +71,7 @@ def check_mix(by_cat_tokens: Counter) -> Tuple[bool, List[str]]:
         tok = by_cat_tokens.get(cat, 0)
         share = tok / total if total else 0.0
         lo, hi = TARGET_MIX[cat]
-        verdict = "OK" if lo <= share <= hi else "HORS BANDE"
+        verdict = "OK" if lo <= share <= hi else "OUT OF BAND"
         if verdict != "OK":
             ok = False
         lines.append(f"| {cat} | {tok:,} | {share*100:.1f} % | "
@@ -91,29 +92,29 @@ def write_stats(rows: List[dict], *, by_cat: Counter, by_cat_tokens: Counter,
         by_license[r["license"]] += 1
         by_source_type[r.get("source_type", "?")] += 1
 
-    L = ["# Corpus complet RoboMix — statistiques", ""]
-    L.append(f"- Généré le : {datetime.now(timezone.utc).isoformat()}")
-    L.append(f"- Racine projet : `{paths.PROJECT_ROOT}`")
-    L.append(f"- Enregistrements : {len(rows)}")
-    L.append(f"- Tokens totaux : {total_tokens:,} (Qwen3)")
-    L.append(f"- Contrôle de contamination : {contamination_summary}")
-    L.append(f"- Déduplication croisée : {dedup_desc}")
+    L = ["# RoboMix full corpus — statistics", ""]
+    L.append(f"- Generated: {datetime.now(timezone.utc).isoformat()}")
+    L.append(f"- Project root: `{paths.PROJECT_ROOT}`")
+    L.append(f"- Records: {len(rows)}")
+    L.append(f"- Total tokens: {total_tokens:,} (Qwen3)")
+    L.append(f"- Contamination check: {contamination_summary}")
+    L.append(f"- Cross-category deduplication: {dedup_desc}")
     if report_path is not None:
-        L.append(f"- Rapport d'exécution : `{paths.to_relative(report_path)}`")
+        L.append(f"- Run report: `{paths.to_relative(report_path)}`")
     L.append("")
 
-    L.append("## Mélange par catégorie (exigence des consignes)")
+    L.append("## Mix per category (requirement of the brief)")
     L.append("")
-    L.append("| Catégorie | Tokens | Part | Bande visée | Verdict |")
+    L.append("| Category | Tokens | Share | Target band | Verdict |")
     L.append("|---|---:|---:|---:|---|")
     L.extend(mix_lines)
     L.append("")
-    L.append(f"**Mélange global : {'CONFORME' if mix_ok else 'NON CONFORME'}**")
+    L.append(f"**Overall mix: {'COMPLIANT' if mix_ok else 'NON-COMPLIANT'}**")
     L.append("")
 
-    L.append("## Documents par catégorie")
+    L.append("## Documents per category")
     L.append("")
-    L.append("| Catégorie | Documents | Tokens | Moyenne |")
+    L.append("| Category | Documents | Tokens | Mean |")
     L.append("|---|---:|---:|---:|")
     for cat in ("cat1", "cat2", "cat3"):
         n = by_cat.get(cat, 0)
@@ -123,46 +124,43 @@ def write_stats(rows: List[dict], *, by_cat: Counter, by_cat_tokens: Counter,
              f"**{total_tokens // len(rows) if rows else 0}** |")
     L.append("")
 
-    L.append("## Par tier")
+    L.append("## Per tier")
     for tier in sorted(by_tier):
-        L.append(f"- {tier} : {by_tier[tier]:,} tokens")
+        L.append(f"- {tier}: {by_tier[tier]:,} tokens")
     L.append("")
 
-    L.append("## Par licence")
+    L.append("## Per license")
     L.append("")
-    L.append("| Licence | Documents |")
+    L.append("| License | Documents |")
     L.append("|---|---:|")
     for lic in sorted(by_license, key=lambda x: -by_license[x]):
-        flag = "  ← hors allowlist, inclusion sur décision tracée" \
+        flag = "  <- outside allowlist, inclusion on a recorded decision" \
             if lic == "no-license" or lic.startswith("flagged:") else ""
         L.append(f"| {lic}{flag} | {by_license[lic]} |")
     L.append("")
 
-    L.append("## Par nature de source")
+    L.append("## Per source nature")
     for st in sorted(by_source_type, key=lambda x: -by_source_type[x]):
-        L.append(f"- {st} : {by_source_type[st]} documents")
+        L.append(f"- {st}: {by_source_type[st]} documents")
     L.append("")
 
     if dropped:
-        L.append("## Écartés à la fusion")
+        L.append("## Dropped at merge time")
         L.append("")
-        L.append("| Motif | Nombre |")
+        L.append("| Reason | Count |")
         L.append("|---|---:|")
         for reason, n in dropped.most_common():
             L.append(f"| {reason} | {n} |")
         L.append("")
 
-    L.append("## Régénération")
+    L.append("## Regeneration")
     L.append("")
     L.append("```bash")
-    L.append("python3 src/cat1/build_corpus.py")
-    L.append("python3 src/cat2/build_corpus.py")
-    L.append("python3 src/cat3/build_corpus.py --sources urdf,pdf --ocr")
-    L.append("python3 src/common/merge_corpus.py")
+    L.append("./rebuild_dataset.sh          # everything, in order")
     L.append("```")
     L.append("")
-    L.append("Les corpus par catégorie restent la source de vérité ; ce "
-             "fichier en est un dérivé régénérable.")
+    L.append("The per-category corpora remain the source of truth; this "
+             "file is a regenerable derivative.")
 
     paths.full_stats_path().write_text("\n".join(L) + "\n", encoding="utf-8")
 
@@ -171,22 +169,22 @@ def main() -> None:
     import argparse
 
     ap = argparse.ArgumentParser(
-        description="Fusion des corpus cat1/cat2/cat3 en un corpus unique")
+        description="Merge the cat1/cat2/cat3 corpora into a single corpus")
     ap.add_argument("--shuffle", action="store_true",
-                    help="mélange déterministe (graine fixe) des enregistrements")
+                    help="deterministic shuffle (fixed seed) of the records")
     ap.add_argument("--no-cross-dedup", action="store_true",
-                    help="désactiver la déduplication entre catégories")
+                    help="disable deduplication between categories")
     ap.add_argument("--dedup-threshold", type=float, default=0.85)
     args = ap.parse_args()
 
-    report = RunReport("merge-corpus", title="Corpus complet — fusion")
+    report = RunReport("merge-corpus", title="Full corpus — merge")
     checker = ContaminationChecker.from_config()
     index = DuplicateIndex(threshold=args.dedup_threshold)
 
-    print(f"Racine projet : {paths.PROJECT_ROOT}")
+    print(f"Project root  : {paths.PROJECT_ROOT}")
     print(f"Contamination : {checker.describe()}")
-    print(f"Dédup croisée : "
-          f"{'désactivée' if args.no_cross_dedup else index.describe()}\n")
+    print(f"Cross-dedup   : "
+          f"{'disabled' if args.no_cross_dedup else index.describe()}\n")
 
     kept: List[dict] = []
     seen_ids: set = set()
@@ -197,8 +195,8 @@ def main() -> None:
     for category in ("cat1", "cat2", "cat3"):
         rows = load_category(category)
         if not rows:
-            print(f"  [{category}] corpus absent — catégorie ignorée")
-            report.warn(category, reason=f"corpus absent : "
+            print(f"  [{category}] corpus missing — category skipped")
+            report.warn(category, reason=f"corpus missing: "
                                          f"{paths.corpus_path(category)}")
             continue
 
@@ -207,17 +205,17 @@ def main() -> None:
             try:
                 validate_record(rec)
             except ValueError as exc:
-                dropped["enregistrement invalide"] += 1
+                dropped["invalid record"] += 1
                 report.fail(rec.get("id", "?"), kind=category, reason=str(exc))
                 continue
 
             if rec["id"] in seen_ids:
-                # Deux catégories ne doivent jamais produire le même id : ce
-                # serait une collision de nommage, pas un doublon de contenu.
-                dropped["identifiant en collision"] += 1
+                # Two categories must never produce the same id: that would
+                # be a naming collision, not a content duplicate.
+                dropped["colliding identifier"] += 1
                 report.fail(rec["id"], kind=category,
-                            reason="identifiant déjà présent dans une autre "
-                                   "catégorie — collision de nommage")
+                            reason="identifier already present in another "
+                                   "category — naming collision")
                 continue
 
             verdict = checker.check(rec["text"])
@@ -230,10 +228,10 @@ def main() -> None:
             if not args.no_cross_dedup:
                 dup = index.check(rec["text"])
                 if dup.is_duplicate:
-                    dropped[f"doublon inter-catégories ({dup.kind})"] += 1
+                    dropped[f"cross-category duplicate ({dup.kind})"] += 1
                     report.skip(rec["id"], kind=category,
-                                reason=f"{dup.describe()} — déjà présent dans "
-                                       f"le corpus fusionné")
+                                reason=f"{dup.describe()} — already present "
+                                       f"in the merged corpus")
                     continue
                 index.add(rec["id"], rec["text"])
 
@@ -243,14 +241,14 @@ def main() -> None:
             by_cat_tokens[category] += rec["n_tokens"]
             n_kept += 1
 
-        print(f"  [{category}] {len(rows)} lus -> {n_kept} retenus "
+        print(f"  [{category}] {len(rows)} read -> {n_kept} kept "
               f"({by_cat_tokens[category]:,} tokens)")
-        report.ok(category, detail=f"{n_kept}/{len(rows)} retenus, "
+        report.ok(category, detail=f"{n_kept}/{len(rows)} kept, "
                                    f"{by_cat_tokens[category]:,} tokens")
 
     if args.shuffle:
-        # Graine fixe : deux fusions donnent le même ordre, sinon le corpus
-        # n'est plus reproductible.
+        # Fixed seed: two merges give the same order, otherwise the corpus
+        # is no longer reproducible.
         random.Random(SHUFFLE_SEED).shuffle(kept)
 
     out = paths.full_corpus_path()
@@ -262,20 +260,20 @@ def main() -> None:
     mix_ok, mix_lines = check_mix(by_cat_tokens)
     total_tokens = sum(by_cat_tokens.values())
     contamination_summary = (
-        f"PASSÉ — 0 recoupement sur {len(kept)} documents"
+        f"PASSED — 0 overlap over {len(kept)} documents"
         if not dropped["contamination"]
-        else f"{dropped['contamination']} document(s) exclu(s)")
-    n_cross = sum(v for k, v in dropped.items() if k.startswith("doublon"))
-    dedup_desc = ("désactivée" if args.no_cross_dedup
-                  else f"{n_cross} doublon(s) inter-catégories retiré(s) "
+        else f"{dropped['contamination']} document(s) excluded")
+    n_cross = sum(v for k, v in dropped.items() if k.startswith("cross-category"))
+    dedup_desc = ("disabled" if args.no_cross_dedup
+                  else f"{n_cross} cross-category duplicate(s) removed "
                        f"({index.describe()})")
 
-    report.info("Tokens totaux", f"{total_tokens:,}")
-    report.info("Mélange", "CONFORME" if mix_ok else "NON CONFORME")
+    report.info("Total tokens", f"{total_tokens:,}")
+    report.info("Mix", "COMPLIANT" if mix_ok else "NON-COMPLIANT")
     report.info("Contamination", contamination_summary)
-    report.info("Déduplication croisée", dedup_desc)
-    report.info("Ordre", "mélangé (graine fixe)" if args.shuffle
-                else "par catégorie")
+    report.info("Cross-category deduplication", dedup_desc)
+    report.info("Ordering", "shuffled (fixed seed)" if args.shuffle
+                else "by category")
     report_path = report.write()
 
     write_stats(kept, by_cat=by_cat, by_cat_tokens=by_cat_tokens,
@@ -284,17 +282,17 @@ def main() -> None:
                 contamination_summary=contamination_summary,
                 report_path=report_path)
 
-    print(f"\nCorpus complet : {out}")
-    print(f"  {len(kept)} enregistrements, {total_tokens:,} tokens")
+    print(f"\nFull corpus : {out}")
+    print(f"  {len(kept)} records, {total_tokens:,} tokens")
     for line in mix_lines:
         print("   ", line)
-    print(f"  mélange : {'CONFORME' if mix_ok else 'NON CONFORME'}")
+    print(f"  mix           : {'COMPLIANT' if mix_ok else 'NON-COMPLIANT'}")
     print(f"  contamination : {contamination_summary}")
-    print(f"  dédup croisée : {dedup_desc}")
+    print(f"  cross-dedup   : {dedup_desc}")
     if dropped:
-        print(f"  écartés : {dict(dropped)}")
+        print(f"  dropped : {dict(dropped)}")
     print(f"  stats   : {paths.full_stats_path()}")
-    print(f"  rapport : {report_path}")
+    print(f"  report  : {report_path}")
 
     raise SystemExit(0 if mix_ok else 1)
 

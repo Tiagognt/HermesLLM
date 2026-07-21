@@ -1,19 +1,19 @@
 """
-Récupération via la bibliothèque robot_descriptions.py.
+Fetch through the robot_descriptions.py library.
 
-Cette bibliothèque gère elle-même le clone, le cache local du dépôt
-source, et le rattachement de la licence déclarée (license_spdx) + du
-dépôt d'origine (avec commit figé, pour la reproductibilité).
+The library handles cloning, local caching of the source repository, and
+attaches the declared license (license_spdx) together with the origin
+repository (with a pinned commit, for reproducibility).
 
-En revanche elle N'expose PAS toujours un URDF prêt à l'emploi : environ
-un module sur six ne fournit qu'un XACRO_PATH (Franka FER/FR3, UR5e/UR10e,
-Kinova Gen3, xArm6/7...). Pour ces cas, on rend nous-mêmes le Xacro en
-URDF via xacro_render.py, en transmettant les XACRO_ARGS que la
-bibliothèque déclare (ex. UR : {"ur_type": "ur5e", "name": "ur5e"} ;
-sans eux, xacro échoue avec "Undefined substitution argument"). Le
-résultat rendu est mis en cache à côté du Xacro source, de sorte que
-FetchResult.urdf_path pointe toujours vers un URDF valide -- le reste du
-pipeline (collect_pilot) n'a donc pas à savoir si un rendu a eu lieu.
+It does NOT always expose a ready-to-use URDF, however: roughly one module
+in six only provides a XACRO_PATH (Franka FER/FR3, UR5e/UR10e, Kinova Gen3,
+xArm6/7...). For those we render the Xacro ourselves through
+xacro_render.py, forwarding the XACRO_ARGS the library declares (e.g. for
+UR: {"ur_type": "ur5e", "name": "ur5e"}; without them xacro fails with
+"Undefined substitution argument"). The rendered result is cached next to
+the source Xacro so that FetchResult.urdf_path always points at a valid
+URDF -- the rest of the pipeline (collect_pilot) therefore never has to
+know whether a rendering step took place.
 """
 
 import importlib
@@ -30,7 +30,7 @@ from cat3.xacro_render import render_xacro_to_urdf
 @dataclass
 class FetchResult:
     urdf_path: Path
-    xacro_path: Optional[Path]     # renseigné seulement si la source est un Xacro
+    xacro_path: Optional[Path]     # set only when the source is a Xacro
     repo_url: str
     repo_commit: str
     license_spdx: Optional[str]
@@ -41,16 +41,16 @@ class FetchResult:
 def _render_xacro_to_cached_urdf(mod, description_module: str,
                                  xacro_path: Path) -> Path:
     """
-    Rend le Xacro d'un module robot_descriptions en URDF et écrit le
-    résultat dans le cache, à côté du Xacro source. Retourne le chemin de
-    l'URDF rendu.
+    Render the Xacro of a robot_descriptions module into URDF and write the
+    result to the cache, next to the source Xacro. Returns the path of the
+    rendered URDF.
 
-    Le nom du fichier rendu inclut le nom du module : deux modules peuvent
-    partager le même Xacro avec des XACRO_ARGS différents (ex. UR5e et
-    UR10e partagent ur.urdf.xacro) et ne doivent donc pas s'écraser.
+    The rendered filename includes the module name: two modules can share
+    the same Xacro with different XACRO_ARGS (e.g. UR5e and UR10e both use
+    ur.urdf.xacro) and must therefore not overwrite each other.
     """
     repo_root = Path(mod.REPOSITORY_PATH)
-    xacro_args = getattr(mod, "XACRO_ARGS", {})  # {} => rendu par défaut
+    xacro_args = getattr(mod, "XACRO_ARGS", {})  # {} => default rendering
 
     urdf_text = render_xacro_to_urdf(
         xacro_path, repo_root, xacro_args=xacro_args
@@ -63,8 +63,8 @@ def _render_xacro_to_cached_urdf(mod, description_module: str,
 
 def fetch_via_robot_descriptions(description_module: str) -> FetchResult:
     """
-    description_module: nom du module tel qu'utilisé par robot_descriptions,
-    ex. "g1_description", "go2_description".
+    description_module: module name as used by robot_descriptions,
+    e.g. "g1_description", "go2_description".
     """
     mod = importlib.import_module(f"robot_descriptions.{description_module}")
 
@@ -73,17 +73,17 @@ def fetch_via_robot_descriptions(description_module: str) -> FetchResult:
     xacro_path = Path(xacro_path_raw) if xacro_path_raw else None
 
     if urdf_path_raw:
-        # Cas courant : un URDF pré-rendu est disponible directement.
+        # Common case: a pre-rendered URDF is directly available.
         urdf_path = Path(urdf_path_raw)
     elif xacro_path is not None:
-        # Pas d'URDF prêt : on rend le Xacro nous-mêmes (avec XACRO_ARGS).
+        # No ready URDF: render the Xacro ourselves (with XACRO_ARGS).
         urdf_path = _render_xacro_to_cached_urdf(
             mod, description_module, xacro_path
         )
     else:
         raise RuntimeError(
-            f"{description_module} n'expose ni URDF_PATH ni XACRO_PATH "
-            f"-- impossible d'en tirer un URDF."
+            f"{description_module} exposes neither URDF_PATH nor XACRO_PATH "
+            f"-- no URDF can be derived from it."
         )
 
     meta = DESCRIPTIONS[description_module]

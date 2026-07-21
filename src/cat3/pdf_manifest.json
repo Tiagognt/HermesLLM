@@ -1,33 +1,154 @@
 {
-  "_comment": "Manifeste des manuels PDF (cat3). Emplacement : src/cat3/pdf_manifest.json (c'est de la CONFIGURATION, elle vit avec le code). Deposez les PDF dans data/cat3/raw/manuals/<robot_id>/ -- n'importe quel nom de fichier .pdf est accepte, inutile de renommer. target_filename n'est plus qu'une preference si plusieurs PDF sont presents dans le meme dossier.",
-  "_licence": "license_spdx=null => classe 'no-license'. Par defaut un tel document est EXCLU. Il n'est inclus que si allow_no_license=true sur l'entree (decision par robot, tracee ici) ou si build_corpus.py est lance avec --allow-proprietary-pdf (decision globale, NON tracee dans un fichier : a eviter).",
+  "_comment": "PDF manual manifest (cat3). Location: src/cat3/pdf_manifest.json (this is CONFIGURATION, it lives with the code). Drop the PDFs into data/cat3/raw/manuals/<robot_id>/ -- any .pdf filename is accepted, no renaming needed. target_filename is only a preference when several PDFs sit in the same folder.",
   "_decision": {
     "date": "2026-07-21",
-    "objet": "Inclusion des manuels constructeur dans le corpus cat3",
-    "decision": "allow_no_license=true est fige entree par entree dans ce fichier pour les manuels TELECHARGES MANUELLEMENT par l'utilisateur.",
-    "portee": "Uniquement les entrees de ce manifeste dont allow_no_license=true. N'elargit ni l'allowlist de license_utils.py, ni la voie URDF, ni aucune autre categorie.",
-    "justification": [
-      "Les consignes autorisent explicitement cette voie pour cat3 : 'Vendor manuals (Unitree / AgileX): do NOT scrape or redistribute -- download the PDF, extract text locally, internal-training use only.'",
-      "Aucun telechargement automatise, aucun contournement d'authentification : les fichiers sont deposes a la main par l'utilisateur.",
-      "Usage strictement interne (entrainement DAPT), pas de redistribution du corpus.",
-      "Exception prevue par les regles du projet (CLAUDE.md, barriere licence) pour les PDF telecharges manuellement."
+    "subject": "Inclusion of vendor manuals in the cat3 corpus",
+    "decision": "allow_no_license=true is frozen entry by entry in this file for the manuals MANUALLY DOWNLOADED by the user.",
+    "scope": "Only the entries of this manifest whose allow_no_license is true. It widens neither the license_utils.py allowlist, nor the URDF path, nor any other category.",
+    "rationale": [
+      "The brief explicitly authorises this route for cat3: 'Vendor manuals (Unitree / AgileX): do NOT scrape or redistribute -- download the PDF, extract text locally, internal-training use only.'",
+      "No automated download, no authentication bypass: the files are placed by hand by the user.",
+      "Strictly internal use (DAPT training), no redistribution of the corpus.",
+      "Exception foreseen by the project rules (license barrier) for manually downloaded PDFs."
     ],
-    "consequence": "Ces documents restent tagges license='no-license' dans corpus_clean.jsonl : ils sont filtrables a tout moment par le consommateur du corpus. La decision est reproductible sans passer d'option en ligne de commande, contrairement a --allow-proprietary-pdf.",
-    "reversibilite": "Repasser allow_no_license a false sur les entrees concernees, puis relancer build_corpus.py : les manuels sortent du corpus et sont journalises comme ecartes."
+    "consequence": "These documents stay tagged license='no-license' in corpus_clean.jsonl: the corpus consumer can filter them out at any time. The decision is reproducible without passing a command-line option, unlike --allow-proprietary-pdf.",
+    "reversibility": "Set allow_no_license back to false on the entries concerned, then re-run build_corpus.py: the manuals leave the corpus and are logged as set aside."
   },
   "manuals": [
-    {"robot_id": "unitree_g1", "display_name": "Unitree G1", "maker": "Unitree", "document": "G1 user manual / datasheet", "url": "https://www.unitree.com/g1", "license_note": "Proprietaire (c) Unitree -- hors allowlist", "license_spdx": null, "allow_no_license": true, "target_filename": "g1_manual.pdf", "note": "PDF scanne (1 page image, aucune couche texte) : necessite --ocr."},
-    {"robot_id": "unitree_go2", "display_name": "Unitree Go2", "maker": "Unitree", "document": "Go2 user manual", "url": "https://www.unitree.com/go2", "license_note": "Proprietaire (c) Unitree", "license_spdx": null, "allow_no_license": true, "target_filename": "go2_manual.pdf"},
-    {"robot_id": "unitree_h1", "display_name": "Unitree H1", "maker": "Unitree", "document": "H1 datasheet", "url": "https://www.unitree.com/h1", "license_note": "Proprietaire (c) Unitree", "license_spdx": null, "allow_no_license": true, "target_filename": "h1_manual.pdf", "note": "ATTENTION : le fichier present sur le disque n'est pas un PDF mais une page HTML enregistree avec l'extension .pdf. A RE-TELECHARGER depuis la source ; l'OCR ne peut rien pour lui."},
-    {"robot_id": "unitree_b2", "display_name": "Unitree B2", "maker": "Unitree", "document": "B2 datasheet", "url": "https://www.unitree.com/b2", "license_note": "Proprietaire (c) Unitree", "license_spdx": null, "allow_no_license": true, "target_filename": "b2_manual.pdf", "note": "PDF scanne (23 pages images) : necessite --ocr."},
-    {"robot_id": "unitree_z1", "display_name": "Unitree Z1", "maker": "Unitree", "document": "Z1 manipulator manual", "url": "https://www.unitree.com/z1", "license_note": "Proprietaire (c) Unitree", "license_spdx": null, "allow_no_license": true, "target_filename": "z1_manual.pdf"},
-    {"robot_id": "ur5e", "display_name": "Universal Robots UR5e", "maker": "Universal Robots", "document": "UR5e user manual", "url": "https://www.universal-robots.com/download/", "license_note": "Proprietaire (c) UR -- telechargement public, redistribution restreinte", "license_spdx": null, "allow_no_license": true, "target_filename": "ur5e_manual.pdf"},
-    {"robot_id": "kinova_gen3", "display_name": "Kinova Gen3", "maker": "Kinova", "document": "Gen3 user guide", "url": "https://www.kinovarobotics.com/resources", "license_note": "Proprietaire (c) Kinova", "license_spdx": null, "allow_no_license": true, "target_filename": "gen3_manual.pdf"},
-    {"robot_id": "franka_fr3", "display_name": "Franka FR3", "maker": "Franka Robotics", "document": "FR3 datasheet / product manual", "url": "https://franka.de/", "license_note": "Proprietaire (c) Franka Robotics", "license_spdx": null, "allow_no_license": true, "target_filename": "fr3_manual.pdf"},
-    {"robot_id": "anymal_d", "display_name": "ANYmal D", "maker": "ANYbotics", "document": "ANYmal technical manual", "url": "https://www.anybotics.com/anymal/", "license_note": "Proprietaire (c) ANYbotics", "license_spdx": null, "allow_no_license": true, "target_filename": "technical_manual.pdf"},
-    {"robot_id": "agilex_piper", "display_name": "AgileX PiPER", "maker": "AgileX", "document": "PiPER user manual", "url": "https://www.agilex.ai/", "license_note": "Proprietaire (c) AgileX", "license_spdx": null, "allow_no_license": true, "target_filename": "piper_manual.pdf"},
-    {"robot_id": "agilex_ranger_mini_v3", "display_name": "AgileX Ranger Mini 3.0", "maker": "AgileX", "document": "Ranger Mini 3.0 user manual", "url": "https://www.agilex.ai/", "license_note": "Proprietaire (c) AgileX -- coherent avec le no-license de l'URDF", "license_spdx": null, "allow_no_license": true, "target_filename": "ranger_mini3_manual.pdf"},
-    {"robot_id": "skydio_x2", "display_name": "Skydio X2", "maker": "Skydio", "document": "X2 datasheet", "url": "https://www.skydio.com/skydio-x2", "license_note": "Proprietaire (c) Skydio", "license_spdx": null, "allow_no_license": true, "target_filename": "x2_manual.pdf"},
-    {"robot_id": "crazyflie2", "display_name": "Crazyflie 2.x", "maker": "Bitcraze", "document": "Crazyflie 2.x documentation / datasheet", "url": "https://www.bitcraze.io/documentation/", "license_note": "POTENTIELLEMENT OUVERT -- doc Bitcraze souvent CC-BY, A CONFIRMER puis renseigner license_spdx", "license_spdx": null, "allow_no_license": true, "target_filename": "crazyfile2_manual.pdf"}
-  ]
+    {
+      "robot_id": "unitree_g1",
+      "display_name": "Unitree G1",
+      "maker": "Unitree",
+      "document": "G1 user manual / datasheet",
+      "url": "https://www.unitree.com/g1",
+      "license_note": "Proprietary (c) Unitree -- outside the allowlist",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "g1_manual.pdf",
+      "note": "Scanned PDF (1 image page, no text layer): requires --ocr."
+    },
+    {
+      "robot_id": "unitree_go2",
+      "display_name": "Unitree Go2",
+      "maker": "Unitree",
+      "document": "Go2 user manual",
+      "url": "https://www.unitree.com/go2",
+      "license_note": "Proprietary (c) Unitree",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "go2_manual.pdf"
+    },
+    {
+      "robot_id": "unitree_b2",
+      "display_name": "Unitree B2",
+      "maker": "Unitree",
+      "document": "B2 datasheet",
+      "url": "https://www.unitree.com/b2",
+      "license_note": "Proprietary (c) Unitree",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "b2_manual.pdf",
+      "note": "Scanned PDF (23 image pages): requires --ocr."
+    },
+    {
+      "robot_id": "unitree_z1",
+      "display_name": "Unitree Z1",
+      "maker": "Unitree",
+      "document": "Z1 manipulator manual",
+      "url": "https://www.unitree.com/z1",
+      "license_note": "Proprietary (c) Unitree",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "z1_manual.pdf"
+    },
+    {
+      "robot_id": "ur5e",
+      "display_name": "Universal Robots UR5e",
+      "maker": "Universal Robots",
+      "document": "UR5e user manual",
+      "url": "https://www.universal-robots.com/download/",
+      "license_note": "Proprietary (c) UR -- publicly downloadable, redistribution restricted",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "ur5e_manual.pdf"
+    },
+    {
+      "robot_id": "kinova_gen3",
+      "display_name": "Kinova Gen3",
+      "maker": "Kinova",
+      "document": "Gen3 user guide",
+      "url": "https://www.kinovarobotics.com/resources",
+      "license_note": "Proprietary (c) Kinova",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "gen3_manual.pdf"
+    },
+    {
+      "robot_id": "franka_fr3",
+      "display_name": "Franka FR3",
+      "maker": "Franka Robotics",
+      "document": "FR3 datasheet / product manual",
+      "url": "https://franka.de/",
+      "license_note": "Proprietary (c) Franka Robotics",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "fr3_manual.pdf"
+    },
+    {
+      "robot_id": "anymal_d",
+      "display_name": "ANYmal D",
+      "maker": "ANYbotics",
+      "document": "ANYmal technical manual",
+      "url": "https://www.anybotics.com/anymal/",
+      "license_note": "Proprietary (c) ANYbotics",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "technical_manual.pdf"
+    },
+    {
+      "robot_id": "agilex_piper",
+      "display_name": "AgileX PiPER",
+      "maker": "AgileX",
+      "document": "PiPER user manual",
+      "url": "https://www.agilex.ai/",
+      "license_note": "Proprietary (c) AgileX",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "piper_manual.pdf"
+    },
+    {
+      "robot_id": "agilex_ranger_mini_v3",
+      "display_name": "AgileX Ranger Mini 3.0",
+      "maker": "AgileX",
+      "document": "Ranger Mini 3.0 user manual",
+      "url": "https://www.agilex.ai/",
+      "license_note": "Proprietary (c) AgileX -- consistent with the no-license status of the URDF",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "ranger_mini3_manual.pdf"
+    },
+    {
+      "robot_id": "skydio_x2",
+      "display_name": "Skydio X2",
+      "maker": "Skydio",
+      "document": "X2 datasheet",
+      "url": "https://www.skydio.com/skydio-x2",
+      "license_note": "Proprietary (c) Skydio",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "x2_manual.pdf"
+    },
+    {
+      "robot_id": "crazyflie2",
+      "display_name": "Crazyflie 2.x",
+      "maker": "Bitcraze",
+      "document": "Crazyflie 2.x documentation / datasheet",
+      "url": "https://www.bitcraze.io/documentation/",
+      "license_note": "POSSIBLY OPEN -- Bitcraze documentation is often CC-BY, TO BE CONFIRMED, then fill in license_spdx",
+      "license_spdx": null,
+      "allow_no_license": true,
+      "target_filename": "crazyfile2_manual.pdf"
+    }
+  ],
+  "_license": "license_spdx=null => classified 'no-license'. By default such a document is EXCLUDED. It is included only if allow_no_license=true on the entry (per-robot decision, traced here) or if build_corpus.py is run with --allow-proprietary-pdf (global decision, NOT traced in a file: avoid)."
 }

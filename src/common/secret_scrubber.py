@@ -1,21 +1,21 @@
 """
-Retrait des secrets dans le texte collecté -- transverse cat1 / cat2 / cat3.
+Secret removal from collected text -- shared by cat1 / cat2 / cat3.
 
-Exigence des consignes pour la catégorie 1 : *scrub API keys/secrets from
-code*. Un corpus d'entraînement ne doit pas mémoriser de credential : un
-LLM entraîné dessus peut le restituer.
+Required by the brief for category 1: *scrub API keys/secrets from code*.
+A training corpus must not memorise credentials: an LLM trained on it can
+reproduce them.
 
-Le module remplace la valeur par un marqueur explicite plutôt que de
-supprimer la ligne : le contexte pédagogique (« voici comment on passe une
-clé d'API ») reste lisible, seule la valeur disparaît.
+The module replaces the value with an explicit marker rather than deleting
+the line: the teaching context ("this is how you pass an API key") stays
+readable, only the value disappears.
 
-Chaque substitution est comptée et remontée à l'appelant, jamais
-silencieuse (règle 4).
+Every substitution is counted and reported to the caller, never silent
+(rule 4).
 
-Faux positifs assumés : on préfère masquer une chaîne anodine que laisser
-fuir un vrai secret. Les valeurs manifestement fictives des documentations
-(`YOUR_API_KEY`, `xxx`, `<token>`...) sont toutefois épargnées, sinon la
-moitié des tutoriels ROS ressortirait caviardée.
+False positives are accepted: masking a harmless string is preferable to
+leaking a real secret. Obvious documentation placeholders (`YOUR_API_KEY`,
+`xxx`, `<token>`...) are nevertheless spared, otherwise half the ROS
+tutorials would come out censored.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Pattern, Tuple
 
-# Valeurs de remplacement pédagogiques -- à ne PAS masquer.
+# Documentation placeholder values -- NOT to be masked.
 _PLACEHOLDER_RE = re.compile(
     r"^(your[_-]?|my[_-]?|some[_-]?|example[_-]?|dummy|fake|test|sample|"
     r"changeme|placeholder|insert|todo|xxx+|\.\.\.|<.*>|\{\{.*\}\}|\$\{.*\}|"
@@ -39,7 +39,7 @@ def _is_placeholder(value: str) -> bool:
         return True
     if _PLACEHOLDER_RE.match(v):
         return True
-    # Une valeur sans aucune variété (aaaaaaaa, 00000000) n'est pas un secret.
+    # A value with no variety at all (aaaaaaaa, 00000000) is not a secret.
     return len(set(v)) <= 2
 
 
@@ -54,13 +54,13 @@ class ScrubResult:
 
     def describe(self) -> str:
         if not self.counts:
-            return "aucun secret détecté"
-        detail = ", ".join(f"{k}×{v}" for k, v in sorted(self.counts.items()))
-        return f"{self.n_redacted} secret(s) masqué(s) : {detail}"
+            return "no secret detected"
+        detail = ", ".join(f"{k}x{v}" for k, v in sorted(self.counts.items()))
+        return f"{self.n_redacted} secret(s) masked: {detail}"
 
 
-# (nom, motif, groupe_de_la_valeur_ou_0)
-# groupe 0 => tout le motif est remplacé ; sinon seule la valeur l'est.
+# (name, pattern, group_holding_the_value_or_0)
+# group 0 => the whole match is replaced; otherwise only the value is.
 _RULES: List[Tuple[str, Pattern, int]] = [
     ("aws_access_key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"), 0),
     ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{30,}\b"), 0),
@@ -72,12 +72,12 @@ _RULES: List[Tuple[str, Pattern, int]] = [
     ("private_key_block",
      re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----",
                 re.DOTALL), 0),
-    # Affectation générique : api_key = "..." / password: '...' / token=...
+    # Generic assignment: api_key = "..." / password: '...' / token=...
     ("assigned_secret",
      re.compile(r"(?i)\b(?:api[_-]?key|secret[_-]?key|secret|password|passwd|"
                 r"pwd|access[_-]?token|auth[_-]?token|token|bearer)\b"
                 r"\s*[:=]\s*[\"']([^\"'\n]{8,})[\"']"), 1),
-    # URL contenant des identifiants : https://user:motdepasse@host
+    # URL carrying credentials: https://user:password@host
     ("url_credentials",
      re.compile(r"(?<=://)([^/\s:@]+:[^/\s:@]+)(?=@)"), 1),
 ]
@@ -92,7 +92,7 @@ def scrub(text: str) -> ScrubResult:
         def _replace(m: re.Match, _name=name, _group=group) -> str:
             value = m.group(_group) if _group else m.group(0)
             if _group and _is_placeholder(value):
-                return m.group(0)          # valeur d'exemple : on la garde
+                return m.group(0)          # example value: keep it
             counts[_name] = counts.get(_name, 0) + 1
             marker = _MARKER.format(_name.upper())
             if _group == 0:

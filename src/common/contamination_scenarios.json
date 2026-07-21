@@ -1,18 +1,19 @@
 {
-  "_comment": "Scenarios d'evaluation a NE PAS retrouver dans le corpus d'entrainement. Regle globale des consignes : 'exclude any text overlapping our evaluation scenario'. Ce fichier est de la CONFIGURATION : il vit avec le code (src/common/), il est lu par common/contamination.py, et il s'applique a cat1, cat2 et cat3 sans modification de code. Ajouter un scenario d'evaluation = ajouter une entree ici.",
-  "_types_de_regles": {
-    "phrase": "contamine si l'une des phrases apparait telle quelle (comparaison insensible a la casse, espaces normalises).",
-    "cooccurrence": "contamine si AU MOINS un terme de CHAQUE groupe apparait a moins de window_chars caracteres d'un terme de chacun des autres groupes. Evite les faux positifs du type 'fire' seul dans un manuel de securite, ou 'metro' seul dans une adresse."
+  "_comment": "Evaluation scenarios that must NOT appear in the training corpus. Global rule of the brief: 'exclude any text overlapping our evaluation scenario'. This file is CONFIGURATION: it lives with the code (src/common/), it is read by common/contamination.py, and it applies to cat1, cat2 and cat3 without any code change. Adding an evaluation scenario = adding an entry here.",
+  "_rule_types": {
+    "phrase": "contaminating if any of the phrases appears verbatim (case-insensitive, whitespace normalised, accents stripped).",
+    "cooccurrence": "contaminating if AT LEAST one term from EACH group appears within window_chars characters of a term from every other group. This avoids false positives such as 'fire' alone in a safety manual, or 'metro' alone in a postal address."
   },
+  "_note_on_terms": "The term lists deliberately mix English and French spellings. Matching is done on accent-stripped text, so 'metro' also catches 'metro' written with an accent, and OCR output that lost its accents is still caught.",
   "scenarios": [
     {
       "id": "subway_station_fire",
       "enabled": true,
-      "description": "Scenario d'evaluation du projet : incendie dans une station de metro (intervention d'une equipe de robots heterogenes). Tout texte qui recoupe ce scenario doit rester hors du corpus DAPT.",
+      "description": "Project evaluation scenario: a fire in a subway station, handled by a team of heterogeneous robots. Any text overlapping this scenario must stay out of the DAPT corpus.",
       "rules": [
         {
           "type": "phrase",
-          "id": "phrases_exactes",
+          "id": "exact_phrases",
           "phrases": [
             "subway station fire",
             "subway fire",
@@ -31,7 +32,7 @@
         },
         {
           "type": "cooccurrence",
-          "id": "lieu_souterrain_x_incendie",
+          "id": "underground_place_x_fire",
           "window_chars": 400,
           "groups": [
             [
@@ -44,7 +45,6 @@
               "railway platform",
               "station platform",
               "metro",
-              "station de metro",
               "station de metro"
             ],
             [
@@ -69,7 +69,7 @@
         },
         {
           "type": "cooccurrence",
-          "id": "evacuation_souterraine_x_secours",
+          "id": "underground_evacuation_x_rescue",
           "window_chars": 400,
           "groups": [
             [
@@ -90,8 +90,7 @@
               "search and rescue",
               "victime",
               "victimes",
-              "sauvetage",
-              "evacuation"
+              "sauvetage"
             ]
           ]
         }

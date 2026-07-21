@@ -1,16 +1,16 @@
 """
-Comptage de tokens avec le tokenizer Qwen3 (exigé par les consignes).
+Token counting with the Qwen3 tokenizer (required by the project brief).
 
-Le tokenizer se télécharge depuis Hugging Face au premier usage. Si HF
-n'est pas accessible (réseau restreint, CI hors-ligne), on bascule sur un
-repli approximatif et on le SIGNALE (le champ n_tokens du corpus est alors
-marqué approximatif). Le comptage Qwen3 exact doit tourner dans un
-environnement ayant accès à huggingface.co.
+The tokenizer is downloaded from Hugging Face on first use. If HF is not
+reachable (restricted network, offline CI), we fall back to an approximate
+count and SAY SO (the n_tokens field of the corpus is then marked
+approximate). Exact Qwen3 counting must run in an environment with access
+to huggingface.co.
 
-Usage :
-    tc = TokenCounter()            # tente Qwen3, sinon repli
-    n = tc.count("du texte")
-    tc.is_exact                    # True si Qwen3 chargé, False si repli
+Usage:
+    tc = TokenCounter()            # tries Qwen3, falls back otherwise
+    n = tc.count("some text")
+    tc.is_exact                    # True if Qwen3 loaded, False if fallback
 """
 
 from __future__ import annotations
@@ -18,8 +18,8 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-# Modèle de référence pour le tokenizer. Ajustable si un dépôt Qwen3
-# différent est souhaité.
+# Reference model for the tokenizer. Adjustable if a different Qwen3
+# repository is preferred.
 DEFAULT_QWEN3_MODEL = "Qwen/Qwen3-8B"
 
 
@@ -29,7 +29,7 @@ class TokenCounter:
         self._tok = None
         self.is_exact = False
         try:
-            from transformers import AutoTokenizer  # import tardif
+            from transformers import AutoTokenizer  # late import
             self._tok = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
             self.is_exact = True
         except Exception as e:
@@ -45,18 +45,18 @@ class TokenCounter:
     def describe(self) -> str:
         if self.is_exact:
             return f"Qwen3 exact ({self.model})"
-        return "approximatif (Qwen3 indisponible : pas d'accès Hugging Face)"
+        return "approximate (Qwen3 unavailable: no Hugging Face access)"
 
 
-# Repli : approximation raisonnable du comptage sous-mot. On compte les
-# unités « mot / ponctuation / espace significatif » et on applique un
-# facteur sous-mot moyen. Volontairement simple et déterministe.
+# Fallback: a reasonable approximation of sub-word counting. We count
+# "word / punctuation / significant space" units and apply an average
+# sub-word factor. Deliberately simple and deterministic.
 _TOKENISH = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 
 
 def _approx_token_count(text: str) -> int:
     units = _TOKENISH.findall(text)
-    # ~1.3 sous-token par unité "mot" en moyenne pour du texte technique EN.
+    # ~1.3 sub-tokens per "word" unit on average for technical English.
     return int(round(len(units) * 1.3))
 
 

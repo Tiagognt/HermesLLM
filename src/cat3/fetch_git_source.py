@@ -1,10 +1,10 @@
 """
-Récupération directe depuis un dépôt git, utilisée pour les robots absents
-du catalogue de robot_descriptions.py (ex: AgileX Ranger Mini).
+Direct fetch from a git repository, used for robots absent from the
+robot_descriptions.py catalogue (e.g. AgileX Ranger Mini).
 
-Utilise un clone superficiel (--depth 1) en sparse-checkout pour ne
-récupérer que le sous-dossier nécessaire : rapide et peu gourmand en
-bande passante, même sur un dépôt volumineux (meshes binaires inclus).
+Uses a shallow clone (--depth 1) with sparse-checkout so that only the
+required subdirectory is materialised: fast and light on bandwidth even for
+a large repository (binary meshes included).
 """
 
 import subprocess
@@ -45,6 +45,6 @@ def fetch_from_git(
 
     file_path = target_dir / file_path_in_repo
     if not file_path.exists():
-        raise FileNotFoundError(f"{file_path_in_repo} introuvable dans {repo_url}")
+        raise FileNotFoundError(f"{file_path_in_repo} not found in {repo_url}")
 
     return GitFetchResult(repo_root=target_dir, file_path=file_path)

@@ -1,17 +1,17 @@
 """
-Voie URDF de la phase 2.
+URDF path of phase 2.
 
-Chaîne : URDF -> capacités déterministes (urdf_parser) -> description en
-langage naturel (LLM ou gabarit) -> garde-fou anti-hallucination ->
-DocumentDraft dont le champ text = description + squelette de syntaxe.
+Chain: URDF -> deterministic capabilities (urdf_parser) -> natural-language
+description (LLM or template) -> anti-hallucination guardrail ->
+DocumentDraft whose `text` field is description + syntax skeleton.
 
-Deux modes :
-  - LLM (use_llm=True) : la description est rédigée par le fournisseur
-    configuré ; on VÉRIFIE ensuite que tout chiffre du texte correspond à
-    une grandeur extraite. Si le garde-fou échoue, on retombe sur le
-    gabarit déterministe (jamais de chiffre halluciné dans le corpus).
-  - gabarit (use_llm=False ou fournisseur "template") : description
-    déterministe construite uniquement à partir des grandeurs extraites.
+Two modes:
+  - LLM (use_llm=True): the description is written by the configured
+    provider; we then VERIFY that every number in the text matches an
+    extracted quantity. If the guardrail fails we fall back to the
+    deterministic template (no hallucinated number ever enters the corpus).
+  - template (use_llm=False or the "template" provider): a deterministic
+    description built solely from the extracted quantities.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ def _allowed_numbers(cap: dict) -> List[float]:
 
 
 def render_template(cap: dict) -> str:
-    """Description déterministe, uniquement à partir des grandeurs extraites."""
+    """Deterministic description, built only from the extracted quantities."""
     parts = []
     name = cap.get("robot_name", "This robot")
     parts.append(
@@ -78,15 +78,15 @@ def _build_prompt(cap: dict) -> str:
 
 
 def describe(cap: dict, provider: LLMProvider) -> str:
-    """Renvoie une description dont les chiffres sont garantis non hallucinés."""
+    """Return a description whose numbers are guaranteed not hallucinated."""
     if isinstance(provider, TemplateProvider):
         return render_template(cap)
 
     text = provider.generate(_build_prompt(cap), system=SYSTEM_PROMPT)
     ok, offending = verify_numbers(text, _allowed_numbers(cap))
     if not ok:
-        # Le LLM a introduit un/des chiffre(s) non extrait(s) -> on ne prend
-        # AUCUN risque sur les chiffres du corpus : repli déterministe.
+        # The LLM introduced one or more numbers that were not extracted ->
+        # we take NO risk with the corpus figures: deterministic fallback.
         return render_template(cap)
     return text.strip()
 
@@ -117,8 +117,8 @@ def adapt(
         url=url,
         lang="en",
         source_name=source_name,
-        # parse_notes documente toute réparation du XML source (préfixe de
-        # namespace non déclaré...). build_corpus la remonte en avertissement :
-        # une réparation n'est pas un échec, mais elle ne doit pas être tue.
+        # parse_notes documents any repair of the source XML (undeclared
+        # namespace prefix...). build_corpus surfaces it as a warning: a
+        # repair is not a failure, but it must not be silent.
         provenance={"capabilities": cap, "parse_notes": model.parse_notes},
     )

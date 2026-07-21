@@ -1,17 +1,17 @@
 """
-Adaptateurs de la phase 2 -- catégorie 2.
+Phase-2 adapters -- category 2.
 
-Même patron que cat1 : fichiers -> `DocCandidate` -> (build_corpus) ->
-`DocumentDraft` -> enregistrement JSONL. Le nettoyage et le découpage sont
-importés de `common/text_clean.py`, partagé avec cat1.
+Same pattern as cat1: files -> `DocCandidate` -> (build_corpus) ->
+`DocumentDraft` -> JSONL record. Cleaning and splitting are imported from
+`common/text_clean.py`, shared with cat1.
 
-Granularité :
+Granularity:
 
-  docs / code   1 fichier = 1 document, découpé si trop long.
-  paper         1 article = 1 document, découpé aux frontières de sections.
-                Un article de 15 k tokens n'est pas un « document » utile
-                en un bloc, et un seul article confisquerait sinon une part
-                notable du plafond de la famille.
+  docs / code   1 file = 1 document, split if too long.
+  paper         1 paper = 1 document, split at section boundaries. A
+                15k-token paper is not a useful "document" in one block,
+                and a single paper would otherwise confiscate a noticeable
+                share of the family cap.
 """
 
 from __future__ import annotations
@@ -25,28 +25,35 @@ from common.text_clean import (clean_text_file, collapse_blank_lines,
                                looks_generated, read_text_file, split_document)
 
 # --------------------------------------------------------------------------
-# Résidus LaTeX du rendu HTML d'arXiv
+# LaTeX residue left by the arXiv HTML rendering
 #
-# Le rendu HTML d'arXiv laisse passer les macros des gabarits d'éditeurs
-# (Springer notamment) qu'il ne sait pas interpréter : un article commençait
-# par « \equalcont ... [] \fnm Lifeng \sur Zhou \orgdiv Department of... ».
-# Ce nettoyage est fait en PHASE 2, pas à la collecte : le fichier récupéré
-# doit rester le texte brut extrait, conformément à la séparation des deux
-# phases (on peut ainsi améliorer ce filtre sans re-télécharger 43 articles).
+# The arXiv HTML renderer lets through the macros of publisher templates
+# (Springer in particular) that it cannot interpret: one paper started with
+# "\equalcont ... [] \fnm Lifeng \sur Zhou \orgdiv Department of...".
+# This cleaning happens in PHASE 2, not at collection time: the fetched
+# file must stay the raw extracted text, in line with the separation of the
+# two phases (the filter can thus be improved without re-downloading 43
+# papers).
 # --------------------------------------------------------------------------
 
 _LATEX_MACRO = re.compile(r"\\[a-zA-Z@]+\*?")
 _EMPTY_BRACKETS = re.compile(r"(?m)^\s*\[\s*\]\s*")
 _LONE_SYMBOL_LINE = re.compile(r"(?m)^\s*[\*∗†‡§¶,;:]+\s*$")
 
-
-# Début du corps de l'article. Tout ce qui précède est du paratexte
-# (auteurs, affiliations, adresses postales, mentions de contribution) :
-# aucune valeur pour un corpus de vocabulaire robotique, et cela ferait
-# apprendre au modèle des noms propres et des adresses.
+# Start of the paper body. Everything before it is front matter (authors,
+# affiliations, postal addresses, contribution statements): no value for a
+# robotics vocabulary corpus, and it would teach the model proper names and
+# street addresses.
 _ABSTRACT = re.compile(r"(?im)^\s*(?:\d+\s*)?abstract\b\s*[:.\-—]?\s*$")
 _ABSTRACT_INLINE = re.compile(r"(?im)^\s*abstract\b[ \t]*[:.\-—]?[ \t]*\S")
 _MAX_FRONTMATTER_CHARS = 4000
+
+MIN_CHARS_DOC = 400
+MIN_CHARS_CODE = 300
+MIN_CHARS_PAPER = 2000     # a shorter "paper" means a failed extraction
+
+_CODE_EXT = {".py", ".cpp", ".hpp", ".h", ".c", ".cc"}
+_DOC_EXT = {".rst", ".md", ".markdown"}
 
 
 def _drop_frontmatter(text: str) -> str:
@@ -62,8 +69,8 @@ def strip_latex_artifacts(text: str) -> str:
     text = _EMPTY_BRACKETS.sub("", text)
     text = _LONE_SYMBOL_LINE.sub("", text)
     text = _drop_frontmatter(text)
-    # Le bloc d'auteurs répète souvent la même mention, séparée par des
-    # lignes vides : on compare donc à la dernière ligne NON vide.
+    # The author block often repeats the same statement, separated by blank
+    # lines: we therefore compare against the last NON-empty line.
     out: List[str] = []
     previous = None
     for line in text.split("\n"):
@@ -76,13 +83,6 @@ def strip_latex_artifacts(text: str) -> str:
     text = "\n".join(out)
     text = re.sub(r"[ \t]{2,}", " ", text)
     return collapse_blank_lines(text)
-
-MIN_CHARS_DOC = 400
-MIN_CHARS_CODE = 300
-MIN_CHARS_PAPER = 2000     # un « article » plus court est une extraction ratée
-
-_CODE_EXT = {".py", ".cpp", ".hpp", ".h", ".c", ".cc"}
-_DOC_EXT = {".rst", ".md", ".markdown"}
 
 
 @dataclass
@@ -101,7 +101,7 @@ class DocCandidate:
 def _group_of(rel: Path) -> str:
     parts = rel.parts
     if len(parts) <= 1:
-        return "(racine)"
+        return "(root)"
     if parts[0] in ("src", "doc", "docs") and len(parts) > 2:
         return f"{parts[0]}/{parts[1]}"
     return parts[0]
@@ -128,7 +128,7 @@ def _emit(meta: dict, base_id: str, rel: str, group: str, parts: List[str],
 
 
 def adapt_documents(meta: dict, root: Path) -> List[DocCandidate]:
-    """Natures `docs` et `code` : un fichier = un document."""
+    """Natures `docs` and `code`: one file = one document."""
     out: List[DocCandidate] = []
     for path in sorted(root.rglob("*")):
         if not path.is_file():
@@ -152,13 +152,12 @@ def adapt_documents(meta: dict, root: Path) -> List[DocCandidate]:
 
 def adapt_paper(meta: dict, root: Path) -> List[DocCandidate]:
     """
-    Nature `paper` : le texte intégral déjà extrait en phase 1.
+    Nature `paper`: the full text already extracted in phase 1.
 
-    Le groupe de diversité est l'identifiant de l'article lui-même : la
-    sélection en tourniquet de la phase 2 prélève ainsi une part de CHAQUE
-    article avant d'en approfondir un seul. Sans cela, le plafond de la
-    famille serait consommé par les cinq premiers articles par ordre
-    alphabétique.
+    The diversity group is the paper identifier itself, so the phase-2
+    round-robin selection takes a slice of EVERY paper before going deeper
+    into any single one. Without that, the family cap would be consumed by
+    the first five papers in alphabetical order.
     """
     path = root / "paper.txt"
     if not path.is_file():
@@ -182,6 +181,6 @@ ADAPTERS = {
 def adapt(meta: dict, root: Path) -> List[DocCandidate]:
     adapter = ADAPTERS.get(meta["kind"])
     if adapter is None:
-        raise ValueError(f"nature inconnue : {meta['kind']!r} "
-                         f"(connues : {sorted(ADAPTERS)})")
+        raise ValueError(f"unknown nature: {meta['kind']!r} "
+                         f"(known: {sorted(ADAPTERS)})")
     return adapter(meta, root)

@@ -1,18 +1,17 @@
 """
-Sélection de documents sous plafond de tokens -- transverse cat1 / cat2.
+Document selection under a token cap -- shared by cat1 / cat2.
 
-Le volume disponible dépasse largement la cible dans les deux catégories.
-Le problème n'est donc pas d'atteindre un nombre de tokens, mais de choisir
-LESQUELS, sans laisser une poignée de sous-arbres confisquer le budget.
+Available volume far exceeds the target in both categories. The problem is
+therefore not reaching a token count, but choosing WHICH documents, without
+letting a handful of subtrees monopolise the budget.
 
-La sélection se fait en TOURNIOIR sur les groupes d'origine : on prend un
-document de chaque groupe, puis un deuxième de chaque groupe, et ainsi de
-suite. Prendre simplement les N premiers par ordre alphabétique
-concentrerait tout le quota de la documentation ROS sur `source/Concepts`,
-et le corpus ne verrait jamais les tutoriels.
+Selection is done ROUND-ROBIN over the source subtrees: one document from
+each group, then a second from each group, and so on. Simply taking the
+first N in alphabetical order would concentrate the whole ROS documentation
+quota on `source/Concepts`, and the corpus would never see the tutorials.
 
-Déterministe : groupes triés, documents triés dans chaque groupe. Deux
-exécutions produisent la même sélection.
+Deterministic: groups are sorted, documents are sorted within each group.
+Two runs produce the same selection.
 """
 
 from __future__ import annotations
@@ -31,12 +30,12 @@ def select_within_budget(
     id_of: Callable = lambda c: c.doc_id,
 ) -> Tuple[List, List]:
     """
-    Retourne (retenus, écartés).
+    Returns (kept, dropped).
 
-    Le dernier document accepté peut faire légèrement dépasser le plafond :
-    c'est voulu. L'alternative -- refuser puis continuer à chercher un
-    document qui rentre -- favoriserait systématiquement les documents
-    courts en fin de sélection, ce qui biaiserait le corpus.
+    The last accepted document may push slightly past the cap: this is
+    intentional. The alternative -- rejecting it and continuing to look for
+    one that fits -- would systematically favour short documents at the end
+    of the selection, biasing the corpus.
     """
     if budget <= 0:
         return [], list(candidates)

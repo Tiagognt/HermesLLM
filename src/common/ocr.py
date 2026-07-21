@@ -1,38 +1,37 @@
 """
-OCR de PDF sans couche texte -- transverse cat1 / cat2 / cat3.
+OCR for PDFs with no text layer -- shared by cat1 / cat2 / cat3.
 
-Contexte : trois manuels de la catégorie 3 sont des PDF *scannés* (images
-seules). L'extraction pdfplumber/pdftotext en tire 0 caractère, et
-pdf_adapter lève alors une erreur explicite plutôt que d'écrire un
-enregistrement vide. Ce module fournit la voie de secours : rastériser
-puis reconnaître le texte.
+Context: two of the category-3 manuals are *scanned* PDFs (images only).
+pdfplumber/pdftotext extract 0 characters from them, and pdf_adapter then
+raises an explicit error rather than writing an empty record. This module
+provides the fallback: rasterise, then recognise the text.
 
-Chaîne de moteurs, essayés dans l'ordre :
+Engine chain, tried in order:
 
-  1. rapidocr-onnxruntime  -- installable par pip seul (ONNX embarqué),
-     aucune dépendance système. C'est le moteur retenu ici parce que
-     l'installation de tesseract exige les droits root, indisponibles sur
-     cette machine.
-  2. tesseract (via pytesseract, ou le binaire en repli) -- si un jour il
-     est installé, il est préféré sur du texte purement latin.
+  1. rapidocr-onnxruntime -- installable with pip alone (ONNX models
+     bundled), no system dependency. It is the engine retained here because
+     installing tesseract requires root privileges, unavailable on this
+     machine.
+  2. tesseract (via pytesseract, or the binary as a fallback) -- if it is
+     ever installed it is preferred for purely Latin script.
 
-La rastérisation passe par `pdftoppm` (poppler-utils), déjà requis par le
-projet comme repli d'extraction texte.
+Rasterisation goes through `pdftoppm` (poppler-utils), already required by
+the project as a text-extraction fallback.
 
-AVERTISSEMENT IMPORTANT, à lire avant d'exploiter le résultat
---------------------------------------------------------------
-L'OCR est faillible sur les CHIFFRES ("V1.0" lu "V1.o", "0.5" lu "O.5"),
-or la règle n°1 du projet est qu'aucun chiffre du corpus ne doit être
-douteux. Le texte produit ici n'est donc PAS de la même qualité qu'une
-extraction native :
+IMPORTANT WARNING, read before using the result
+------------------------------------------------
+OCR is fallible on DIGITS ("V1.0" read as "V1.o", "0.5" as "O.5"), and rule
+number one of the project is that no number in the corpus may be doubtful.
+The text produced here is therefore NOT of the same quality as a native
+extraction:
 
-  - chaque document océrisé est marqué `ocr: true` dans le corpus, avec sa
-    confiance moyenne, afin de rester filtrable en aval ;
-  - les blocs sous le seuil de confiance sont écartés, pas devinés ;
-  - on ne « corrige » jamais le texte reconnu : pas de post-traitement
-    heuristique qui inventerait des caractères.
+  - every OCR'd document is marked `ocr: true` in the corpus, with its mean
+    confidence, so it stays filterable downstream;
+  - blocks below the confidence threshold are dropped, not guessed;
+  - recognised text is never "corrected": no heuristic post-processing that
+    would invent characters.
 
-Utilisation :
+Usage:
 
     from common.ocr import ocr_pdf
     result = ocr_pdf(path, cache_path=path.parent / ".ocr_cache.json")
@@ -53,23 +52,23 @@ from typing import List, Optional, Tuple
 DEFAULT_DPI = 200
 DEFAULT_MIN_CONFIDENCE = 0.5
 
-# Version du format de cache : incrémenter invalide les caches existants
-# (à faire si la chaîne d'OCR change et que le texte produit changerait).
+# Cache format version: incrementing it invalidates existing caches (do so
+# if the OCR chain changes in a way that would change the produced text).
 CACHE_VERSION = 2
 
-# Bornes de rastérisation. Certains « manuels » sont en réalité une page
-# unique interminable (page produit chinoise déroulante) : le manuel G1 fait
-# 20 x 784 pouces, soit 627 Mpx à 200 dpi -- assez pour faire tomber le
-# décodeur d'images (garde-fou anti-« decompression bomb ») et, même sans
-# cela, pour que le moteur OCR redimensionne l'image jusqu'à l'illisible.
-# On borne donc la largeur, puis on découpe la hauteur en bandes.
-MAX_RASTER_WIDTH_PX = 2000     # au-delà, le moteur redimensionne lui-même
-MAX_BAND_HEIGHT_PX = 1600      # hauteur d'une bande envoyée à l'OCR
-BAND_OVERLAP_PX = 120          # recouvrement, pour ne pas couper une ligne
+# Rasterisation bounds. Some "manuals" are in fact a single endless page (a
+# scrolling Chinese product page): the G1 manual is 20 x 784 inches, i.e.
+# 627 Mpx at 200 dpi -- enough to trip the image decoder's
+# decompression-bomb guard and, even without that, enough for the OCR
+# engine to downscale the image into illegibility. We therefore bound the
+# width, then cut the height into bands.
+MAX_RASTER_WIDTH_PX = 2000     # beyond this the engine downscales by itself
+MAX_BAND_HEIGHT_PX = 1600      # height of one band sent to the OCR engine
+BAND_OVERLAP_PX = 120          # overlap, so a line is never cut in half
 
 
 class OcrUnavailable(RuntimeError):
-    """Aucun moteur OCR utilisable dans cet environnement."""
+    """No usable OCR engine in this environment."""
 
 
 @dataclass
@@ -83,24 +82,24 @@ class OcrResult:
     from_cache: bool = False
 
     def describe(self) -> str:
-        return (f"OCR {self.backend} : {self.n_pages_with_text}/{self.n_pages} "
-                f"pages avec texte, confiance moyenne "
-                f"{self.mean_confidence:.2f}, {len(self.text)} caractères"
+        return (f"OCR {self.backend}: {self.n_pages_with_text}/{self.n_pages} "
+                f"pages with text, mean confidence "
+                f"{self.mean_confidence:.2f}, {len(self.text)} characters"
                 f"{' (cache)' if self.from_cache else ''}")
 
 
 # --------------------------------------------------------------------------
-# Garde-fou : est-ce seulement un PDF ?
+# Guardrail: is this even a PDF?
 # --------------------------------------------------------------------------
 
 def looks_like_pdf(path: Path) -> bool:
     """
-    Vérifie la signature %PDF- en tête de fichier.
+    Check the %PDF- signature at the head of the file.
 
-    Cas réel rencontré : un manuel « .pdf » qui était en fait une page HTML
-    enregistrée par le navigateur. Sans ce contrôle, l'erreur remontée est
-    l'obscur « No /Root object! » de pdfminer, qui n'oriente vers aucune
-    action. Ici on peut dire quoi faire : re-télécharger le fichier.
+    Real case encountered: a "manual.pdf" that was in fact an HTML page
+    saved by a browser. Without this check the reported error is pdfminer's
+    opaque "No /Root object!", which points at no action at all. Here we
+    can say what to do: re-download the file.
     """
     try:
         with path.open("rb") as f:
@@ -110,28 +109,28 @@ def looks_like_pdf(path: Path) -> bool:
 
 
 def sniff_file_type(path: Path) -> str:
-    """Description courte du contenu réel, pour un message d'erreur utile."""
+    """Short description of the real content, for a useful error message."""
     try:
         with path.open("rb") as f:
             head = f.read(1024)
     except OSError as exc:
-        return f"illisible ({exc})"
+        return f"unreadable ({exc})"
     if head.startswith(b"%PDF-"):
         return "PDF"
     lowered = head.lstrip().lower()
     if lowered.startswith(b"<!doctype html") or lowered.startswith(b"<html"):
         return "HTML"
     if head.startswith(b"PK\x03\x04"):
-        return "archive ZIP (docx/xlsx ?)"
+        return "ZIP archive (docx/xlsx?)"
     if head.startswith(b"\x89PNG"):
-        return "image PNG"
+        return "PNG image"
     if head.startswith(b"\xff\xd8\xff"):
-        return "image JPEG"
-    return "inconnu"
+        return "JPEG image"
+    return "unknown"
 
 
 # --------------------------------------------------------------------------
-# Rastérisation
+# Rasterisation
 # --------------------------------------------------------------------------
 
 def _pdfinfo(pdf_path: Path, *args: str) -> str:
@@ -139,14 +138,14 @@ def _pdfinfo(pdf_path: Path, *args: str) -> str:
                           capture_output=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(
-            f"pdfinfo a échoué sur {pdf_path.name} : {proc.stderr.strip()[:200]}")
+            f"pdfinfo failed on {pdf_path.name}: {proc.stderr.strip()[:200]}")
     return proc.stdout
 
 
 def count_pdf_pages(pdf_path: Path) -> int:
     m = re.search(r"^Pages:\s+(\d+)", _pdfinfo(pdf_path), re.MULTILINE)
     if not m:
-        raise RuntimeError(f"Nombre de pages introuvable pour {pdf_path.name}")
+        raise RuntimeError(f"Page count not found for {pdf_path.name}")
     return int(m.group(1))
 
 
@@ -154,25 +153,25 @@ def page_size_pts(pdf_path: Path, page: int) -> Tuple[float, float]:
     out = _pdfinfo(pdf_path, "-f", str(page), "-l", str(page))
     m = re.search(r"Page(?:\s+\d+)?\s+size:\s+([\d.]+) x ([\d.]+) pts", out)
     if not m:
-        raise RuntimeError(f"Taille de page introuvable pour {pdf_path.name} p{page}")
+        raise RuntimeError(f"Page size not found for {pdf_path.name} p{page}")
     return float(m.group(1)), float(m.group(2))
 
 
 @dataclass
 class _Band:
-    """Une bande horizontale d'une page, en pixels à la résolution choisie."""
+    """A horizontal band of a page, in pixels at the chosen resolution."""
     y: int
     height: int
 
 
 def plan_page_render(pdf_path: Path, page: int, dpi: int) -> Tuple[int, int, int, List[_Band]]:
     """
-    Retourne (dpi_effectif, largeur_px, hauteur_px, bandes).
+    Returns (effective_dpi, width_px, height_px, bands).
 
-    Le dpi est abaissé si nécessaire pour que la largeur reste sous
-    MAX_RASTER_WIDTH_PX, puis la hauteur est découpée en bandes qui se
-    recouvrent. Une page normale donne une seule bande couvrant toute la
-    page : le chemin nominal est inchangé.
+    The dpi is lowered if needed so the width stays under
+    MAX_RASTER_WIDTH_PX, then the height is cut into overlapping bands. A
+    normal page yields a single band covering the whole page: the nominal
+    path is unchanged.
     """
     w_pts, h_pts = page_size_pts(pdf_path, page)
     eff_dpi = dpi
@@ -209,8 +208,8 @@ def _render_band(pdf_path: Path, page: int, out_dir: Path, dpi: int,
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(
-            f"pdftoppm a échoué sur {pdf_path.name} page {page} "
-            f"bande {index} : {proc.stderr.strip()[:200]}"
+            f"pdftoppm failed on {pdf_path.name} page {page} "
+            f"band {index}: {proc.stderr.strip()[:200]}"
         )
     produced = sorted(out_dir.glob(f"p{page:05d}b{index:05d}*.png"))
     return produced[0] if produced else None
@@ -218,9 +217,9 @@ def _render_band(pdf_path: Path, page: int, out_dir: Path, dpi: int,
 
 def _merge_bands(texts: List[str]) -> str:
     """
-    Recolle les bandes en supprimant les lignes dupliquées par le
-    recouvrement. On ne retire qu'une ligne strictement identique à la
-    précédente : aucune reconstruction, aucune correction.
+    Re-join the bands, dropping lines duplicated by the overlap. Only a line
+    strictly identical to a recent one is removed: no reconstruction, no
+    correction.
     """
     merged: List[str] = []
     for text in texts:
@@ -230,8 +229,8 @@ def _merge_bands(texts: List[str]) -> str:
                 continue
             if merged and stripped == merged[-1]:
                 continue
-            # Le recouvrement peut ramener plusieurs lignes déjà vues juste
-            # avant : on regarde une courte fenêtre arrière.
+            # The overlap can bring back several lines just seen: look at a
+            # short backward window.
             if stripped in merged[-4:]:
                 continue
             merged.append(stripped)
@@ -239,7 +238,7 @@ def _merge_bands(texts: List[str]) -> str:
 
 
 # --------------------------------------------------------------------------
-# Moteurs
+# Engines
 # --------------------------------------------------------------------------
 
 class _Backend:
@@ -249,7 +248,7 @@ class _Backend:
         raise NotImplementedError
 
     def read_image(self, image: Path, min_confidence: float) -> tuple:
-        """Retourne (texte_de_la_page, confiance_moyenne)."""
+        """Returns (page_text, mean_confidence)."""
         raise NotImplementedError
 
 
@@ -278,13 +277,13 @@ class _RapidOcrBackend(_Backend):
         if not res:
             return "", 0.0
 
-        # res : [[box, texte, score], ...]. On regroupe par ligne (centre y)
-        # puis on ordonne de gauche à droite : l'ordre de lecture n'est pas
-        # garanti par le détecteur.
+        # res: [[box, text, score], ...]. Group by line (y centre) then
+        # order left to right: reading order is not guaranteed by the
+        # detector.
         items = []
         for box, text, score in res:
             if score < min_confidence:
-                continue          # bloc douteux : écarté, jamais deviné
+                continue          # doubtful block: dropped, never guessed
             ys = [p[1] for p in box]
             xs = [p[0] for p in box]
             items.append(((min(ys) + max(ys)) / 2.0, min(xs), text, score))
@@ -321,7 +320,7 @@ class _TesseractBackend(_Backend):
             import pytesseract  # noqa: F401
             return True
         except ImportError:
-            return True   # on sait utiliser le binaire directement
+            return True   # we know how to drive the binary directly
 
     def read_image(self, image: Path, min_confidence: float) -> tuple:
         try:
@@ -331,8 +330,8 @@ class _TesseractBackend(_Backend):
             proc = subprocess.run(["tesseract", str(image), "stdout"],
                                   capture_output=True, text=True)
             if proc.returncode != 0:
-                raise RuntimeError(f"tesseract a échoué : {proc.stderr[:200]}")
-            # Le mode binaire ne remonte pas de confiance exploitable.
+                raise RuntimeError(f"tesseract failed: {proc.stderr[:200]}")
+            # Binary mode reports no usable confidence.
             return proc.stdout, 1.0 if proc.stdout.strip() else 0.0
 
         data = pytesseract.image_to_data(
@@ -358,17 +357,17 @@ def _select_backend(preferred: Optional[str] = None) -> _Backend:
             if b.name.startswith(preferred):
                 if not b.available():
                     raise OcrUnavailable(
-                        f"Moteur OCR demandé indisponible : {preferred}")
+                        f"Requested OCR engine unavailable: {preferred}")
                 return b
         raise OcrUnavailable(
-            f"Moteur OCR inconnu : {preferred} "
-            f"(connus : {[b.name for b in backends]})")
+            f"Unknown OCR engine: {preferred} "
+            f"(known: {[b.name for b in backends]})")
     for b in backends:
         if b.available():
             return b
     raise OcrUnavailable(
-        "Aucun moteur OCR disponible. Installez au choix :\n"
-        "  pip install rapidocr-onnxruntime      (aucun droit root requis)\n"
+        "No OCR engine available. Install either:\n"
+        "  pip install rapidocr-onnxruntime      (no root required)\n"
         "  sudo apt-get install tesseract-ocr && pip install pytesseract"
     )
 
@@ -392,9 +391,9 @@ def _load_cache(cache_path: Path, pdf_path: Path, params: dict) -> Optional[OcrR
     if blob.get("cache_version") != CACHE_VERSION:
         return None
     if blob.get("source") != _source_signature(pdf_path):
-        return None      # le PDF a changé -> cache périmé
+        return None      # the PDF changed -> stale cache
     if blob.get("params") != params:
-        return None      # dpi / seuil / moteur différent -> on refait
+        return None      # different dpi / threshold / engine -> redo
     return OcrResult(
         text=blob["text"],
         backend=blob["backend"],
@@ -423,7 +422,7 @@ def _store_cache(cache_path: Path, pdf_path: Path, params: dict,
 
 
 # --------------------------------------------------------------------------
-# Entrée principale
+# Main entry point
 # --------------------------------------------------------------------------
 
 def ocr_pdf(
@@ -437,19 +436,20 @@ def ocr_pdf(
     progress=None,
 ) -> OcrResult:
     """
-    Océrise un PDF page par page et retourne le texte reconnu.
+    Run OCR on a PDF page by page and return the recognised text.
 
-    max_pages : borne le coût (l'OCR tourne à quelques secondes par page en
-    CPU). Si le PDF est plus long, les pages au-delà sont ignorées -- et le
-    fait est signalé dans le texte produit, jamais tu.
-    cache_path : si fourni, le résultat est relu/écrit là, de sorte que
-    régénérer le corpus ne relance pas l'OCR (phases indépendantes).
+    max_pages: bounds the cost (OCR runs at a few seconds per page on CPU).
+    If the PDF is longer, the remaining pages are skipped -- and the fact is
+    reported in the produced text, never silently dropped.
+    cache_path: when supplied, the result is read from / written to that
+    file, so regenerating the corpus never re-runs OCR (the two phases stay
+    independent).
     """
     if not looks_like_pdf(pdf_path):
         raise RuntimeError(
-            f"{pdf_path.name} n'est pas un PDF (contenu détecté : "
-            f"{sniff_file_type(pdf_path)}). Le fichier doit être "
-            f"re-téléchargé depuis la source."
+            f"{pdf_path.name} is not a PDF (detected content: "
+            f"{sniff_file_type(pdf_path)}). The file must be re-downloaded "
+            f"from its source."
         )
 
     params = {"dpi": dpi, "min_confidence": min_confidence,
@@ -495,8 +495,8 @@ def ocr_pdf(
     kept = [(t, c) for t, c in zip(page_texts, page_confs) if t.strip()]
     body = "\n\n".join(t.strip() for t, _ in kept)
     if max_pages and total_pages > n_pages:
-        body += (f"\n\n[... {total_pages - n_pages} pages non océrisées "
-                 f"(limite max_pages={max_pages}) ...]")
+        body += (f"\n\n[... {total_pages - n_pages} pages not OCR'd "
+                 f"(max_pages={max_pages} limit) ...]")
 
     result = OcrResult(
         text=body,

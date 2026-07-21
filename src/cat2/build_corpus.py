@@ -1,19 +1,18 @@
 """
-Point d'entrée de la PHASE 2 (transformation) -- catégorie 2 (tier B).
+Entry point for PHASE 2 (transformation) -- category 2 (tier B).
 
-Même enchaînement que cat1 : adaptation -> scrubbing -> contamination ->
-déduplication -> comptage -> quotas -> assemblage.
+Same chain as cat1: adaptation -> scrubbing -> contamination ->
+deduplication -> counting -> quotas -> assembly.
 
-UNE différence structurelle : le plafond des ARTICLES est porté par la
-famille entière, pas par article. Chaque article est une « source » dans
-les métadonnées ; leur appliquer un plafond individuel reviendrait à n'en
-appliquer aucun. Les 43 articles se partagent donc un budget unique, réparti
-en tourniquet sur les articles — on prend un morceau de chacun avant
-d'approfondir, sinon les cinq premiers par ordre alphabétique
-consommeraient tout.
+ONE structural difference: the PAPER cap is carried by the whole family,
+not per paper. Each paper is a "source" in the metadata; applying an
+individual cap to each would amount to applying none at all. The 43 papers
+therefore share a single budget, spread round-robin over the papers -- a
+slice of each before going deeper, otherwise the first five in
+alphabetical order would consume everything.
 
-Lançable depuis n'importe quel répertoire :
-    python3 /chemin/vers/src/cat2/build_corpus.py
+Runnable from any directory:
+    python3 /path/to/src/cat2/build_corpus.py
     python3 .../build_corpus.py --budget-scale 0.8
 """
 
@@ -63,31 +62,31 @@ def write_stats(rows: List[dict], *, skipped: Counter, per_bucket: Dict[str, dic
         by_license[r["license"]] += 1
         by_kind[r["kind"]] += 1
 
-    lines = ["# Corpus catégorie 2 — statistiques", ""]
-    lines.append(f"- Généré le : {datetime.now(timezone.utc).isoformat()}")
-    lines.append(f"- Racine projet : `{paths.PROJECT_ROOT}`")
-    lines.append(f"- Tier : {TIER}")
-    lines.append(f"- Enregistrements : {len(rows)}")
-    lines.append(f"- Tokens totaux : {total_tokens} "
-                 f"({'Qwen3 exact' if tc.is_exact else 'APPROXIMATIF — ' + tc.describe()})")
-    lines.append(f"- Contrôle de contamination : {contamination_summary}")
-    lines.append(f"- Déduplication : {dedup_desc}")
+    lines = ["# Category 2 corpus — statistics", ""]
+    lines.append(f"- Generated: {datetime.now(timezone.utc).isoformat()}")
+    lines.append(f"- Project root: `{paths.PROJECT_ROOT}`")
+    lines.append(f"- Tier: {TIER}")
+    lines.append(f"- Records: {len(rows)}")
+    lines.append(f"- Total tokens: {total_tokens} "
+                 f"({'Qwen3 exact' if tc.is_exact else 'APPROXIMATE — ' + tc.describe()})")
+    lines.append(f"- Contamination check: {contamination_summary}")
+    lines.append(f"- Deduplication: {dedup_desc}")
     if report_path is not None:
-        lines.append(f"- Rapport d'exécution : `{paths.to_relative(report_path)}`")
+        lines.append(f"- Run report: `{paths.to_relative(report_path)}`")
     lines.append("")
 
-    lines.append("## Par famille de sources")
+    lines.append("## Per source family")
     lines.append("")
-    lines.append("| Famille | Documents | Tokens | Part |")
+    lines.append("| Family | Documents | Tokens | Share |")
     lines.append("|---|---:|---:|---:|")
     for fam in sorted(by_family_tok, key=lambda f: -by_family_tok[f]):
         pct = 100.0 * by_family_tok[fam] / total_tokens if total_tokens else 0
         lines.append(f"| {fam} | {by_family[fam]} | {by_family_tok[fam]:,} | {pct:.1f} % |")
     lines.append("")
 
-    lines.append("## Par source (les 43 articles sont regroupés)")
+    lines.append("## Per source (the 43 papers are grouped)")
     lines.append("")
-    lines.append("| Source | Famille | Retenus | Tokens | Plafond | Écartés (quota) |")
+    lines.append("| Source | Family | Kept | Tokens | Cap | Dropped (quota) |")
     lines.append("|---|---|---:|---:|---:|---:|")
     for sid in sorted(per_bucket, key=lambda s: -per_bucket[s]["tokens"]):
         d = per_bucket[sid]
@@ -95,48 +94,48 @@ def write_stats(rows: List[dict], *, skipped: Counter, per_bucket: Dict[str, dic
                      f"| {d['budget']:,} | {d['over_budget']} |")
     lines.append("")
 
-    lines.append("## Par nature de contenu")
+    lines.append("## Per content nature")
     for k in sorted(by_kind):
-        lines.append(f"- {k} : {by_kind[k]} documents")
+        lines.append(f"- {k}: {by_kind[k]} documents")
     lines.append("")
 
-    lines.append("## Par licence")
+    lines.append("## Per license")
     for lic in sorted(by_license):
-        lines.append(f"- {lic} : {by_license[lic]}")
+        lines.append(f"- {lic}: {by_license[lic]}")
     lines.append("")
 
-    lines.append("## Documents écartés")
+    lines.append("## Dropped documents")
     lines.append("")
-    lines.append("| Motif | Nombre |")
+    lines.append("| Reason | Count |")
     lines.append("|---|---:|")
     for reason, n in skipped.most_common():
         lines.append(f"| {reason} | {n} |")
     lines.append("")
 
-    lines.append("## Secrets masqués")
+    lines.append("## Masked secrets")
     if secrets:
         for k, v in secrets.most_common():
-            lines.append(f"- {k} : {v}")
+            lines.append(f"- {k}: {v}")
     else:
-        lines.append("- aucun secret détecté dans les sources retenues")
+        lines.append("- no secret detected in the retained sources")
 
     STATS_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Phase 2 -- construction du corpus cat2")
+    ap = argparse.ArgumentParser(description="Phase 2 -- build the cat2 corpus")
     ap.add_argument("--budget-scale", type=float, default=1.0,
-                    help="multiplie tous les plafonds")
+                    help="multiply every cap")
     ap.add_argument("--dedup-threshold", type=float, default=0.85,
-                    help="seuil de similarité du quasi-doublon (0 = désactivé)")
+                    help="near-duplicate similarity threshold (0 = disabled)")
     args = ap.parse_args()
 
     report = RunReport("cat2-build-corpus", category=CATEGORY,
-                       title="Catégorie 2 — phase 2 (construction du corpus)")
+                       title="Category 2 — phase 2 (corpus build)")
 
     if not METADATA_PATH.exists():
-        raise SystemExit(f"Métadonnées absentes : {METADATA_PATH}\n"
-                         f"-> lancez d'abord collect_hmrs.py")
+        raise SystemExit(f"Metadata missing: {METADATA_PATH}\n"
+                         f"-> run collect_hmrs.py first")
 
     metas = [json.loads(l) for l in
              METADATA_PATH.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -145,24 +144,24 @@ def main() -> None:
     checker = ContaminationChecker.from_config()
     index = DuplicateIndex(threshold=args.dedup_threshold)
 
-    print(f"Racine projet : {paths.PROJECT_ROOT}")
+    print(f"Project root  : {paths.PROJECT_ROOT}")
     print(f"Sources       : {len(metas)}")
     print(f"Tokenizer     : {tc.describe()}")
     print(f"Contamination : {checker.describe()}")
-    print(f"Déduplication : {index.describe()}")
-    print(f"Échelle des plafonds : x{args.budget_scale}\n")
+    print(f"Deduplication : {index.describe()}")
+    print(f"Cap scale     : x{args.budget_scale}\n")
     for k, v in [("Sources", len(metas)), ("Tokenizer", tc.describe()),
                  ("Contamination", checker.describe()),
-                 ("Déduplication", index.describe()),
-                 ("Échelle des plafonds", f"x{args.budget_scale}")]:
+                 ("Deduplication", index.describe()),
+                 ("Cap scale", f"x{args.budget_scale}")]:
         report.info(k, v)
 
     skipped: Counter = Counter()
     secrets: Counter = Counter()
     per_bucket: Dict[str, dict] = {}
     all_kept: List[tuple] = []
-    # Les articles sont mis de côté : leur plafond est appliqué en une fois,
-    # sur la famille entière (voir la docstring du module).
+    # Papers are set aside: their cap is applied once, over the whole
+    # family (see the module docstring).
     paper_pool: List[tuple] = []
     paper_budget = 0
 
@@ -171,7 +170,7 @@ def main() -> None:
         root = paths.from_relative(meta["raw_dir"])
         if not root.exists():
             report.fail(sid, kind=meta["kind"],
-                        reason=f"dossier brut absent : {root} — relancer la phase 1")
+                        reason=f"raw directory missing: {root} — re-run phase 1")
             continue
         try:
             candidates = text_adapters.adapt(meta, root)
@@ -198,7 +197,7 @@ def main() -> None:
             if args.dedup_threshold > 0:
                 dup = index.check(c.text)
                 if dup.is_duplicate:
-                    skipped[f"doublon {dup.kind}"] += 1
+                    skipped[f"{dup.kind} duplicate"] += 1
                     continue
                 index.add(c.doc_id, c.text)
 
@@ -212,39 +211,39 @@ def main() -> None:
 
         budget = int(meta["token_budget"] * args.budget_scale)
         kept, dropped = select_within_budget(surviving, budget)
-        skipped["hors quota"] += len(dropped)
+        skipped["over quota"] += len(dropped)
         per_bucket[sid] = {"family": meta["family"], "kept": len(kept),
                            "tokens": sum(c.n_tokens for c in kept),
                            "budget": budget, "over_budget": len(dropped)}
         all_kept.extend((meta, c) for c in kept)
-        print(f"  [{sid:24s}] {len(candidates):4d} candidats -> "
-              f"{len(surviving):4d} uniques -> {len(kept):4d} retenus "
+        print(f"  [{sid:24s}] {len(candidates):4d} candidates -> "
+              f"{len(surviving):4d} unique -> {len(kept):4d} kept "
               f"({per_bucket[sid]['tokens']:,} tokens)")
         report.ok(sid, kind=meta["kind"],
-                  detail=f"{len(candidates)} candidats, {len(surviving)} uniques, "
-                         f"{len(kept)} retenus, {per_bucket[sid]['tokens']:,} tokens")
+                  detail=f"{len(candidates)} candidates, {len(surviving)} unique, "
+                         f"{len(kept)} kept, {per_bucket[sid]['tokens']:,} tokens")
 
-    # ---- quota des articles, appliqué à la famille entière ---------------
+    # ---- paper quota, applied to the whole family ------------------------
     if paper_pool:
         cands = [c for _m, c in paper_pool]
         kept, dropped = select_within_budget(cands, paper_budget)
         kept_ids = {c.doc_id for c in kept}
-        skipped["hors quota"] += len(dropped)
+        skipped["over quota"] += len(dropped)
         n_papers = len({c.group for c in cands})
         n_kept_papers = len({c.group for c in kept})
-        per_bucket[f"{n_papers} articles arXiv"] = {
+        per_bucket[f"{n_papers} arXiv papers"] = {
             "family": PAPER_FAMILY, "kept": len(kept),
             "tokens": sum(c.n_tokens for c in kept),
             "budget": paper_budget, "over_budget": len(dropped)}
         all_kept.extend((m, c) for m, c in paper_pool if c.doc_id in kept_ids)
-        print(f"  [{'articles arXiv':24s}] {len(cands):4d} candidats -> "
-              f"{len(kept):4d} retenus, {n_kept_papers}/{n_papers} articles "
-              f"représentés ({sum(c.n_tokens for c in kept):,} tokens)")
-        report.ok("articles arXiv", kind="paper",
-                  detail=f"{len(kept)} segments retenus sur {len(cands)}, "
-                         f"{n_kept_papers}/{n_papers} articles représentés")
+        print(f"  [{'arXiv papers':24s}] {len(cands):4d} candidates -> "
+              f"{len(kept):4d} kept, {n_kept_papers}/{n_papers} papers "
+              f"represented ({sum(c.n_tokens for c in kept):,} tokens)")
+        report.ok("arXiv papers", kind="paper",
+                  detail=f"{len(kept)} segments kept out of {len(cands)}, "
+                         f"{n_kept_papers}/{n_papers} papers represented")
 
-    # ---- écriture --------------------------------------------------------
+    # ---- writing ---------------------------------------------------------
     paths.ensure_dirs(CORPUS_PATH.parent)
     rows: List[dict] = []
     with CORPUS_PATH.open("w", encoding="utf-8") as f:
@@ -273,29 +272,29 @@ def main() -> None:
 
     total_tokens = sum(r["n_tokens"] for r in rows)
     contamination_summary = (
-        "PASSÉ — 0 recoupement" if not skipped["contamination"]
-        else f"{skipped['contamination']} document(s) exclu(s)"
+        "PASSED — 0 overlap" if not skipped["contamination"]
+        else f"{skipped['contamination']} document(s) excluded"
     ) + f" ({checker.describe()})"
-    dedup_desc = (f"{skipped['doublon exact']} doublons exacts, "
-                  f"{skipped['doublon near']} quasi-doublons retirés "
+    dedup_desc = (f"{skipped['exact duplicate']} exact duplicates, "
+                  f"{skipped['near duplicate']} near-duplicates removed "
                   f"({index.describe()})")
 
-    report.info("Résultat contamination", contamination_summary)
-    report.info("Résultat déduplication", dedup_desc)
-    report.info("Tokens retenus", f"{total_tokens:,}")
+    report.info("Contamination result", contamination_summary)
+    report.info("Deduplication result", dedup_desc)
+    report.info("Tokens kept", f"{total_tokens:,}")
     report_path = report.write()
 
     write_stats(rows, skipped=skipped, per_bucket=per_bucket, tc=tc,
                 contamination_summary=contamination_summary,
                 dedup_desc=dedup_desc, secrets=secrets, report_path=report_path)
 
-    print(f"\nCorpus écrit : {CORPUS_PATH}")
-    print(f"  {len(rows)} enregistrements, {total_tokens:,} tokens (tier {TIER})")
+    print(f"\nCorpus written: {CORPUS_PATH}")
+    print(f"  {len(rows)} records, {total_tokens:,} tokens (tier {TIER})")
     print(f"  contamination : {contamination_summary}")
-    print(f"  déduplication : {dedup_desc}")
+    print(f"  deduplication : {dedup_desc}")
     if secrets:
-        print(f"  secrets masqués : {dict(secrets)}")
-    print(f"  rapport : {report_path}")
+        print(f"  secrets masked : {dict(secrets)}")
+    print(f"  report : {report_path}")
 
 
 if __name__ == "__main__":

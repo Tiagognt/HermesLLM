@@ -1,12 +1,12 @@
 """
-Objet intermédiaire commun aux deux voies (URDF, PDF) + assemblage vers
-le schéma JSONL final des consignes.
+Intermediate object shared by every collection path, plus assembly into the
+final JSONL schema required by the project brief.
 
-Les deux adaptateurs (urdf_adapter, pdf_adapter) produisent un
-DocumentDraft. L'assembleur est le SEUL endroit qui connaît le schéma de
-sortie -- ajouter une source ne le change pas.
+All adapters (urdf_adapter, pdf_adapter, and the cat1/cat2 text adapters)
+produce a DocumentDraft. The assembler is the ONLY place that knows the
+output schema -- adding a source never changes it.
 
-Schéma d'une ligne (consignes) :
+Schema of one line (per the brief):
   {id, source, category, tier, license, url, lang, text, n_tokens, collected_at}
 """
 
@@ -22,16 +22,17 @@ from common.tokenizer_utils import TokenCounter
 @dataclass
 class DocumentDraft:
     robot_id: str
-    source_type: str          # "urdf" | "pdf_manual"
-    text: str                 # texte final destiné au corpus
-    license_status: str       # déjà classé (license_utils) : conforme / no-license / flagged:*
+    source_type: str          # "urdf" | "pdf_manual" | "docs" | "code" | ...
+    text: str                 # final text destined for the corpus
+    license_status: str       # already classified (license_utils):
+                              # allowed / no-license / flagged:*
     url: str = ""
     lang: str = "en"
-    source_name: str = ""     # ex: "robot_descriptions", "manual:unitree_g1"
-    provenance: dict = field(default_factory=dict)  # infos annexes (capacités, fichiers...)
-    # Texte issu d'une reconnaissance optique (PDF scanné) : qualité et
-    # fiabilité des chiffres inférieures à une extraction native. Remonté
-    # dans le corpus pour rester filtrable en aval (cf. common/ocr.py).
+    source_name: str = ""     # e.g. "robot_descriptions", "manual:unitree_g1"
+    provenance: dict = field(default_factory=dict)  # side info (capabilities, files...)
+    # Text produced by optical character recognition (scanned PDF): lower
+    # quality and lower digit reliability than a native extraction. Carried
+    # into the corpus so it stays filterable downstream (see common/ocr.py).
     ocr: bool = False
     ocr_confidence: Optional[float] = None
 
@@ -46,13 +47,13 @@ def assemble_record(
     extra: Optional[dict] = None,
 ) -> dict:
     """
-    DocumentDraft -> ligne de corpus (dict prêt à sérialiser en JSONL).
+    DocumentDraft -> corpus line (dict ready to serialise as JSONL).
 
-    doc_id : remplace `robot_id` dans la construction de l'identifiant, pour
-    les catégories dont l'unité n'est pas un robot (cat1 : un document).
-    extra : champs supplémentaires fusionnés dans l'enregistrement, SANS
-    pouvoir écraser un champ du schéma des consignes -- c'est le point
-    d'extension par catégorie (cat1 y met family/kind/rel_path).
+    doc_id: replaces `robot_id` when building the identifier, for categories
+    whose unit is not a robot (cat1/cat2: a document).
+    extra: additional fields merged into the record, WITHOUT being able to
+    overwrite a field of the required schema -- this is the per-category
+    extension point (cat1/cat2 put family/kind/rel_path there).
     """
     tc = token_counter or TokenCounter()
     record = {
@@ -65,9 +66,9 @@ def assemble_record(
         "lang": draft.lang,
         "text": draft.text,
         "n_tokens": tc.count(draft.text),
-        "n_tokens_exact": tc.is_exact,     # False = comptage approximatif (voir tokenizer_utils)
-        "source_type": draft.source_type,  # pratique pour les stats/filtrage
-        "ocr": draft.ocr,                  # True = texte reconnu optiquement
+        "n_tokens_exact": tc.is_exact,     # False = approximate count (see tokenizer_utils)
+        "source_type": draft.source_type,  # handy for stats / filtering
+        "ocr": draft.ocr,                  # True = optically recognised text
         "collected_at": datetime.now(timezone.utc).isoformat(),
     }
     if draft.ocr and draft.ocr_confidence is not None:
@@ -76,7 +77,7 @@ def assemble_record(
         protected = REQUIRED_FIELDS & extra.keys()
         if protected:
             raise ValueError(
-                f"`extra` tente d'écraser des champs du schéma : {sorted(protected)}")
+                f"`extra` attempts to overwrite schema fields: {sorted(protected)}")
         record.update(extra)
     return record
 
@@ -88,6 +89,6 @@ REQUIRED_FIELDS = {"id", "source", "category", "tier", "license", "url",
 def validate_record(record: dict) -> None:
     missing = REQUIRED_FIELDS - record.keys()
     if missing:
-        raise ValueError(f"Champs manquants dans l'enregistrement : {sorted(missing)}")
+        raise ValueError(f"Missing fields in record: {sorted(missing)}")
     if not record["text"].strip():
-        raise ValueError(f"Texte vide pour {record.get('id')}")
+        raise ValueError(f"Empty text for {record.get('id')}")

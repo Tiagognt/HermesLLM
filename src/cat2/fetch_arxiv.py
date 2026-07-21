@@ -1,23 +1,22 @@
 """
-Récupération du texte intégral d'un article arXiv -- catégorie 2.
+Full-text retrieval of an arXiv paper -- category 2.
 
-Deux voies, choisies par entrée du catalogue :
+Two paths, selected per catalogue entry:
 
-  html  arXiv publie depuis fin 2023 un rendu HTML de la plupart des
-        articles. C'est la meilleure source : structure préservée, pas de
-        colonnes à recoller, pas de coupures de mots.
-  pdf   repli pour les articles antérieurs, via `pdftotext -layout`
-        (poppler, déjà requis par le projet). Les PDF arXiv ont toujours une
-        couche texte : aucun OCR n'est nécessaire ici, contrairement aux
-        manuels constructeur de cat3.
+  html  since late 2023 arXiv publishes an HTML rendering of most papers.
+        It is the better source: structure preserved, no columns to
+        re-join, no hyphenated line breaks.
+  pdf   fallback for older papers, through `pdftotext -layout` (poppler,
+        already required by the project). arXiv PDFs always carry a text
+        layer: no OCR is needed here, unlike the vendor manuals of cat3.
 
-LICENCE : ce module ne décide RIEN. La licence de chaque article a été
-vérifiée en amont via l'interface OAI-PMH d'arXiv et figée dans
-`sources.py` ; c'est `collect_hmrs.py` qui applique la barrière.
+LICENSE: this module decides NOTHING. Each paper's license was verified
+upstream through the arXiv OAI-PMH interface and frozen in `sources.py`;
+`collect_hmrs.py` applies the barrier.
 
-La bibliographie est retirée : des centaines de lignes d'auteurs et de
-numéros de pages n'apprennent rien sur la robotique multi-agents et
-dilueraient le corpus.
+The bibliography is stripped: hundreds of lines of author names and page
+numbers teach nothing about multi-agent robotics and would dilute the
+corpus.
 """
 
 from __future__ import annotations
@@ -28,7 +27,6 @@ import subprocess
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 USER_AGENT = "HermesLLM-corpus-builder/1.0 (research dataset construction)"
 TIMEOUT = 90
@@ -40,7 +38,8 @@ _TAGS = re.compile(r"(?s)<[^>]+>")
 _WS_LINE = re.compile(r"[ \t]+")
 _BLANKS = re.compile(r"\n\s*\n+")
 
-# Début de bibliographie, en HTML rendu comme en texte extrait de PDF.
+# Start of the bibliography, in rendered HTML as well as in PDF-extracted
+# text.
 _BIB_MARKERS = re.compile(
     r"\n\s*(?:References|REFERENCES|Bibliography|BIBLIOGRAPHY)\s*\n")
 
@@ -62,9 +61,9 @@ def _get(url: str) -> bytes:
 
 def _strip_bibliography(text: str) -> str:
     """
-    Tronque à la bibliographie, mais seulement si elle apparaît dans le
-    dernier tiers du document : certains articles citent le mot
-    « References » dans leur introduction.
+    Truncate at the bibliography, but only if it appears in the last third
+    of the document: some papers mention the word "References" in their
+    introduction.
     """
     matches = list(_BIB_MARKERS.finditer(text))
     for m in matches:
@@ -77,8 +76,8 @@ def html_to_text(raw_html: str) -> str:
     m = _ARTICLE.search(raw_html)
     body = m.group(0) if m else raw_html
     body = _DROP_TAGS.sub(" ", body)
-    # Les fins de bloc deviennent des sauts de ligne, sinon tout l'article
-    # se retrouve sur une seule ligne.
+    # Block ends become newlines, otherwise the whole paper collapses onto
+    # a single line.
     body = re.sub(r"(?i)</(p|div|section|h\d|li|tr|figcaption)>", "\n", body)
     body = _TAGS.sub(" ", body)
     body = _html.unescape(body)
@@ -91,8 +90,8 @@ def fetch_html(arxiv_id: str) -> PaperText:
     url = f"https://arxiv.org/html/{arxiv_id}"
     raw = _get(url).decode("utf-8", errors="replace")
     if "<article" not in raw and len(raw) < 5000:
-        raise RuntimeError(f"{arxiv_id} : pas de rendu HTML exploitable "
-                           f"({len(raw)} octets)")
+        raise RuntimeError(f"{arxiv_id}: no usable HTML rendering "
+                           f"({len(raw)} bytes)")
     text = _strip_bibliography(html_to_text(raw))
     return PaperText(arxiv_id, text, "html", len(text), url)
 
@@ -106,19 +105,19 @@ def fetch_pdf(arxiv_id: str, tmp_dir: Path) -> PaperText:
                           capture_output=True, text=True)
     pdf_path.unlink(missing_ok=True)
     if proc.returncode != 0:
-        raise RuntimeError(f"pdftotext a échoué sur {arxiv_id} : "
+        raise RuntimeError(f"pdftotext failed on {arxiv_id}: "
                            f"{proc.stderr.strip()[:200]}")
     text = _strip_bibliography(_BLANKS.sub("\n\n", proc.stdout).strip())
     return PaperText(arxiv_id, text, "pdf", len(text), url)
 
 
-MIN_USEFUL_CHARS = 4000     # un article plus court n'a pas été extrait
+MIN_USEFUL_CHARS = 4000     # a shorter "paper" means extraction failed
 
 
 def fetch(arxiv_id: str, mode: str, tmp_dir: Path) -> PaperText:
     result = fetch_html(arxiv_id) if mode == "html" else fetch_pdf(arxiv_id, tmp_dir)
     if result.n_chars < MIN_USEFUL_CHARS:
         raise RuntimeError(
-            f"{arxiv_id} : {result.n_chars} caractères seulement par la voie "
-            f"{mode} -- extraction probablement incomplète, article écarté.")
+            f"{arxiv_id}: only {result.n_chars} characters through the "
+            f"{mode} path -- extraction probably incomplete, paper dropped.")
     return result

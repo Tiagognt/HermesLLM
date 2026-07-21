@@ -1,52 +1,51 @@
 """
-Catalogue déclaratif des sources de la catégorie 2 (HMRS Data, tier B).
+Declarative catalogue of category-2 sources (HMRS Data, tier B).
 
-C'est le SEUL fichier de cat2 contenant des noms de dépôts et des
-identifiants arXiv en dur, sur le modèle de `cat1/sources.py` et
-`cat3/sources.py`.
+This is the ONLY file in cat2 containing hard-coded repository names and
+arXiv identifiers, mirroring `cat1/sources.py` and `cat3/sources.py`.
 
-cat2 est la catégorie la plus pauvre en sources : l'enquête datasets du
-projet note que RoCoBench est « quasiment la seule source textuelle
-multi-robots propre ». Elle est donc alimentée par TROIS voies
-complémentaires plutôt qu'une seule :
+cat2 is the category with the fewest available sources: the project's
+dataset survey notes that RoCoBench is "almost the only clean multi-robot
+text source". It is therefore fed by THREE complementary paths rather than
+one:
 
-  1. dépôts de frameworks et benchmarks HMRS (prompts, définitions de
-     tâches, code de planification) ;
-  2. le livre « Programming Multiple Robots with ROS 2 » (CC-BY-4.0), seul
-     ouvrage complet sur le sujet ;
-  3. des ARTICLES DE RECHERCHE, qui portent le vocabulaire du domaine
-     (allocation, coalition, décomposition, embodiment-aware) que ni le
-     code ni la documentation n'emploient.
+  1. repositories of HMRS frameworks and benchmarks (prompts, task
+     definitions, planning code);
+  2. the book "Programming Multiple Robots with ROS 2" (CC-BY-4.0), the
+     only complete work on the subject;
+  3. RESEARCH PAPERS, which carry the vocabulary of the field (allocation,
+     coalition, decomposition, embodiment-aware) that neither code nor
+     documentation uses.
 
 --------------------------------------------------------------------------
-LICENCES -- vérifiées à la main le 2026-07-21.
+LICENSES -- verified by hand on 2026-07-21.
 
-Dépôts écartés après lecture :
-  SMARTlab-Purdue/SMART-LLM        aucun LICENSE  -> no-license
-  UMass-Foundation-Model/Co-LLM-Agents (CoELA)  aucun LICENSE -> no-license
-  facebookresearch/habitat-lab     MIT, mais ÉCARTÉ pour une autre raison :
-                                   SgtVincent/EMOS en est un fork complet,
-                                   les collecter tous deux dupliquerait
-                                   l'intégralité du simulateur.
+Repositories rejected after reading:
+  SMARTlab-Purdue/SMART-LLM         no LICENSE -> no-license
+  UMass-Foundation-Model/Co-LLM-Agents (CoELA)  no LICENSE -> no-license
+  facebookresearch/habitat-lab      MIT, but REJECTED for a different
+                                    reason: SgtVincent/EMOS is a complete
+                                    fork of it, so collecting both would
+                                    duplicate the whole simulator.
 
-ARTICLES : arXiv publie la licence de chaque dépôt via son interface
-OAI-PMH. Sur 148 articles pertinents interrogés :
-    83  licence arXiv par défaut (nonexclusive-distrib) -> NON redistribuable
-    45  CC-BY-4.0                                       -> conformes
-     9  CC-BY-NC-ND-4.0                                 -> hors allowlist
-     4  CC-BY-NC-SA-4.0                                 -> hors allowlist
-     4  CC-BY-SA-4.0                                    -> hors allowlist (*)
-     3  CC0-1.0                                         -> hors allowlist (*)
-Seuls les 45 CC-BY-4.0 sont retenus (moins 2 hors sujet -> 43).
-(*) CC-BY-SA et CC0 ne figurent pas dans l'allowlist du projet
-    (`^CC-BY-\d\.\d$`). CC0 est pourtant PLUS permissif que CC-BY : les
-    inclure demanderait d'élargir `license_utils.py`, ce qui ne se fait pas
-    sans décision explicite. Gain potentiel : 7 articles.
+PAPERS: arXiv publishes the license of every submission through its OAI-PMH
+interface. Of 148 relevant papers queried:
+    83  arXiv default license (nonexclusive-distrib) -> NOT redistributable
+    45  CC-BY-4.0                                    -> compliant
+     9  CC-BY-NC-ND-4.0                              -> outside allowlist
+     4  CC-BY-NC-SA-4.0                              -> outside allowlist
+     4  CC-BY-SA-4.0                                 -> outside allowlist (*)
+     3  CC0-1.0                                      -> outside allowlist (*)
+Only the 45 CC-BY-4.0 papers are retained (minus 2 off-topic -> 43).
+(*) CC-BY-SA and CC0 are not on the project allowlist (`^CC-BY-\d\.\d$`).
+    CC0 is nevertheless MORE permissive than CC-BY: including them would
+    require widening `license_utils.py`, which is not done without an
+    explicit decision. Potential gain: 7 papers.
 --------------------------------------------------------------------------
 
-QUOTAS : comme en cat1, `token_budget` est un plafond appliqué en phase 2.
-La fenêtre cible de cat2 est étroite (elle est imposée par les tailles déjà
-figées de cat1 et cat3), d'où des plafonds resserrés.
+QUOTAS: as in cat1, `token_budget` is a cap applied in phase 2. The cat2
+target window is narrow (it is imposed by the already-fixed sizes of cat1
+and cat3), hence the tight caps.
 """
 
 from dataclasses import dataclass, field
@@ -78,7 +77,7 @@ class RepoSource:
 class Paper:
     arxiv_id: str
     title: str
-    fetch: str = "html"      # "html" (rendu arXiv) | "pdf" (repli poppler)
+    fetch: str = "html"      # "html" (arXiv rendering) | "pdf" (poppler fallback)
 
     @property
     def url(self) -> str:
@@ -90,7 +89,7 @@ COMMON_EXCLUDES = [
     "CONTRIBUTING*", "CODE_OF_CONDUCT*", "third_party/*",
 ]
 
-# Licence commune à tous les articles retenus (vérifiée une par une).
+# License shared by every retained paper (verified one by one).
 PAPER_LICENSE_SPDX = "CC-BY-4.0"
 PAPER_TOKEN_BUDGET = 280_000
 
@@ -98,25 +97,26 @@ PAPER_TOKEN_BUDGET = 280_000
 REPO_CATALOG: List[RepoSource] = [
 
     # ======================================================================
-    # FAMILLE « hmrs_framework » -- frameworks et benchmarks multi-robots.
-    # Ce sont les seules sources qui contiennent des PROMPTS et des
-    # définitions de tâches réellement multi-agents.
+    # FAMILY "hmrs_framework" -- multi-robot frameworks and benchmarks.
+    # These are the only sources that contain genuinely multi-agent PROMPTS
+    # and task definitions.
     # ======================================================================
     RepoSource(
         source_id="emos", display_name="EMOS / Habitat-MAS",
         family="hmrs_framework", kind=KIND_CODE,
         repo_url="https://github.com/SgtVincent/EMOS.git",
         repo_ref="main", license_spdx="MIT",
-        # On restreint aux parties propres à EMOS : le reste du dépôt est un
-        # fork de habitat-lab (simulateur), hors sujet pour cat2.
+        # Restricted to the parts specific to EMOS: the rest of the
+        # repository is a fork of habitat-lab (the simulator), off-topic
+        # for cat2.
         include_globs=["docs/**/*.md", "*.md", "habitat-baselines/**/*.md",
                        "examples/**/*.md"],
         exclude_globs=COMMON_EXCLUDES,
         token_budget=35_000,
         url="https://github.com/SgtVincent/EMOS",
-        notes="Méthodologie « Robot Resume » : URDF -> description de "
-              "capacités -> allocation embodiment-aware. C'est exactement le "
-              "pont entre cat3 et la cible du modèle.",
+        notes="The 'Robot Resume' methodology: URDF -> capability "
+              "description -> embodiment-aware allocation. This is exactly "
+              "the bridge between cat3 and the model's target behaviour.",
     ),
     RepoSource(
         source_id="roco", display_name="RoCo / RoCoBench",
@@ -127,9 +127,9 @@ REPO_CATALOG: List[RepoSource] = [
         exclude_globs=COMMON_EXCLUDES,
         token_budget=45_000,
         url="https://project-roco.github.io/",
-        notes="Dialogue dialectique entre robots : les prompts de "
-              "négociation et les six tâches de RoCoBench. Source textuelle "
-              "multi-robots la plus propre selon l'enquête datasets.",
+        notes="Dialectic negotiation between robots: the negotiation "
+              "prompts and the six RoCoBench tasks. The cleanest "
+              "multi-robot text source according to the dataset survey.",
     ),
     RepoSource(
         source_id="partnr", display_name="PARTNR (Meta)",
@@ -141,13 +141,12 @@ REPO_CATALOG: List[RepoSource] = [
         exclude_globs=COMMON_EXCLUDES,
         token_budget=50_000,
         url="https://github.com/facebookresearch/partnr-planner",
-        notes="100 k tâches de collaboration ; le planificateur LLM "
-              "(habitat_llm) contient les prompts de décomposition et "
-              "d'assignation.",
+        notes="100k collaboration tasks; the LLM planner (habitat_llm) "
+              "holds the decomposition and assignment prompts.",
     ),
 
     # ======================================================================
-    # FAMILLE « hmrs_book » -- le seul ouvrage complet du domaine.
+    # FAMILY "hmrs_book" -- the only complete work in the field.
     # ======================================================================
     RepoSource(
         source_id="ros2_multirobot_book",
@@ -159,31 +158,31 @@ REPO_CATALOG: List[RepoSource] = [
         exclude_globs=COMMON_EXCLUDES,
         token_budget=75_000,
         url="https://osrf.github.io/ros2multirobotbook/",
-        notes="Livre de l'Open Source Robotics Foundation : flottes "
-              "hétérogènes, répartition des tâches, interopérabilité. Prose "
-              "pédagogique continue, registre absent des autres sources.",
+        notes="Book by the Open Source Robotics Foundation: heterogeneous "
+              "fleets, task distribution, interoperability. Continuous "
+              "teaching prose, a register absent from the other sources.",
     ),
 
     # ======================================================================
-    # FAMILLE « fleet » -- gestion de flotte hétérogène en production.
-    # Contrepoint indispensable aux articles : ici l'allocation de tâches
-    # n'est pas une expérience, c'est un système déployé.
+    # FAMILY "fleet" -- heterogeneous fleet management in production.
+    # An indispensable counterpoint to the papers: here task allocation is
+    # not an experiment, it is a deployed system.
     # ======================================================================
     RepoSource(
         source_id="open_rmf", display_name="Open-RMF",
         family="fleet", kind=KIND_DOCS,
         repo_url="https://github.com/open-rmf/rmf.git",
         repo_ref="main", license_spdx="Apache-2.0",
-        # `reports/` contient les tableaux de statut d'intégration continue
-        # (281 000 caractères de badges pour un seul fichier) : du bruit
-        # d'outillage, aucune connaissance robotique. Exclu.
+        # `reports/` holds continuous-integration status tables (281,000
+        # characters of badges in a single file): tooling noise, no
+        # robotics knowledge. Excluded.
         include_globs=["docs/**/*.md", "*.md"],
         exclude_globs=COMMON_EXCLUDES + ["reports/*"],
         token_budget=40_000,
         url="https://www.open-rmf.org/",
-        notes="Interopérabilité entre flottes de robots hétérogènes, "
-              "allocation de tâches et résolution de conflits sur des "
-              "ressources partagées (ascenseurs, portes, couloirs).",
+        notes="Interoperability between heterogeneous robot fleets, task "
+              "allocation and conflict resolution over shared resources "
+              "(lifts, doors, corridors).",
     ),
     RepoSource(
         source_id="rmf_demos", display_name="Open-RMF Demos",
@@ -195,17 +194,18 @@ REPO_CATALOG: List[RepoSource] = [
         exclude_globs=COMMON_EXCLUDES,
         token_budget=35_000,
         url="https://github.com/open-rmf/rmf_demos",
-        notes="Tâches concrètes de flotte (livraison, boucle de patrouille, "
-              "nettoyage) et adaptateurs de flotte.",
+        notes="Concrete fleet tasks (delivery, patrol loop, cleaning) and "
+              "fleet adapters.",
     ),
 ]
 
 
 # ==========================================================================
-# ARTICLES DE RECHERCHE -- tous CC-BY-4.0, licence vérifiée une par une via
-# l'interface OAI-PMH d'arXiv (champ <license> de la notice).
-# `fetch` indique la voie d'extraction : "html" quand arXiv publie un rendu
-# HTML (net et structuré), "pdf" sinon (articles antérieurs à fin 2023).
+# RESEARCH PAPERS -- all CC-BY-4.0, license verified one by one through the
+# arXiv OAI-PMH interface (the <license> field of the record).
+# `fetch` gives the extraction path: "html" when arXiv publishes an HTML
+# rendering (clean and structured), "pdf" otherwise (papers predating late
+# 2023).
 # ==========================================================================
 
 PAPER_CATALOG: List[Paper] = [

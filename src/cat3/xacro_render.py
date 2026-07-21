@@ -1,20 +1,20 @@
 """
-Rendu Xacro -> URDF autonome (sans installation ROS complète).
+Standalone Xacro -> URDF rendering (no full ROS installation required).
 
-Les fichiers Xacro utilisent parfois des substitutions $(find <package>)
-pour localiser d'autres fichiers (ROS résout ça via ament_index_python /
-rospkg). Sans ROS, on résout localement : on cherche un dossier nommé
-<package> sous une racine de recherche, et on remplace $(find <package>)
-par son chemin absolu avant d'appeler l'outil xacro.
+Xacro files sometimes use $(find <package>) substitutions to locate other
+files (ROS resolves these through ament_index_python / rospkg). Without ROS
+we resolve them locally: we look for a directory named <package> under a
+search root and replace $(find <package>) with its absolute path before
+invoking the xacro tool.
 
-Certains Xacro ont besoin d'arguments (xacro_args, ex. ur_type:=ur5e) ;
-d'autres référencent le dépôt lui-même comme paquet (package == racine du
-dépôt) ; d'autres encore, non gérés ici, référencent des paquets situés
-dans des dépôts tiers séparés (voir note dans render_xacro_to_urdf).
+Some Xacro files need arguments (xacro_args, e.g. ur_type:=ur5e); others
+reference the repository itself as a package (package == repository root);
+others still -- not handled here -- reference packages living in separate
+third-party repositories (see the note in render_xacro_to_urdf).
 
-Les .xacro qui ne contiennent aucune directive xacro (URDF déguisé en
-.xacro, ex. Ranger Mini) passent par le même chemin et ressortent
-inchangés.
+A .xacro file containing no xacro directive at all (a URDF disguised as a
+.xacro, e.g. Ranger Mini) goes through the same path and comes out
+unchanged.
 """
 
 import re
@@ -30,19 +30,19 @@ _FIND_PATTERN = re.compile(r"\$\(find ([\w\-]+)\)")
 def _resolve_find_substitutions(text: str, search_root: Path) -> str:
     def repl(match: "re.Match[str]") -> str:
         package_name = match.group(1)
-        # Cas 1 : le paquet EST la racine de recherche elle-même
-        # (fréquent : ur_description, franka_description...). rglob ne
-        # descend pas sur soi-même, on le traite explicitement.
+        # Case 1: the package IS the search root itself (common with
+        # ur_description, franka_description...). rglob does not descend
+        # into itself, so this case is handled explicitly.
         if search_root.name == package_name:
             return str(search_root)
-        # Cas 2 : le paquet est un sous-dossier (éventuellement d'un dépôt
-        # tiers si search_root est la racine du cache).
+        # Case 2: the package is a subdirectory (possibly of a third-party
+        # repository if search_root is the cache root).
         for candidate in search_root.rglob(package_name):
             if candidate.is_dir():
                 return str(candidate)
-        # Sinon : laissé tel quel (souvent une référence commentée ou un
-        # paquet annexe absent). Si xacro en a réellement besoin, l'erreur
-        # surviendra plus loin, explicite.
+        # Otherwise: left as-is (often a commented-out reference or a
+        # missing optional package). If xacro genuinely needs it, the error
+        # will surface later, explicitly.
         return match.group(0)
 
     return _FIND_PATTERN.sub(repl, text)
@@ -55,28 +55,28 @@ def render_xacro_to_urdf(
     find_search_root: Optional[Path] = None,
 ) -> str:
     """
-    Rend un .xacro (ou un .urdf déguisé en .xacro) en URDF final.
+    Render a .xacro (or a .urdf disguised as .xacro) into final URDF.
 
-    - xacro_args : arguments passés à xacro sous forme key:=value
-      (ex. {"ur_type": "ur5e", "name": "ur5e"}). Requis par certains Xacro
-      génériques, sinon "Undefined substitution argument".
-    - find_search_root : racine sous laquelle résoudre les $(find pkg).
-      Par défaut = repo_root. Passer la racine du cache robot_descriptions
-      permet de résoudre des paquets situés dans des dépôts voisins
-      (dépendances cross-repo).
+    - xacro_args: arguments passed to xacro as key:=value pairs
+      (e.g. {"ur_type": "ur5e", "name": "ur5e"}). Required by some generic
+      Xacro files, otherwise "Undefined substitution argument".
+    - find_search_root: root under which $(find pkg) is resolved. Defaults
+      to repo_root. Passing the robot_descriptions cache root allows
+      resolving packages that live in neighbouring repositories
+      (cross-repo dependencies).
 
-    Travaille sur une copie temporaire pour ne jamais modifier le cache.
-    Retourne le contenu URDF sous forme de texte.
+    Works on a temporary copy so the cache is never modified. Returns the
+    URDF content as text.
     """
     xacro_args = xacro_args or {}
     with tempfile.TemporaryDirectory() as tmp:
-        # On PRÉSERVE le nom du dépôt (ex: "ur_description") pour que la
-        # résolution de $(find <nom_du_dépôt>) fonctionne (cas paquet ==
-        # racine). L'ancien code copiait vers "repo_copy" et cassait ce cas.
+        # The repository name is PRESERVED (e.g. "ur_description") so that
+        # resolving $(find <repo_name>) works (the package == root case).
+        # An earlier version copied to "repo_copy" and broke that case.
         tmp_root = Path(tmp) / repo_root.name
-        # symlinks=True : certains paquets contiennent un CMakeLists.txt
-        # symlinké vers /opt/ros/... (cible absente ici). Copier le lien
-        # tel quel évite une erreur sur cible cassée -- xacro ne le lit pas.
+        # symlinks=True: some packages contain a CMakeLists.txt symlinked
+        # to /opt/ros/... (target absent here). Copying the link as-is
+        # avoids a broken-target error -- xacro never reads it.
         shutil.copytree(repo_root, tmp_root, symlinks=True)
 
         relative_xacro = xacro_path.relative_to(repo_root)
@@ -95,6 +95,6 @@ def render_xacro_to_urdf(
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(
-                f"Echec du rendu xacro pour {xacro_path}:\n{result.stderr}"
+                f"xacro rendering failed for {xacro_path}:\n{result.stderr}"
             )
         return result.stdout

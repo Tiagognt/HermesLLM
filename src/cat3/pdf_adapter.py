@@ -1,20 +1,19 @@
 """
-Voie PDF de la phase 2 : formatage de manuels/datasheets de robots.
+PDF path of phase 2: formatting robot manuals and datasheets.
 
-Chaîne : PDF -> extraction texte (pdfplumber, repli pdftotext -layout) ->
-nettoyage (en-têtes/pieds de page répétés, numéros de page, césures,
-espaces) -> (option) mise en forme LLM strictement EXTRACTIVE ->
-DocumentDraft.
+Chain: PDF -> text extraction (pdfplumber, pdftotext -layout fallback) ->
+cleaning (repeated headers/footers, page numbers, hyphenation, spacing) ->
+(optional) strictly EXTRACTIVE LLM formatting -> DocumentDraft.
 
-IMPORTANT licence : un manuel de fabricant est presque toujours
-propriétaire (©), donc HORS de l'allowlist du projet. La licence vient du
-manifeste (pdf_manifest.json), est classée par license_utils, et c'est
-build_corpus qui décide de l'inclusion via is_collectible. Cet adaptateur
-ne force jamais l'inclusion d'un contenu propriétaire.
+LICENSE, important: a vendor manual is almost always proprietary (c), hence
+OUTSIDE the project allowlist. The license comes from the manifest
+(pdf_manifest.json), is classified by license_utils, and it is build_corpus
+that decides on inclusion through is_collectible. This adapter never forces
+the inclusion of proprietary content.
 
-La mise en forme LLM est DÉSACTIVÉE par défaut : reformuler un manuel via
-LLM risque (a) d'inventer des specs, (b) d'aggraver la question de droits.
-En extractif pur, le texte reste une extraction fidèle et vérifiable.
+LLM formatting is DISABLED by default: rephrasing a manual through an LLM
+risks (a) inventing specifications and (b) worsening the rights question.
+In purely extractive mode the text stays a faithful, verifiable extraction.
 """
 
 from __future__ import annotations
@@ -32,18 +31,17 @@ from common.ocr import (OcrUnavailable, looks_like_pdf, ocr_pdf,
 
 
 # --------------------------------------------------------------------------
-# Découverte du fichier PDF
+# Finding the PDF file
 # --------------------------------------------------------------------------
 
 def find_pdf(robot_manual_dir: Path, preferred_name: Optional[str] = None) -> Optional[Path]:
     """
-    Trouve le PDF d'un robot dans son dossier de manuels.
+    Find a robot's PDF inside its manual directory.
 
-    On accepte N'IMPORTE QUEL nom de fichier .pdf : exiger un nom exact
-    (l'ancien comportement, "manual.pdf") faisait échouer silencieusement
-    tous les manuels réellement téléchargés (g1_manual.pdf, x2_manual.pdf,
-    technical_manual.pdf...). preferred_name n'est plus qu'une préférence
-    en cas de PDF multiples.
+    ANY .pdf filename is accepted: requiring an exact name (the old
+    behaviour, "manual.pdf") silently failed for every manual actually
+    downloaded (g1_manual.pdf, x2_manual.pdf, technical_manual.pdf...).
+    preferred_name is now only a preference when several PDFs are present.
     """
     if not robot_manual_dir.is_dir():
         return None
@@ -65,7 +63,7 @@ def _extract_pages_pdfplumber(pdf_path: Path) -> Optional[List[str]]:
     try:
         import pdfplumber
     except ImportError:
-        return None      # pdfplumber non installé -> repli pdftotext
+        return None      # pdfplumber not installed -> pdftotext fallback
     pages = []
     with pdfplumber.open(str(pdf_path)) as pdf:
         for p in pdf.pages:
@@ -74,25 +72,25 @@ def _extract_pages_pdfplumber(pdf_path: Path) -> Optional[List[str]]:
 
 
 def _extract_text_pdftotext(pdf_path: Path) -> str:
-    # Repli : poppler, en préservant la mise en page (utile multi-colonnes).
+    # Fallback: poppler, preserving layout (useful for multi-column pages).
     out = subprocess.run(
         ["pdftotext", "-layout", str(pdf_path), "-"],
         capture_output=True, text=True,
     )
     if out.returncode != 0:
-        raise RuntimeError(f"pdftotext a échoué sur {pdf_path}: {out.stderr[:200]}")
+        raise RuntimeError(f"pdftotext failed on {pdf_path}: {out.stderr[:200]}")
     return out.stdout
 
 
 # --------------------------------------------------------------------------
-# Nettoyage
+# Cleaning
 # --------------------------------------------------------------------------
 
 _PAGE_NUM_RE = re.compile(r"^\s*(page\s*)?\d+\s*(/\s*\d+)?\s*$", re.IGNORECASE)
 
 
 def _strip_repeated_headers_footers(pages: List[str], min_fraction: float = 0.5) -> List[str]:
-    """Supprime les lignes (en-têtes/pieds) qui réapparaissent sur >= min_fraction des pages."""
+    """Remove lines (headers/footers) recurring on >= min_fraction of pages."""
     if len(pages) < 4:
         return pages
     first_last = Counter()
@@ -115,19 +113,19 @@ def clean_text(pages: List[str]) -> str:
     for pg in pages:
         for raw in pg.splitlines():
             line = raw.rstrip()
-            if _PAGE_NUM_RE.match(line):      # ligne = numéro de page seul
+            if _PAGE_NUM_RE.match(line):      # line is just a page number
                 continue
             lines.append(line)
 
     text = "\n".join(lines)
-    text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)      # dé-césure fin de ligne
-    text = re.sub(r"[ \t]+", " ", text)               # espaces multiples
-    text = re.sub(r"\n{3,}", "\n\n", text)            # lignes vides multiples
+    text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)      # de-hyphenate line ends
+    text = re.sub(r"[ \t]+", " ", text)               # multiple spaces
+    text = re.sub(r"\n{3,}", "\n\n", text)            # multiple blank lines
     return text.strip()
 
 
 # --------------------------------------------------------------------------
-# Mise en forme LLM (optionnelle, strictement extractive)
+# LLM formatting (optional, strictly extractive)
 # --------------------------------------------------------------------------
 
 _FORMAT_SYSTEM = (
@@ -139,24 +137,24 @@ _FORMAT_SYSTEM = (
 
 def llm_format(text: str, provider: LLMProvider, max_chars: int = 12000) -> str:
     if isinstance(provider, TemplateProvider):
-        return text  # pas de LLM configuré -> extractif pur
+        return text  # no LLM configured -> purely extractive
     prompt = ("Reformat the following robot manual excerpt. Keep all facts and "
               "numbers verbatim.\n\n" + text[:max_chars])
     return provider.generate(prompt, system=_FORMAT_SYSTEM).strip()
 
 
 # --------------------------------------------------------------------------
-# Adaptateur
+# Adapter
 # --------------------------------------------------------------------------
 
-MIN_USEFUL_CHARS = 200   # en dessous : PDF probablement scanné (pas de couche texte)
+MIN_USEFUL_CHARS = 200   # below this: probably a scanned PDF (no text layer)
 
 
 def ocr_cache_path(pdf_path: Path) -> Path:
     """
-    Cache OCR, à côté du PDF source. L'OCR coûte quelques secondes par page :
-    sans cache, régénérer le corpus (phase 2) relancerait la reconnaissance
-    à chaque fois, ce qui reviendrait à coupler les deux phases.
+    OCR cache, next to the source PDF. OCR costs a few seconds per page:
+    without a cache, regenerating the corpus (phase 2) would re-run
+    recognition every time, which would amount to coupling the two phases.
     """
     return pdf_path.parent / f".ocr-{pdf_path.stem}.json"
 
@@ -175,14 +173,14 @@ def adapt(
     ocr_max_pages: Optional[int] = None,
     ocr_progress=None,
 ) -> DocumentDraft:
-    # Contrôle de signature AVANT toute tentative d'extraction : un fichier
-    # « .pdf » qui n'en est pas un produisait sinon une erreur pdfminer
-    # incompréhensible (« No /Root object! ») n'indiquant aucune action.
+    # Signature check BEFORE any extraction attempt: a ".pdf" file that is
+    # not one used to produce an incomprehensible pdfminer error
+    # ("No /Root object!") pointing at no action at all.
     if not looks_like_pdf(pdf_path):
         raise RuntimeError(
-            f"{pdf_path.name} n'est pas un PDF : contenu réel détecté = "
-            f"{sniff_file_type(pdf_path)}. Le fichier doit être "
-            f"re-téléchargé depuis la source officielle."
+            f"{pdf_path.name} is not a PDF: real content detected = "
+            f"{sniff_file_type(pdf_path)}. The file must be re-downloaded "
+            f"from its official source."
         )
 
     pages = _extract_pages_pdfplumber(pdf_path)
@@ -195,13 +193,13 @@ def adapt(
     provenance = {"pdf_file": pdf_path.name, "n_pages": len(pages),
                   "extraction": "native"}
 
-    # Un PDF scanné (images seules) ressort quasi vide.
+    # A scanned PDF (images only) comes out nearly empty.
     if len(text) < MIN_USEFUL_CHARS:
         if not use_ocr:
             raise RuntimeError(
-                f"{pdf_path.name} : {len(text)} caractères extraits seulement "
-                f"({len(pages)} pages) -- PDF probablement scanné ou sans couche "
-                f"texte. Relancer avec --ocr, ou écarter ce manuel."
+                f"{pdf_path.name}: only {len(text)} characters extracted "
+                f"({len(pages)} pages) -- probably a scanned PDF or one with "
+                f"no text layer. Re-run with --ocr, or drop this manual."
             )
         try:
             result = ocr_pdf(pdf_path, max_pages=ocr_max_pages,
@@ -209,15 +207,14 @@ def adapt(
                              progress=ocr_progress)
         except OcrUnavailable as exc:
             raise RuntimeError(
-                f"{pdf_path.name} : PDF scanné et OCR indisponible. {exc}"
+                f"{pdf_path.name}: scanned PDF and OCR unavailable. {exc}"
             ) from exc
 
         text = clean_text([result.text])
         if len(text) < MIN_USEFUL_CHARS:
             raise RuntimeError(
-                f"{pdf_path.name} : OCR effectué ({result.describe()}) mais "
-                f"seulement {len(text)} caractères exploitables -- document "
-                f"à écarter."
+                f"{pdf_path.name}: OCR performed ({result.describe()}) but "
+                f"only {len(text)} usable characters -- document to drop."
             )
         used_ocr = True
         ocr_confidence = result.mean_confidence
@@ -231,7 +228,7 @@ def adapt(
     if use_llm_format and provider is not None:
         text = llm_format(text, provider)
     if max_chars is not None and len(text) > max_chars:
-        text = text[:max_chars].rstrip() + "\n[... tronqué ...]"
+        text = text[:max_chars].rstrip() + "\n[... truncated ...]"
 
     return DocumentDraft(
         robot_id=robot_id,

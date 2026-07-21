@@ -1,18 +1,18 @@
 """
-Récupération de dépôts git complets -- transverse cat1 / cat2.
+Fetching whole git repositories -- shared by cat1 / cat2.
 
-cat3 récupérait UN fichier par robot (`cat3/fetch_git_source.py`, clone
-sparse). cat1 a besoin de l'inverse : des arborescences entières de
-documentation. D'où ce module, générique et réutilisable par cat2.
+cat3 fetches ONE file per robot (`cat3/fetch_git_source.py`, sparse clone).
+cat1 needs the opposite: entire documentation trees. Hence this module,
+generic and reusable by cat2.
 
-Choix : clone *shallow* (`--depth 1`) sur une référence donnée, puis
-relevé du commit obtenu. Le commit est stocké dans les métadonnées, ce qui
-rend la collecte auditable même si la branche bouge ensuite.
+Design: shallow clone (`--depth 1`) on a given reference, then record the
+resulting commit. The commit is stored in the metadata, which keeps the
+collection auditable even if the branch moves afterwards.
 
-Le module lit aussi le fichier de licence du dépôt et tente de
-l'identifier. Cette identification sert de CONTRE-VÉRIFICATION du SPDX
-déclaré à la main dans le catalogue : c'est le catalogue qui fait foi
-(vérifié par un humain), mais un désaccord est signalé plutôt que tu.
+The module also reads the repository's license file and tries to identify
+it. That identification is a CROSS-CHECK of the SPDX id declared by hand in
+the catalogue: the catalogue is authoritative (a human verified it), but a
+disagreement is reported rather than silently ignored.
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ from typing import List, Optional
 LICENSE_FILENAMES = ("LICENSE", "LICENSE.md", "LICENSE.txt", "LICENSE.TXT",
                      "LICENCE", "COPYING", "COPYING.txt", "LICENSE-APACHE")
 
-# Signatures textuelles -> identifiant SPDX. Ordre significatif : les
-# motifs les plus spécifiques d'abord.
+# Textual signatures -> SPDX identifier. Order matters: the most specific
+# patterns come first.
 _LICENSE_SIGNATURES = [
     (re.compile(r"GNU LESSER GENERAL PUBLIC LICENSE", re.I), "LGPL"),
     (re.compile(r"GNU GENERAL PUBLIC LICENSE", re.I), "GPL"),
@@ -60,12 +60,12 @@ def _run(cmd: List[str], cwd: Optional[Path] = None, timeout: int = 900) -> str:
                           capture_output=True, text=True, timeout=timeout)
     if proc.returncode != 0:
         raise RuntimeError(
-            f"échec de `{' '.join(cmd[:4])}...` : {proc.stderr.strip()[:300]}")
+            f"`{' '.join(cmd[:4])}...` failed: {proc.stderr.strip()[:300]}")
     return proc.stdout.strip()
 
 
 def detect_license(repo_path: Path) -> tuple:
-    """Retourne (chemin_du_fichier, spdx_detecté_ou_None)."""
+    """Returns (license_file_path, detected_spdx_or_None)."""
     for name in LICENSE_FILENAMES:
         candidate = repo_path / name
         if not candidate.is_file():
@@ -77,7 +77,7 @@ def detect_license(repo_path: Path) -> tuple:
         if _BSD_BODY.search(head):
             return candidate, ("BSD-3-Clause" if _BSD_THIRD_CLAUSE.search(head)
                                else "BSD-2-Clause")
-        return candidate, None      # fichier présent mais non reconnu
+        return candidate, None      # file present but not recognised
     return None, None
 
 
@@ -85,13 +85,13 @@ def clone(source_id: str, repo_url: str, ref: str, cache_root: Path,
           *, refresh: bool = False,
           sparse_paths: Optional[List[str]] = None) -> RepoCheckout:
     """
-    Clone shallow dans cache_root/<source_id>. Si le dossier existe déjà et
-    que refresh=False, on le réutilise tel quel : re-cloner 20 dépôts à
-    chaque essai est inutile et fragile côté réseau.
+    Shallow clone into cache_root/<source_id>. If the directory already
+    exists and refresh=False, it is reused as-is: re-cloning 25 repositories
+    on every attempt is wasteful and network-fragile.
 
-    sparse_paths : ne matérialiser que ces sous-arbres. Indispensable pour
-    les dépôts monolithiques -- `google-research` fait plusieurs Go, mais
-    5 Mo en sparse sur le seul dossier qui nous intéresse.
+    sparse_paths: materialise only these subtrees. Essential for monolithic
+    repositories -- `google-research` is several GB, but 5 MB sparse on the
+    single directory we care about.
     """
     cache_root.mkdir(parents=True, exist_ok=True)
     dest = cache_root / source_id
@@ -115,10 +115,10 @@ def clone(source_id: str, repo_url: str, ref: str, cache_root: Path,
 
     warnings: List[str] = []
     if license_file is None:
-        warnings.append("aucun fichier LICENSE à la racine du dépôt")
+        warnings.append("no LICENSE file at the repository root")
     elif detected is None:
-        warnings.append(f"fichier {license_file.name} présent mais licence "
-                        f"non reconnue automatiquement")
+        warnings.append(f"{license_file.name} present but the license was "
+                        f"not recognised automatically")
 
     return RepoCheckout(
         source_id=source_id, path=dest, repo_url=repo_url, ref=ref,
@@ -130,8 +130,8 @@ def clone(source_id: str, repo_url: str, ref: str, cache_root: Path,
 def select_files(root: Path, include_globs: List[str],
                  exclude_globs: Optional[List[str]] = None) -> List[Path]:
     """
-    Fichiers retenus, chemins ABSOLUS, triés -- l'ordre doit être
-    déterministe pour que deux collectes donnent le même corpus.
+    Selected files, ABSOLUTE paths, sorted -- the order must be
+    deterministic so that two collections produce the same corpus.
     """
     exclude_globs = exclude_globs or []
     selected: set = set()

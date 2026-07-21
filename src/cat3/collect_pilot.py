@@ -1,19 +1,19 @@
 """
-Point d'entrée du pilote de collecte (catégorie 3 -- URDF & Robot Specs).
+Entry point of the collection pilot (category 3 -- URDF & Robot Specs).
 
-Pour chaque robot du catalogue (sources.py) :
-  1. récupère le fichier source (via robot_descriptions.py ou git direct)
-  2. si c'est un Xacro, le rend en URDF (xacro_render.py)
-  3. classe la licence selon les règles des consignes (license_utils.py)
-  4. copie le(s) fichier(s) bruts dans data/cat3/raw/urdf/<robot_id>/
-  5. ajoute une ligne dans data/cat3/metadata/collection_metadata.jsonl
+For each robot in the catalogue (sources.py):
+  1. fetch the source file (via robot_descriptions.py or direct git)
+  2. if it is a Xacro, render it to URDF (xacro_render.py)
+  3. classify the license per the project rules (license_utils.py)
+  4. copy the raw file(s) to data/cat3/raw/urdf/<robot_id>/
+  5. append a line to data/cat3/metadata/collection_metadata.jsonl
 
-Ce script NE fait PAS la transformation vers le corpus final : c'est
-build_corpus.py (phase 2), volontairement séparé. Ce module ne produit que
-des fichiers bruts + métadonnées de provenance/licence.
+This script does NOT transform anything into the final corpus: that is
+build_corpus.py (phase 2), deliberately kept separate. This module only
+produces raw files plus provenance/license metadata.
 
-Lançable depuis n'importe quel répertoire :
-    python3 /chemin/vers/src/cat3/collect_pilot.py
+Runnable from any directory:
+    python3 /path/to/src/cat3/collect_pilot.py
 """
 
 from __future__ import annotations
@@ -40,8 +40,8 @@ RAW_URDF_DIR = paths.raw_kind_dir(CATEGORY, "urdf")
 METADATA_PATH = paths.metadata_path(CATEGORY)
 GIT_CACHE_DIR = paths.git_cache_dir(CATEGORY)
 
-# Robots pour lesquels une absence de licence est explicitement acceptée
-# (décision projet du 2026-07-15, à traiter plus tard -- cf. sources.py).
+# Robots for which a missing license is explicitly accepted (project
+# decision of 2026-07-15, to be revisited -- see sources.py).
 ALLOW_NO_LICENSE_FOR = {"agilex_ranger_mini_v3"}
 
 
@@ -104,11 +104,11 @@ def _robot_dir(source: RobotSource) -> Path:
 
 def _cleanup_if_empty(robot_dir: Path) -> bool:
     """
-    Supprime le dossier d'un robot s'il est resté vide.
+    Remove a robot's directory if it was left empty.
 
-    Le dossier est créé avant la récupération ; si celle-ci échoue, il
-    restait sur le disque, vide, et donnait l'illusion d'un robot collecté
-    (cas réel : `tiago`, dossier vide et absent des métadonnées).
+    The directory is created before fetching; when the fetch failed it used
+    to stay on disk, empty, giving the illusion of a collected robot (real
+    case: `tiago`, empty directory and absent from the metadata).
     """
     if robot_dir.is_dir() and not any(robot_dir.iterdir()):
         robot_dir.rmdir()
@@ -117,7 +117,7 @@ def _cleanup_if_empty(robot_dir: Path) -> bool:
 
 
 def _collect_one(source: RobotSource, report: RunReport) -> None:
-    print(f"[{source.robot_id}] collecte en cours...")
+    print(f"[{source.robot_id}] collecting...")
     robot_dir = _robot_dir(source)
     robot_dir.mkdir(parents=True, exist_ok=True)
 
@@ -133,11 +133,11 @@ def _collect_one(source: RobotSource, report: RunReport) -> None:
     collectible = is_collectible(license_status, allow_no_license_override=allow_override)
 
     if not collectible:
-        print(f"[{source.robot_id}] ECARTE -- licence non conforme ({license_status})")
+        print(f"[{source.robot_id}] SET ASIDE -- non-compliant license ({license_status})")
         shutil.rmtree(robot_dir, ignore_errors=True)
         report.skip(source.robot_id, kind=source.robot_class or "urdf",
-                    reason=f"licence non conforme ({license_status}) — "
-                           f"bruts supprimés du disque"
+                    reason=f"non-compliant license ({license_status}) — "
+                           f"raw files removed from disk"
                            + (f". {source.notes}" if source.notes else ""))
         return
 
@@ -151,33 +151,33 @@ def _collect_one(source: RobotSource, report: RunReport) -> None:
         "repo_ref": outcome["repo_ref"],
         "source_file": outcome["source_file"],
         "license_status": license_status,
-        # Chemins RELATIFS à la racine du projet : les métadonnées restent
-        # valides si le projet est déplacé ou cloné sur une autre machine.
+        # Paths RELATIVE to the project root: the metadata stays valid if
+        # the project is moved or cloned onto another machine.
         "raw_urdf_path": paths.to_relative(outcome["raw_urdf_dest"]),
         "raw_xacro_path": (paths.to_relative(outcome["raw_xacro_dest"])
                            if outcome["raw_xacro_dest"] else None),
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "notes": source.notes,
     })
-    flag = " (flagué, à traiter)" if license_status == "no-license" else ""
-    print(f"[{source.robot_id}] collecté -- licence: {license_status}{flag}")
+    flag = " (flagged, to revisit)" if license_status == "no-license" else ""
+    print(f"[{source.robot_id}] collected -- license: {license_status}{flag}")
     if license_status == "no-license":
         report.warn(source.robot_id, kind=source.robot_class or "urdf",
-                    reason="collecté SANS licence déclarée, sur décision "
-                           "explicite du projet (ALLOW_NO_LICENSE_FOR)")
+                    reason="collected WITHOUT a declared license, on an "
+                           "explicit project decision (ALLOW_NO_LICENSE_FOR)")
     report.ok(source.robot_id, kind=source.robot_class or "urdf",
-              detail=f"{source.source_type.value} — licence {license_status}")
+              detail=f"{source.source_type.value} — license {license_status}")
 
 
 def main() -> None:
     report = RunReport("cat3-collect", category=CATEGORY,
-                       title="Catégorie 3 — phase 1 (collecte URDF)")
-    print(f"Racine projet : {paths.PROJECT_ROOT}")
-    print(f"Sortie brute  : {RAW_URDF_DIR}\n")
+                       title="Category 3 — phase 1 (URDF collection)")
+    print(f"Project root : {paths.PROJECT_ROOT}")
+    print(f"Raw output   : {RAW_URDF_DIR}\n")
     paths.ensure_dirs(RAW_URDF_DIR, METADATA_PATH.parent, GIT_CACHE_DIR)
     report.info("Catalogue", f"{len(PILOT_CATALOG)} robots")
-    report.info("Sortie brute", f"`{paths.to_relative(RAW_URDF_DIR)}`")
-    report.info("no-license tolérés", sorted(ALLOW_NO_LICENSE_FOR) or "aucun")
+    report.info("Raw output", f"`{paths.to_relative(RAW_URDF_DIR)}`")
+    report.info("Tolerated no-license", sorted(ALLOW_NO_LICENSE_FOR) or "none")
 
     if METADATA_PATH.exists():
         METADATA_PATH.unlink()
@@ -185,20 +185,20 @@ def main() -> None:
     for source in PILOT_CATALOG:
         try:
             _collect_one(source, report)
-        except Exception as exc:  # noqa: BLE001 -- on veut continuer les autres robots
-            print(f"[{source.robot_id}] ECHEC: {exc}")
+        except Exception as exc:  # noqa: BLE001 -- keep going with the others
+            print(f"[{source.robot_id}] FAILED: {exc}")
             report.fail(source.robot_id, kind=source.robot_class or "urdf", exc=exc)
-            # Un échec laissait derrière lui un dossier vide, indistinguable
-            # d'une collecte réussie à l'inspection du disque.
+            # A failure used to leave an empty directory behind,
+            # indistinguishable from a successful collection on disk.
             if _cleanup_if_empty(_robot_dir(source)):
-                print(f"[{source.robot_id}] dossier vide supprimé")
+                print(f"[{source.robot_id}] empty directory removed")
 
     report_path = report.write()
     counts = report.counts()
-    print(f"\nTerminé : {counts['ok']} collectés, {counts['skip']} écartés, "
-          f"{counts['fail']} en échec sur {len(PILOT_CATALOG)}.")
-    print(f"Métadonnées : {METADATA_PATH}")
-    print(f"Rapport     : {report_path}")
+    print(f"\nDone: {counts['ok']} collected, {counts['skip']} set aside, "
+          f"{counts['fail']} failed out of {len(PILOT_CATALOG)}.")
+    print(f"Metadata : {METADATA_PATH}")
+    print(f"Report   : {report_path}")
 
 
 if __name__ == "__main__":

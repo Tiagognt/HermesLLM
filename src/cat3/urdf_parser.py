@@ -1,15 +1,15 @@
 """
-Parsing déterministe d'un URDF vers une représentation intermédiaire
-robot-agnostique, PUIS dérivation de capacités (DOF, masse, limites,
-portée cinématique) et extraction d'un squelette de syntaxe nettoyé.
+Deterministic parsing of a URDF into a robot-agnostic intermediate
+representation, THEN derivation of capabilities (DOF, mass, limits,
+kinematic reach) and extraction of a cleaned syntax skeleton.
 
-Principe clé du projet : TOUT chiffre du corpus final vient d'ici, par le
-code, jamais d'un LLM. La description en langage naturel (module LLM,
-séparé) ne fera que reformuler des valeurs déjà extraites ici -- et un
-garde-fou vérifiera qu'elle n'invente aucun nombre.
+Key principle of the project: EVERY number in the final corpus comes from
+here, from code, never from an LLM. The natural-language description
+(separate LLM module) only rephrases values already extracted here -- and a
+guardrail verifies that it invents no number.
 
-Aucune dépendance ROS. math3d fait maison (pas de dépendance externe au-delà
-de la lib standard) pour rester installable partout.
+No ROS dependency. Hand-rolled 3D maths (no external dependency beyond the
+standard library) so it stays installable anywhere.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-# Degrés de liberté par type de joint URDF.
+# Degrees of freedom per URDF joint type.
 _DOF_BY_TYPE = {
     "revolute": 1,
     "continuous": 1,
@@ -34,7 +34,7 @@ _ACTUATED_TYPES = {"revolute", "continuous", "prismatic"}
 
 
 # --------------------------------------------------------------------------
-# Représentation intermédiaire
+# Intermediate representation
 # --------------------------------------------------------------------------
 
 @dataclass
@@ -60,7 +60,7 @@ class Joint:
 @dataclass
 class Link:
     name: str
-    mass: Optional[float] = None   # None si pas d'<inertial><mass>
+    mass: Optional[float] = None   # None when there is no <inertial><mass>
 
 
 @dataclass
@@ -68,8 +68,8 @@ class RobotModel:
     name: str
     links: List[Link] = field(default_factory=list)
     joints: List[Joint] = field(default_factory=list)
-    # Réparations appliquées au XML avant parsing. Jamais silencieuses :
-    # l'appelant les journalise (règle « aucun saut silencieux »).
+    # Repairs applied to the XML before parsing. Never silent: the caller
+    # logs them (rule "no silent skip").
     parse_notes: List[str] = field(default_factory=list)
 
     def link_names(self) -> List[str]:
@@ -101,20 +101,20 @@ def _opt_float(x: Optional[str]) -> Optional[float]:
 
 
 # --------------------------------------------------------------------------
-# Lecture XML tolérante aux préfixes de namespace non déclarés
+# XML reading tolerant of undeclared namespace prefixes
 #
-# Certains URDF publiés à l'époque de Gazebo Classic contiennent des balises
-# préfixées (<sensor:camera>, <controller:gazebo_ros_camera>) sans le
-# xmlns: correspondant. C'est du XML invalide : ElementTree refuse le
-# fichier entier avec « unbound prefix », et on perdait donc TOUT le robot
-# (cas réel : fetch, ligne 655) alors que ses <link>/<joint> sont parfaits.
+# Some URDFs published in the Gazebo Classic era contain prefixed tags
+# (<sensor:camera>, <controller:gazebo_ros_camera>) without the matching
+# xmlns:. That is invalid XML: ElementTree rejects the entire file with
+# "unbound prefix", so we used to lose the WHOLE robot (real case: fetch,
+# line 655) even though its <link>/<joint> elements are perfectly fine.
 #
-# On déclare donc les préfixes manquants sur l'élément racine avant de
-# parser. Aucune donnée n'est supprimée ni réécrite : on n'ajoute que les
-# déclarations xmlns absentes. Les éléments concernés se retrouvent dans un
-# namespace factice, donc ignorés par nos findall("link")/findall("joint")
-# non préfixés -- exactement le comportement voulu, puisque ce sont des
-# extensions simulateur, pas de la description cinématique.
+# We therefore declare the missing prefixes on the root element before
+# parsing. No data is removed or rewritten: we only add the absent xmlns
+# declarations. The affected elements end up in a dummy namespace and are
+# thus ignored by our unprefixed findall("link")/findall("joint") -- exactly
+# the desired behaviour, since they are simulator extensions, not kinematic
+# description.
 # --------------------------------------------------------------------------
 
 _TAG_PREFIX_RE = re.compile(r"</?([A-Za-z_][\w.\-]*):")
@@ -135,7 +135,7 @@ def _undeclared_prefixes(raw: str) -> List[str]:
 def _declare_prefixes(raw: str, prefixes: List[str]) -> str:
     m = _FIRST_ELEMENT_RE.search(raw)
     if m is None:
-        raise ET.ParseError("aucun élément racine trouvé dans le document")
+        raise ET.ParseError("no root element found in the document")
     decls = " " + " ".join(
         f'xmlns:{p}="{_UNDECLARED_NS_FMT.format(p)}"' for p in prefixes)
     insert_at = m.end(1)
@@ -144,9 +144,9 @@ def _declare_prefixes(raw: str, prefixes: List[str]) -> str:
 
 def read_urdf_xml(path: Path) -> Tuple[ET.Element, List[str]]:
     """
-    Retourne (racine, notes). `notes` documente toute réparation appliquée.
-    Une erreur XML qui n'est pas un préfixe non déclaré est relayée telle
-    quelle : on ne répare que ce qu'on sait réparer sans rien inventer.
+    Returns (root, notes). `notes` documents any repair applied. An XML
+    error that is not an undeclared prefix is re-raised unchanged: we only
+    repair what we can repair without inventing anything.
     """
     raw = path.read_text(encoding="utf-8", errors="replace")
     try:
@@ -158,15 +158,15 @@ def read_urdf_xml(path: Path) -> Tuple[ET.Element, List[str]]:
         if not prefixes:
             raise
         root = ET.fromstring(_declare_prefixes(raw, prefixes))
-        note = (f"XML réparé avant parsing : préfixe(s) de namespace non "
-                f"déclaré(s) {prefixes} (erreur d'origine : {first_error}). "
-                f"Déclarations xmlns ajoutées sur la racine ; les éléments "
-                f"concernés (extensions simulateur) sont ignorés.")
+        note = (f"XML repaired before parsing: undeclared namespace "
+                f"prefix(es) {prefixes} (original error: {first_error}). "
+                f"xmlns declarations added on the root; the affected "
+                f"elements (simulator extensions) are ignored.")
         return root, [note]
 
 
 def parse_urdf(path: Path) -> RobotModel:
-    """Lit un fichier URDF et renvoie un RobotModel. Robuste aux champs absents."""
+    """Read a URDF file and return a RobotModel. Robust to missing fields."""
     root, notes = read_urdf_xml(path)
     model = RobotModel(name=root.get("name", "unnamed"), parse_notes=notes)
 
@@ -204,14 +204,14 @@ def parse_urdf(path: Path) -> RobotModel:
 
 
 # --------------------------------------------------------------------------
-# Petite algèbre 3D (pas de numpy requis)
+# Small 3D algebra (numpy not required)
 # --------------------------------------------------------------------------
 
 def _rpy_to_matrix(r: float, p: float, y: float) -> List[List[float]]:
     cr, sr = math.cos(r), math.sin(r)
     cp, sp = math.cos(p), math.sin(p)
     cy, sy = math.cos(y), math.sin(y)
-    # R = Rz(y) @ Ry(p) @ Rx(r)  (convention URDF)
+    # R = Rz(y) @ Ry(p) @ Rx(r)  (URDF convention)
     return [
         [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
         [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
@@ -228,7 +228,7 @@ def _mat_mul(a, b):
 
 
 # --------------------------------------------------------------------------
-# Dérivation de capacités (déterministe)
+# Capability derivation (deterministic)
 # --------------------------------------------------------------------------
 
 def _build_child_map(model: RobotModel) -> Dict[str, List[Joint]]:
@@ -245,11 +245,11 @@ def _find_root_links(model: RobotModel) -> List[str]:
 
 def _kinematic_span_m(model: RobotModel) -> Optional[float]:
     """
-    Distance maximale (mètres) entre le lien racine et n'importe quel lien,
-    en configuration zéro (tous les joints à 0), transforms d'origine
-    appliqués (translation + rotation rpy). Descripteur géométrique
-    déterministe -- PAS le workspace réel (qui nécessiterait un
-    échantillonnage), mais une borne d'encombrement/allonge exploitable.
+    Maximum distance (metres) between the root link and any link, in the
+    zero configuration (all joints at 0), with the origin transforms
+    applied (translation + rpy rotation). A deterministic geometric
+    descriptor -- NOT the real workspace (which would require sampling),
+    but a usable bound on extent/reach.
     """
     roots = _find_root_links(model)
     if not roots:
@@ -262,7 +262,7 @@ def _kinematic_span_m(model: RobotModel) -> Optional[float]:
     seen = set()
     while stack:
         link, pos, rot = stack.pop()
-        if link in seen:      # garde-fou anti-cycle
+        if link in seen:      # anti-cycle guard
             continue
         seen.add(link)
         d = math.sqrt(sum(c * c for c in pos))
@@ -277,7 +277,7 @@ def _kinematic_span_m(model: RobotModel) -> Optional[float]:
 
 
 def derive_capabilities(model: RobotModel) -> dict:
-    """Retourne un dict de capacités/chiffres exacts, tous dérivés du URDF."""
+    """Return a dict of exact capabilities/figures, all derived from the URDF."""
     joint_types: Dict[str, int] = {}
     for j in model.joints:
         joint_types[j.type] = joint_types.get(j.type, 0) + 1
@@ -298,7 +298,6 @@ def derive_capabilities(model: RobotModel) -> dict:
     ]
 
     roots = _find_root_links(model)
-    children = {j.child for j in model.joints}
     parents = {j.parent for j in model.joints}
     leaves = [l.name for l in model.links if l.name not in parents]
 
@@ -324,18 +323,18 @@ def derive_capabilities(model: RobotModel) -> dict:
 
 
 # --------------------------------------------------------------------------
-# Squelette de syntaxe nettoyé (pour la branche "syntaxe brute" du corpus)
+# Cleaned syntax skeleton (for the "raw syntax" branch of the corpus)
 # --------------------------------------------------------------------------
 
 def make_skeleton(model: RobotModel, max_joints: Optional[int] = None) -> str:
     """
-    Régénère un URDF minimal : liens (noms seuls) + joints (type, parent,
-    child, axis, origin, limits). SANS <visual>/<collision>/<inertial>/
-    meshes. Déterministe, régénéré depuis le modèle (pas un strip regex du
-    fichier d'origine), donc aucun chemin de mesh ni commentaire ne fuit.
+    Regenerate a minimal URDF: links (names only) plus joints (type, parent,
+    child, axis, origin, limits). WITHOUT <visual>/<collision>/<inertial>/
+    meshes. Deterministic, regenerated from the model (not a regex strip of
+    the original file), so no mesh path or comment can leak.
 
-    max_joints : si fourni, tronque à N joints représentatifs (utile pour
-    les robots à très longue chaîne, afin de garder l'extrait compact).
+    max_joints: when given, truncate to N representative joints (useful for
+    robots with very long chains, to keep the excerpt compact).
     """
     lines = [f'<robot name="{model.name}">']
     for l in model.links:
@@ -363,6 +362,6 @@ def make_skeleton(model: RobotModel, max_joints: Optional[int] = None) -> str:
         lines.append('  </joint>')
 
     if max_joints is not None and len(model.joints) > max_joints:
-        lines.append(f'  <!-- ... {len(model.joints) - max_joints} joints supplémentaires omis -->')
+        lines.append(f'  <!-- ... {len(model.joints) - max_joints} additional joints omitted -->')
     lines.append('</robot>')
     return "\n".join(lines)

@@ -1,25 +1,24 @@
 """
-Contrôle de contamination -- transverse cat1 / cat2 / cat3.
+Contamination check -- shared by cat1 / cat2 / cat3.
 
-Règle globale des consignes : *exclure du corpus d'entraînement tout texte
-qui recoupe le scénario d'évaluation* (ici : incendie dans une station de
-métro). Un corpus contaminé rend l'évaluation finale ininterprétable : le
-modèle a déjà vu la réponse.
+Global rule of the brief: *exclude from the training corpus any text that
+overlaps the evaluation scenario* (here: a fire in a subway station). A
+contaminated corpus makes the final evaluation meaningless: the model has
+already seen the answer.
 
-Ce module est volontairement DÉTERMINISTE et auditable -- aucun LLM. Un
-document rejeté doit pouvoir être justifié devant quelqu'un : le verdict
-porte toujours la règle déclenchée, le terme trouvé, et un extrait du
-texte incriminé.
+This module is deliberately DETERMINISTIC and auditable -- no LLM. A
+rejected document must be defensible to a human: the verdict always carries
+the rule that fired, the term found, and an excerpt of the offending text.
 
-Deux types de règles (déclarés dans contamination_scenarios.json) :
+Two rule types (declared in contamination_scenarios.json):
 
-  phrase        -- une phrase du scénario apparaît telle quelle.
-  cooccurrence  -- au moins un terme de CHAQUE groupe apparaît dans une
-                   même fenêtre de N caractères. C'est ce qui distingue
-                   « incendie » dans un manuel de sécurité (inoffensif) de
-                   « incendie dans une station de métro » (contaminant).
+  phrase        -- a scenario phrase appears verbatim.
+  cooccurrence  -- at least one term from EACH group appears within the
+                   same N-character window. This is what separates "fire"
+                   in a safety manual (harmless) from "fire in a metro
+                   station" (contaminating).
 
-Utilisation dans un pipeline :
+Use inside a pipeline:
 
     from common.contamination import ContaminationChecker
     checker = ContaminationChecker.from_config()
@@ -27,8 +26,8 @@ Utilisation dans un pipeline :
     if verdict.is_contaminated:
         report.skip(item_id, reason=verdict.describe())
 
-Utilisation en audit d'un corpus déjà écrit (livrable « contamination
-check passed » de la Definition of Done) :
+Use as an audit of an already-written corpus (the "contamination check
+passed" deliverable of the definition of done):
 
     python3 src/common/contamination.py --corpus data/cat3/clean/corpus_clean.jsonl
 """
@@ -42,7 +41,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-if __name__ == "__main__":  # exécution directe : src/ doit être dans sys.path
+if __name__ == "__main__":  # direct execution: src/ must be on sys.path
     import sys as _sys
     _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -57,12 +56,11 @@ CONFIG_PATH = Path(__file__).resolve().parent / "contamination_scenarios.json"
 
 def normalize(text: str) -> str:
     """
-    Minuscules, accents retirés, espaces normalisés.
+    Lowercase, accents stripped, whitespace collapsed.
 
-    Retirer les accents permet à un seul terme de config d'attraper
-    « métro » et « metro », « fumée » et « fumee » -- utile car nos sources
-    mélangent anglais, français et texte issu d'OCR (où les accents sautent
-    fréquemment).
+    Stripping accents lets a single configured term catch both "métro" and
+    "metro", "fumée" and "fumee" -- useful because our sources mix English,
+    French and OCR output (where accents frequently disappear).
     """
     text = unicodedata.normalize("NFKD", text)
     text = "".join(c for c in text if not unicodedata.combining(c))
@@ -72,9 +70,9 @@ def normalize(text: str) -> str:
 
 def _term_regex(term: str) -> re.Pattern:
     """
-    Recherche du terme sur frontières de mot, en tolérant n'importe quelle
-    espace entre les mots d'une expression (le texte a déjà été normalisé,
-    mais les césures d'OCR/PDF restent capricieuses).
+    Word-boundary search for the term, tolerating any whitespace between
+    the words of a phrase (the text is already normalised, but PDF/OCR
+    line breaks remain capricious).
     """
     parts = [re.escape(p) for p in normalize(term).split()]
     return re.compile(r"\b" + r"\s+".join(parts) + r"\b")
@@ -95,7 +93,7 @@ class Match:
 
     def describe(self) -> str:
         return (f"contamination [{self.scenario_id}/{self.rule_id}] "
-                f"termes={self.terms} @{self.position} : « {self.excerpt} »")
+                f"terms={self.terms} @{self.position}: « {self.excerpt} »")
 
 
 @dataclass
@@ -108,12 +106,12 @@ class Verdict:
 
     def describe(self) -> str:
         if not self.matches:
-            return "non contaminé"
+            return "not contaminated"
         return " ; ".join(m.describe() for m in self.matches)
 
 
 # --------------------------------------------------------------------------
-# Règles
+# Rules
 # --------------------------------------------------------------------------
 
 EXCERPT_RADIUS = 90
@@ -152,7 +150,7 @@ class _PhraseRule(_Rule):
                                  _excerpt(norm_text, m.start())))
                 if first_only:
                     return out
-                break  # une occurrence suffit à documenter cette phrase
+                break  # one occurrence is enough to document this phrase
         return out
 
 
@@ -164,7 +162,7 @@ class _CooccurrenceRule(_Rule):
         self._compiled = [[(t, _term_regex(t)) for t in g] for g in self.groups]
 
     def find(self, norm_text: str, first_only: bool) -> List[Match]:
-        # Positions de chaque groupe, triées : (position, terme, index_groupe)
+        # Positions of every group hit, sorted: (position, term, group_index)
         hits: List[tuple] = []
         for gi, group in enumerate(self._compiled):
             for term, rx in group:
@@ -174,12 +172,12 @@ class _CooccurrenceRule(_Rule):
             return []
         n_groups = len(self._compiled)
         if len({gi for _, _, gi in hits}) < n_groups:
-            return []  # un groupe entier est absent -> pas de cooccurrence
+            return []  # a whole group is absent -> no co-occurrence
 
         hits.sort()
         out: List[Match] = []
-        # Fenêtre glissante : on cherche un intervalle <= window contenant au
-        # moins un terme de chaque groupe.
+        # Sliding window: look for an interval <= window containing at
+        # least one term from each group.
         left = 0
         counts: dict = {}
         for right in range(len(hits)):
@@ -197,8 +195,8 @@ class _CooccurrenceRule(_Rule):
                                  terms, pos, _excerpt(norm_text, pos)))
                 if first_only:
                     return out
-                # On repart après la fenêtre pour ne pas signaler 50 fois le
-                # même paragraphe.
+                # Restart past the window so the same paragraph is not
+                # reported fifty times.
                 left = right + 1
                 counts = {}
         return out
@@ -221,9 +219,9 @@ class ContaminationChecker:
         path = config_path or CONFIG_PATH
         if not path.exists():
             raise FileNotFoundError(
-                f"Configuration de contamination introuvable : {path}. "
-                f"Le contrôle de contamination est une exigence des consignes, "
-                f"il ne doit pas être désactivé par simple absence de fichier."
+                f"Contamination configuration not found: {path}. The "
+                f"contamination check is a requirement of the brief; it must "
+                f"not be disabled by a missing file."
             )
         cfg = json.loads(path.read_text(encoding="utf-8"))
         rules: List[_Rule] = []
@@ -237,19 +235,19 @@ class ContaminationChecker:
                 factory = _RULE_TYPES.get(spec["type"])
                 if factory is None:
                     raise ValueError(
-                        f"Type de règle inconnu dans {path} : {spec['type']!r} "
-                        f"(attendu : {sorted(_RULE_TYPES)})"
+                        f"Unknown rule type in {path}: {spec['type']!r} "
+                        f"(expected one of {sorted(_RULE_TYPES)})"
                     )
                 rules.append(factory(sid, spec))
         if not rules:
-            raise ValueError(f"Aucune règle de contamination active dans {path}.")
+            raise ValueError(f"No active contamination rule in {path}.")
         return cls(rules, scenario_ids)
 
     def check(self, text: str, *, first_only: bool = True) -> Verdict:
         """
-        first_only=True (défaut) : on s'arrête au premier indice trouvé --
-        suffisant pour décider d'exclure, et bien plus rapide.
-        first_only=False : inventaire complet, pour un audit.
+        first_only=True (default): stop at the first hit -- enough to decide
+        exclusion, and much faster.
+        first_only=False: full inventory, for auditing.
         """
         norm = normalize(text)
         matches: List[Match] = []
@@ -262,17 +260,17 @@ class ContaminationChecker:
         return Verdict(matches)
 
     def describe(self) -> str:
-        return (f"{len(self.rules)} règles sur "
-                f"{len(self.scenario_ids)} scénario(s) : "
+        return (f"{len(self.rules)} rules over "
+                f"{len(self.scenario_ids)} scenario(s): "
                 f"{', '.join(self.scenario_ids)}")
 
 
 # --------------------------------------------------------------------------
-# Audit en ligne de commande
+# Command-line audit
 # --------------------------------------------------------------------------
 
 def audit_corpus(corpus_path: Path, *, first_only: bool = False) -> List[tuple]:
-    """Retourne [(record_id, Verdict)] pour les enregistrements contaminés."""
+    """Returns [(record_id, Verdict)] for contaminated records."""
     checker = ContaminationChecker.from_config()
     flagged: List[tuple] = []
     for line in corpus_path.read_text(encoding="utf-8").splitlines():
@@ -290,20 +288,20 @@ def _main() -> None:
     import sys
 
     ap = argparse.ArgumentParser(
-        description="Audit de contamination d'un corpus JSONL déjà écrit.")
+        description="Contamination audit of an already-written JSONL corpus.")
     ap.add_argument("--corpus", action="append", default=None,
-                    help="chemin d'un corpus_clean.jsonl (répétable). "
-                         "Par défaut : les corpus de toutes les catégories.")
-    ap.add_argument("--text", default=None, help="tester une chaîne directement")
+                    help="path to a corpus_clean.jsonl (repeatable). "
+                         "Default: every category corpus plus the merged one.")
+    ap.add_argument("--text", default=None, help="test a string directly")
     args = ap.parse_args()
 
     checker = ContaminationChecker.from_config()
-    print(f"Configuration : {CONFIG_PATH}")
-    print(f"Règles actives : {checker.describe()}\n")
+    print(f"Configuration: {CONFIG_PATH}")
+    print(f"Active rules: {checker.describe()}\n")
 
     if args.text is not None:
         verdict = checker.check(args.text, first_only=False)
-        print("CONTAMINÉ" if verdict.is_contaminated else "propre")
+        print("CONTAMINATED" if verdict.is_contaminated else "clean")
         print(verdict.describe())
         sys.exit(1 if verdict.is_contaminated else 0)
 
@@ -311,18 +309,19 @@ def _main() -> None:
         corpora = [Path(c) for c in args.corpus]
     else:
         corpora = [paths.corpus_path(c) for c in paths.CATEGORIES]
+        corpora.append(paths.full_corpus_path())
 
     total_flagged = 0
     for corpus in corpora:
         if not corpus.exists():
-            print(f"[absent] {corpus}")
+            print(f"[missing] {corpus}")
             continue
         flagged = audit_corpus(corpus)
         n_records = sum(1 for l in corpus.read_text(encoding="utf-8").splitlines()
                         if l.strip())
-        state = "CONTAMINÉ" if flagged else "propre"
-        print(f"[{state}] {corpus} — {n_records} enregistrements, "
-              f"{len(flagged)} signalés")
+        state = "CONTAMINATED" if flagged else "clean"
+        print(f"[{state}] {corpus} — {n_records} records, "
+              f"{len(flagged)} flagged")
         for rid, verdict in flagged:
             print(f"    - {rid}")
             for m in verdict.matches:
@@ -331,10 +330,9 @@ def _main() -> None:
 
     print()
     if total_flagged:
-        print(f"ÉCHEC du contrôle de contamination : {total_flagged} "
-              f"enregistrement(s) à retirer.")
+        print(f"Contamination check FAILED: {total_flagged} record(s) to remove.")
     else:
-        print("Contrôle de contamination : PASSÉ (aucun recoupement détecté).")
+        print("Contamination check: PASSED (no overlap detected).")
     sys.exit(1 if total_flagged else 0)
 
 

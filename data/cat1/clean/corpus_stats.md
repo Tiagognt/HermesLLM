@@ -1,17 +1,17 @@
-# Corpus catégorie 1 — statistiques
+# Category 1 corpus — statistics
 
-- Généré le : 2026-07-21T11:08:10.885037+00:00
-- Racine projet : `/home/tiago/HermesPerso/HermesLLM`
-- Tier : A
-- Enregistrements : 966
-- Tokens totaux : 1648225 (Qwen3 exact)
-- Contrôle de contamination : PASSÉ — 0 recoupement (3 règles sur 1 scénario(s) : subway_station_fire)
-- Déduplication : 25 doublons exacts, 39 quasi-doublons retirés (MinHash 128 permutations, 16 bandes x 8 lignes, seuil 0.85)
-- Rapport d'exécution : `logs/20260721-110343-cat1-build-corpus.md`
+- Generated: 2026-07-21T12:39:47.109896+00:00
+- Project root: `/home/tiago/HermesPerso/HermesLLM`
+- Tier: A
+- Records: 966
+- Total tokens: 1648225 (Qwen3 exact)
+- Contamination check: PASSED — 0 overlap (3 rules over 1 scenario(s): subway_station_fire)
+- Deduplication: 25 exact duplicates, 39 near-duplicates removed (MinHash 128 permutations, 16 bands x 8 rows, threshold 0.85)
+- Run report: `logs/20260721-123518-cat1-build-corpus.md`
 
-## Par famille de sources
+## Per source family
 
-| Famille | Documents | Tokens | Part |
+| Family | Documents | Tokens | Share |
 |---|---:|---:|---:|
 | ros_docs | 357 | 644,844 | 39.1 % |
 | sim_docs | 187 | 429,517 | 26.1 % |
@@ -20,9 +20,9 @@
 | planning_code | 40 | 79,384 | 4.8 % |
 | interfaces | 16 | 46,308 | 2.8 % |
 
-## Par source
+## Per source
 
-| Source | Famille | Retenus | Tokens | Plafond | Écartés (quota) |
+| Source | Family | Kept | Tokens | Cap | Dropped (quota) |
 |---|---|---:|---:|---:|---:|
 | `ros2_documentation` | ros_docs | 178 | 300,097 | 300,000 | 193 |
 | `nav2_docs` | ros_docs | 70 | 141,934 | 140,000 | 204 |
@@ -53,26 +53,26 @@
 | `control_msgs` | interfaces | 1 | 8,415 | 20,000 | 0 |
 | `nav2_msgs` | interfaces | 2 | 7,096 | 25,000 | 0 |
 
-## Par nature de contenu
-- code : 401 documents
-- docs : 544 documents
-- interfaces : 16 documents
-- notebooks : 5 documents
+## Per content nature
+- code: 401 documents
+- docs: 544 documents
+- interfaces: 16 documents
+- notebooks: 5 documents
 
-## Par licence
-- Apache-2.0 : 414
-- BSD-2-Clause : 16
-- BSD-3-Clause : 167
-- CC-BY-4.0 : 271
-- MIT : 98
+## Per license
+- Apache-2.0: 414
+- BSD-2-Clause: 16
+- BSD-3-Clause: 167
+- CC-BY-4.0: 271
+- MIT: 98
 
-## Documents écartés
+## Dropped documents
 
-| Motif | Nombre |
+| Reason | Count |
 |---|---:|
-| hors quota | 2128 |
-| doublon near | 39 |
-| doublon exact | 25 |
+| over quota | 2128 |
+| near duplicate | 39 |
+| exact duplicate | 25 |
 
-## Secrets masqués
-- aucun secret détecté dans les sources retenues
+## Masked secrets
+- no secret detected in the retained sources

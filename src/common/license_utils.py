@@ -1,9 +1,9 @@
 """
-Classification des licences selon les règles globales des consignes du
-dataset : MIT / BSD (toutes variantes) / Apache-2.0 / CC-BY (toutes
-variantes) -> autorisées. Tout le reste -> signalé, non collecté par
-défaut. Absence de licence -> "no-license", non collecté par défaut sauf
-décision explicite prise robot par robot dans sources.py.
+License classification, following the project's global rules: MIT / BSD
+(all variants) / Apache-2.0 / CC-BY (all variants) -> allowed. Everything
+else -> flagged, not collected by default. Absence of a license ->
+"no-license", not collected by default either, unless an explicit decision
+is recorded source by source in the relevant catalogue.
 """
 
 import re
@@ -20,10 +20,10 @@ _ALLOWED_RE = re.compile("|".join(_ALLOWED_PATTERNS))
 
 def classify_license(spdx_id: Optional[str]) -> str:
     """
-    Retourne :
-      - le SPDX id tel quel si la licence est dans l'allowlist des consignes
-      - "no-license" si aucune licence n'a été trouvée pour la source
-      - "flagged:<spdx_id>" si une licence existe mais n'est pas autorisée
+    Returns:
+      - the SPDX id unchanged when the license is on the allowlist
+      - "no-license" when no license was found for the source
+      - "flagged:<spdx_id>" when a license exists but is not allowed
     """
     if not spdx_id:
         return "no-license"
@@ -35,12 +35,12 @@ def classify_license(spdx_id: Optional[str]) -> str:
 
 def is_collectible(license_status: str, *, allow_no_license_override: bool = False) -> bool:
     """
-    Règle de collecte par défaut :
-      - licence autorisée -> collecte
-      - "no-license" -> collecte SEULEMENT si explicitement autorisé pour
-        cette entrée (allow_no_license_override=True) ; reste taggé
-        "no-license" dans les métadonnées dans tous les cas
-      - "flagged:*" -> jamais collecté automatiquement
+    Default collection rule:
+      - allowed license -> collect
+      - "no-license" -> collect ONLY when explicitly authorised for this
+        entry (allow_no_license_override=True); it stays tagged
+        "no-license" in the metadata in every case
+      - "flagged:*" -> never collected automatically
     """
     if license_status == "no-license":
         return allow_no_license_override

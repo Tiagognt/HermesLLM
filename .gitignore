@@ -226,3 +226,9 @@ __marimo__/
 # l'identique depuis le commit épinglé dans collection_metadata.jsonl.
 # cat1 pèse à lui seul 5,6 Go de clones.
 data/*/raw/_cache/
+
+# --- Assistant-related files (never pushed) -----------------------------
+CLAUDE.md
+.claude/
+.claude-*
+**/CLAUDE.md
