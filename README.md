@@ -18,7 +18,7 @@ of the target model's reasoning.
 
 | Category | Tier | Content | Serves | Status |
 |---|---|---|---|---|
-| **cat1** — General Robot Data | A | ROS2 / ROS1 / MoveIt2 / Nav2 docs, license-cleared robotics code, planning-as-code | action functions, foundation for planning | not started |
+| **cat1** — General Robot Data | A | ROS 2 / Nav2 / MoveIt 2 / ros2_control docs, simulator docs, interface definitions, robotics algorithms, planning-as-code | action functions, foundation for planning | **complete** |
 | **cat2** — HMRS Data | B | multi-robot decomposition / allocation / coordination text (RoCoBench, EMOS / Habitat-MAS, SMART-LLM, PARTNR) | task planning, allocation, per-robot planning | not started |
 | **cat3** — URDF & Robot Specs | D | physical capabilities: DOF, mass, joint limits, payload, reach — URDF/Xacro plus vendor manuals | embodiment-aware allocation, feasibility | **complete** |
 
@@ -27,15 +27,22 @@ tier C is expected, not an error.
 
 ### Token budget
 
-The mandated mix is **cat1 60–70% · cat2 15–25% · cat3 10–15%**. cat3 is
-finished and therefore fixes the scale of everything else:
+The mandated mix is **cat1 60–70% · cat2 15–25% · cat3 10–15%**. With cat1
+and cat3 built, the remaining freedom is fully determined:
 
 | | Share | Tokens |
 |---|---|---|
+| cat1 (built) | 60–70% | **1 507 283** |
 | cat3 (built) | 10–15% | **236 604** |
-| **Whole corpus (implied)** | 100% | **1.58 M – 2.37 M** |
-| cat1 (to build) | 60–70% | ~0.95 M – 1.66 M |
-| cat2 (to build) | 15–25% | ~0.24 M – 0.59 M |
+| **cat2 (to build)** | 15–25% | **410 000 – 581 000** |
+| Whole corpus | 100% | 2.15 M – 2.32 M |
+
+That cat2 window is the binding constraint for the next step: it is the
+only interval satisfying all three ratio bands at once. The dataset survey
+warns that clean multi-robot text is scarce, so **if cat2 falls short,
+shrink cat1 rather than pad cat2** — `cat1/build_corpus.py --budget-scale
+0.75` re-emits a smaller, still-balanced cat1 in one offline pass, with no
+re-collection.
 
 Tokens are counted with the **Qwen3 tokenizer** (`Qwen/Qwen3-8B`). If
 Hugging Face is unreachable the counter falls back to an approximation and
@@ -115,6 +122,14 @@ src/
     contamination_scenarios.json   ^ its configuration
     ocr.py                       scanned-PDF fallback (rasterize + recognize)
     run_report.py                Markdown run reports
+    git_repo.py                  shallow/sparse clone + license cross-check
+    dedup.py                     exact + near-duplicate (MinHash/LSH)
+    secret_scrubber.py           API-key / credential redaction
+  cat1/
+    sources.py                   source catalogue (ONLY place with hard-coded repos)
+    collect_docs.py              PHASE 1 entry point
+    build_corpus.py              PHASE 2 entry point
+    text_adapters.py             rst/md/code/interfaces/notebooks → DocCandidate
   cat3/
     sources.py                   robot catalogue (ONLY place with hard-coded names)
     pdf_manifest.json            manual catalogue + recorded license decision
@@ -192,6 +207,18 @@ Environment variables: `HERMES_ROOT`, `HERMES_LLM_PROVIDER`,
 # check the detected project root (when in doubt about paths)
 python3 src/common/paths.py
 
+# ---- cat1 ----------------------------------------------------------
+# PHASE 1 — clone the 25 source repositories (needs network + git)
+python3 src/cat1/collect_docs.py
+python3 src/cat1/collect_docs.py --only ros2_documentation   # one source
+python3 src/cat1/collect_docs.py --refresh                   # ignore the clone cache
+
+# PHASE 2 — corpus (fully offline)
+python3 src/cat1/build_corpus.py
+python3 src/cat1/build_corpus.py --budget-scale 0.75         # smaller corpus
+python3 src/cat1/build_corpus.py --dedup-threshold 0.9       # looser near-dup
+
+# ---- cat3 ----------------------------------------------------------
 # PHASE 1 — collection (needs network + git)
 python3 src/cat3/collect_pilot.py
 
@@ -305,7 +332,60 @@ misread digits, and rule 1 forbids doubtful numbers. Therefore:
 
 ---
 
-## 7. cat3 status
+### Deduplication
+
+`common/dedup.py` removes exact duplicates (SHA-256 of normalized text) and
+near-duplicates (MinHash + LSH banding, Jaccard threshold 0.85, verified
+after the LSH lookup so a bucket collision alone never rejects a document).
+
+This is not a refinement, it is a measured necessity: Gazebo publishes its
+documentation in **12 parallel versions**, ROS 2 one per distribution. On a
+`harmonic` vs `ionic` sample, ~85% of same-named files are near-identical
+but only ~15% are identical byte-for-byte — exact hashing alone would miss
+most of them. The cat1 catalogue therefore also selects a *single* version
+per simulator upfront, so deduplication is a safety net rather than the
+primary defence.
+
+Determinism matters here: the MinHash permutations come from a fixed-seed
+PRNG and shingles are hashed with `crc32`, not Python's `hash()` (which is
+randomized per process). Two runs produce byte-identical corpora.
+
+### Secret scrubbing
+
+`common/secret_scrubber.py` redacts AWS keys, GitHub/Slack/OpenAI tokens,
+JWTs, private-key blocks, credentials embedded in URLs, and generic
+`api_key = "..."` assignments. Values are replaced by an explicit marker
+rather than deleted, so the teaching context survives while the value does
+not. Documentation placeholders (`YOUR_API_KEY`, `<token>`, `$ENV_VAR`) are
+deliberately spared — otherwise half the ROS tutorials would come out
+censored. Every redaction is counted and reported.
+
+## 7. Status
+
+### cat1 — General Robot Data (tier A)
+
+| | |
+|---|---|
+| Source repositories | 25 (all licenses hand-verified) |
+| Corpus records | **876** |
+| Tokens | **1 507 283** (Qwen3, exact) |
+| Median / max document | 1 077 / 9 434 tokens |
+| Contamination check | **passed** — 0 overlap |
+| Duplicates removed | 23 exact + 34 near |
+| Secrets redacted | 0 found (scrubber verified separately on known patterns) |
+
+Family mix: ros_docs 43% · sim_docs 24% · algorithms 14% · examples 11% ·
+planning_code 5% · interfaces 3%.
+
+Licenses: Apache-2.0 419 · CC-BY-4.0 226 · BSD-3-Clause 144 · MIT 67 ·
+BSD-2-Clause 16. **No `no-license` and no `flagged:*` record.**
+
+Sources rejected after verification: ProgPrompt (NVIDIA License),
+slam_toolbox (LGPL-2.1), Instruct2Act / ros_tutorials / REP / gazebo_ros_pkgs
+(no LICENSE file). Two of the three planning-as-code sources named in the
+brief are therefore unusable; only Code-as-Policies survives.
+
+### cat3 — URDF & Robot Specs (tier D)
 
 | | |
 |---|---|
@@ -354,12 +434,20 @@ both the URDF and the manual path.
 
 ## 9. Next steps
 
-1. Re-download the Unitree H1 manual (the current file is HTML).
-2. Propagate `robot_class` and `fleet_priority` from the collection
-   metadata into the corpus records — the consignes ask to *tag the fleet
-   robots*, and cat3 exists to serve embodiment-aware allocation.
-3. Add near-duplicate detection in `src/common/` before cat1/cat2 scale up
-   (template-generated descriptions of 12 humanoids are structurally very
-   similar).
-4. Build cat1 and cat2 against the token budget in section 1, reusing
-   `src/common/` unchanged.
+1. **Build cat2** (HMRS, tier B) against the **410 k – 581 k token** window
+   in section 1, reusing `src/common/` unchanged. This is the scarce
+   category: RoCoBench, EMOS / Habitat-MAS, SMART-LLM and PARTNR are the
+   named candidates, and their licenses must be verified one by one before
+   anything is collected.
+2. Re-download the Unitree H1 manual (the current file is HTML).
+3. Propagate `robot_class` and `fleet_priority` from the cat3 collection
+   metadata into its corpus records — the brief asks to *tag the fleet
+   robots*, and cat3 exists to serve embodiment-aware allocation. The
+   `extra=` hook in `assemble_record()` (already used by cat1) makes this a
+   small change.
+4. Run the cross-category deduplication pass once cat2 exists: `dedup.py`
+   currently runs within a category, and cat1/cat2 may overlap on
+   planning-as-code material.
+5. Decide the final mix and emit it: with all three categories built,
+   `--budget-scale` on cat1 is the lever that makes the three ratio bands
+   hold simultaneously.

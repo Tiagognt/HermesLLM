@@ -66,3 +66,55 @@ pip uninstall rapidocr-onnxruntime
 L'OCR devient alors indisponible ; `--ocr` échoue avec un message explicite
 plutôt que silencieusement, et la phase 2 sans `--ocr` fonctionne comme
 avant.
+
+---
+
+# Retour arrière — pilote catégorie 1 (2026-07-21)
+
+Point de restauration : **tag git `pre-cat1`** = commit `4522b38`
+(clôture de cat3). Il précède tout le travail sur cat1.
+
+## Tout annuler
+
+```bash
+cd /home/tiago/HermesPerso/HermesLLM
+git reset --hard pre-cat1
+git clean -fd data/cat1 logs/          # retire les bruts et rapports cat1
+```
+
+Le cache des clones git (`data/*/raw/_cache/`, 5,6 Go pour cat1) n'est plus
+suivi par git depuis ce commit : il n'est donc pas concerné par le reset.
+Pour le supprimer aussi : `rm -rf data/cat1/raw/_cache`.
+
+## Annuler seulement une partie
+
+| Ce que vous voulez retirer | Commande |
+|---|---|
+| Toute la catégorie 1 | `git rm -r --cached src/cat1 data/cat1 && rm -rf src/cat1 data/cat1` |
+| La déduplication | `git checkout pre-cat1 -- src/common/` puis retirer les appels dans `src/cat1/build_corpus.py` |
+| Le scrubbing de secrets | idem, module `src/common/secret_scrubber.py` |
+| Le point d'extension `extra=` du schéma | `git checkout pre-cat1 -- src/common/corpus_assembler.py` (casse cat1, pas cat3) |
+| La mise à jour du README | `git checkout pre-cat1 -- README.md` |
+| Le détachement du cache git du suivi | `git checkout pre-cat1 -- .gitignore` puis `git add data/cat3/raw/_cache` |
+
+## Changer la taille de cat1 sans rien recollecter
+
+C'est le levier prévu, pas un contournement :
+
+```bash
+python3 src/cat1/build_corpus.py --budget-scale 0.75   # ~1,13 M tokens
+python3 src/cat1/build_corpus.py --budget-scale 1.20   # ~1,80 M tokens
+```
+
+Pour un réglage par source, modifier `token_budget` dans
+`src/cat1/sources.py` et relancer la phase 2. La phase 1 n'est jamais
+rejouée.
+
+## Retirer une source précise du corpus
+
+Supprimer (ou commenter) son entrée dans `src/cat1/sources.py`, puis :
+
+```bash
+python3 src/cat1/collect_docs.py     # réécrit les métadonnées
+python3 src/cat1/build_corpus.py
+```

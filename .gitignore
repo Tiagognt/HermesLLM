@@ -219,3 +219,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- HermesLLM ---------------------------------------------------------
+# Clones git de travail (phase 1). Volumineux et intégralement
+# reconstructibles : `collect_docs.py` / `collect_pilot.py` les recréent à
+# l'identique depuis le commit épinglé dans collection_metadata.jsonl.
+# cat1 pèse à lui seul 5,6 Go de clones.
+data/*/raw/_cache/

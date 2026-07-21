@@ -42,11 +42,21 @@ def assemble_record(
     category: str = "cat3",
     tier: str = "D",
     token_counter: Optional[TokenCounter] = None,
+    doc_id: Optional[str] = None,
+    extra: Optional[dict] = None,
 ) -> dict:
-    """DocumentDraft -> ligne de corpus (dict prêt à sérialiser en JSONL)."""
+    """
+    DocumentDraft -> ligne de corpus (dict prêt à sérialiser en JSONL).
+
+    doc_id : remplace `robot_id` dans la construction de l'identifiant, pour
+    les catégories dont l'unité n'est pas un robot (cat1 : un document).
+    extra : champs supplémentaires fusionnés dans l'enregistrement, SANS
+    pouvoir écraser un champ du schéma des consignes -- c'est le point
+    d'extension par catégorie (cat1 y met family/kind/rel_path).
+    """
     tc = token_counter or TokenCounter()
     record = {
-        "id": f"{category}-{draft.robot_id}-{draft.source_type}",
+        "id": f"{category}-{doc_id or draft.robot_id}-{draft.source_type}",
         "source": draft.source_name or draft.source_type,
         "category": category,
         "tier": tier,
@@ -62,6 +72,12 @@ def assemble_record(
     }
     if draft.ocr and draft.ocr_confidence is not None:
         record["ocr_confidence"] = round(draft.ocr_confidence, 4)
+    if extra:
+        protected = REQUIRED_FIELDS & extra.keys()
+        if protected:
+            raise ValueError(
+                f"`extra` tente d'écraser des champs du schéma : {sorted(protected)}")
+        record.update(extra)
     return record
 
 
