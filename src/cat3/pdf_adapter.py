@@ -25,8 +25,34 @@ from collections import Counter
 from pathlib import Path
 from typing import List, Optional
 
-from llm_provider import LLMProvider, TemplateProvider
-from corpus_assembler import DocumentDraft
+from common.llm_provider import LLMProvider, TemplateProvider
+from common.corpus_assembler import DocumentDraft
+
+
+# --------------------------------------------------------------------------
+# Découverte du fichier PDF
+# --------------------------------------------------------------------------
+
+def find_pdf(robot_manual_dir: Path, preferred_name: Optional[str] = None) -> Optional[Path]:
+    """
+    Trouve le PDF d'un robot dans son dossier de manuels.
+
+    On accepte N'IMPORTE QUEL nom de fichier .pdf : exiger un nom exact
+    (l'ancien comportement, "manual.pdf") faisait échouer silencieusement
+    tous les manuels réellement téléchargés (g1_manual.pdf, x2_manual.pdf,
+    technical_manual.pdf...). preferred_name n'est plus qu'une préférence
+    en cas de PDF multiples.
+    """
+    if not robot_manual_dir.is_dir():
+        return None
+    pdfs = sorted(p for p in robot_manual_dir.glob("*.pdf") if p.is_file())
+    if not pdfs:
+        return None
+    if preferred_name:
+        for p in pdfs:
+            if p.name == preferred_name:
+                return p
+    return pdfs[0]
 
 
 # --------------------------------------------------------------------------
@@ -36,8 +62,8 @@ from corpus_assembler import DocumentDraft
 def _extract_pages_pdfplumber(pdf_path: Path) -> Optional[List[str]]:
     try:
         import pdfplumber
-    except Exception:
-        return None
+    except ImportError:
+        return None      # pdfplumber non installé -> repli pdftotext
     pages = []
     with pdfplumber.open(str(pdf_path)) as pdf:
         for p in pdf.pages:
@@ -121,6 +147,9 @@ def llm_format(text: str, provider: LLMProvider, max_chars: int = 12000) -> str:
 # Adaptateur
 # --------------------------------------------------------------------------
 
+MIN_USEFUL_CHARS = 200   # en dessous : PDF probablement scanné (pas de couche texte)
+
+
 def adapt(
     robot_id: str,
     pdf_path: Path,
@@ -137,6 +166,16 @@ def adapt(
         pages = [_extract_text_pdftotext(pdf_path)]
 
     text = clean_text(pages)
+
+    # Un PDF scanné (images seules) ressort quasi vide : mieux vaut une
+    # erreur explicite qu'un enregistrement vide dans le corpus.
+    if len(text) < MIN_USEFUL_CHARS:
+        raise RuntimeError(
+            f"{pdf_path.name} : {len(text)} caractères extraits seulement "
+            f"({len(pages)} pages) -- PDF probablement scanné ou sans couche "
+            f"texte. OCR nécessaire, ou écarter ce manuel."
+        )
+
     if use_llm_format and provider is not None:
         text = llm_format(text, provider)
     if max_chars is not None and len(text) > max_chars:
@@ -150,5 +189,5 @@ def adapt(
         url=url,
         lang="en",
         source_name=source_name or f"manual:{robot_id}",
-        provenance={"pdf_file": str(pdf_path), "n_pages": len(pages)},
+        provenance={"pdf_file": pdf_path.name, "n_pages": len(pages)},
     )

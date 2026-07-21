@@ -24,7 +24,7 @@ from typing import Optional
 from robot_descriptions._descriptions import DESCRIPTIONS
 from robot_descriptions._repositories import REPOSITORIES
 
-from xacro_render import render_xacro_to_urdf
+from cat3.xacro_render import render_xacro_to_urdf
 
 
 @dataclass

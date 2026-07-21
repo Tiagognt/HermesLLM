@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
-from tokenizer_utils import TokenCounter
+from common.tokenizer_utils import TokenCounter
 
 
 @dataclass

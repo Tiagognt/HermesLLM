@@ -5,32 +5,39 @@ Pour chaque robot du catalogue (sources.py) :
   1. récupère le fichier source (via robot_descriptions.py ou git direct)
   2. si c'est un Xacro, le rend en URDF (xacro_render.py)
   3. classe la licence selon les règles des consignes (license_utils.py)
-  4. copie le(s) fichier(s) bruts dans data/raw/<robot_id>/
-  5. ajoute une ligne dans data/collection_metadata.jsonl
+  4. copie le(s) fichier(s) bruts dans data/cat3/raw/urdf/<robot_id>/
+  5. ajoute une ligne dans data/cat3/metadata/collection_metadata.jsonl
 
-Ce script NE fait PAS la transformation vers le corpus final (parsing des
-capacités, génération de la description en langage naturel, JSONL final).
-C'est l'étape suivante, volontairement séparée -- ce module ne produit que
+Ce script NE fait PAS la transformation vers le corpus final : c'est
+build_corpus.py (phase 2), volontairement séparé. Ce module ne produit que
 des fichiers bruts + métadonnées de provenance/licence.
 
-Usage :
-    python3 collect_pilot.py
+Lançable depuis n'importe quel répertoire :
+    python3 /chemin/vers/src/cat3/collect_pilot.py
 """
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # -> src/
 
 import json
 import shutil
 from datetime import datetime, timezone
-from pathlib import Path
 
-from fetch_git_source import fetch_from_git
-from fetch_robot_descriptions import fetch_via_robot_descriptions
-from license_utils import classify_license, is_collectible
-from sources import PILOT_CATALOG, RobotSource, SourceType
-from xacro_render import render_xacro_to_urdf
+from common import paths
+from common.license_utils import classify_license, is_collectible
+from cat3.fetch_git_source import fetch_from_git
+from cat3.fetch_robot_descriptions import fetch_via_robot_descriptions
+from cat3.sources import PILOT_CATALOG, RobotSource, SourceType
+from cat3.xacro_render import render_xacro_to_urdf
 
-RAW_DATA_DIR = Path("../../data/cat3/raw")
-METADATA_PATH = Path("../../data/cat3/collection_metadata.jsonl")
-GIT_CACHE_DIR = Path("../../data/cat3/raw/_git_cache")
+CATEGORY = "cat3"
+RAW_URDF_DIR = paths.raw_kind_dir(CATEGORY, "urdf")
+METADATA_PATH = paths.metadata_path(CATEGORY)
+GIT_CACHE_DIR = paths.git_cache_dir(CATEGORY)
 
 # Robots pour lesquels une absence de licence est explicitement acceptée
 # (décision projet du 2026-07-15, à traiter plus tard -- cf. sources.py).
@@ -92,7 +99,7 @@ def _collect_from_git(source: RobotSource, robot_dir: Path):
 
 def _collect_one(source: RobotSource) -> None:
     print(f"[{source.robot_id}] collecte en cours...")
-    robot_dir = RAW_DATA_DIR / source.robot_id
+    robot_dir = RAW_URDF_DIR / source.robot_id
     robot_dir.mkdir(parents=True, exist_ok=True)
 
     if source.source_type is SourceType.ROBOT_DESCRIPTIONS:
@@ -114,14 +121,18 @@ def _collect_one(source: RobotSource) -> None:
     _write_metadata_row({
         "robot_id": source.robot_id,
         "display_name": source.display_name,
+        "robot_class": source.robot_class,
         "fleet_priority": source.fleet_priority,
         "source_type": source.source_type.value,
         "repo_url": outcome["repo_url"],
         "repo_ref": outcome["repo_ref"],
         "source_file": outcome["source_file"],
         "license_status": license_status,
-        "raw_urdf_path": str(outcome["raw_urdf_dest"]),
-        "raw_xacro_path": str(outcome["raw_xacro_dest"]) if outcome["raw_xacro_dest"] else None,
+        # Chemins RELATIFS à la racine du projet : les métadonnées restent
+        # valides si le projet est déplacé ou cloné sur une autre machine.
+        "raw_urdf_path": paths.to_relative(outcome["raw_urdf_dest"]),
+        "raw_xacro_path": (paths.to_relative(outcome["raw_xacro_dest"])
+                           if outcome["raw_xacro_dest"] else None),
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "notes": source.notes,
     })
@@ -130,16 +141,24 @@ def _collect_one(source: RobotSource) -> None:
 
 
 def main() -> None:
+    print(f"Racine projet : {paths.PROJECT_ROOT}")
+    print(f"Sortie brute  : {RAW_URDF_DIR}\n")
+    paths.ensure_dirs(RAW_URDF_DIR, METADATA_PATH.parent, GIT_CACHE_DIR)
+
     if METADATA_PATH.exists():
         METADATA_PATH.unlink()
 
+    ok = failed = 0
     for source in PILOT_CATALOG:
         try:
             _collect_one(source)
+            ok += 1
         except Exception as exc:  # noqa: BLE001 -- on veut continuer les autres robots
+            failed += 1
             print(f"[{source.robot_id}] ECHEC: {exc}")
 
-    print(f"\nTerminé. Résumé dans {METADATA_PATH}")
+    print(f"\nTerminé : {ok} traités, {failed} en échec sur {len(PILOT_CATALOG)}.")
+    print(f"Résumé : {METADATA_PATH}")
 
 
 if __name__ == "__main__":

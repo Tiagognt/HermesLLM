@@ -19,9 +19,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
-from urdf_parser import parse_urdf, derive_capabilities, make_skeleton
-from llm_provider import LLMProvider, TemplateProvider, verify_numbers
-from corpus_assembler import DocumentDraft
+from cat3.urdf_parser import parse_urdf, derive_capabilities, make_skeleton
+from common.llm_provider import LLMProvider, TemplateProvider, verify_numbers
+from common.corpus_assembler import DocumentDraft
 
 
 SYSTEM_PROMPT = (
