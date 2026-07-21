@@ -1,0 +1,820 @@
+Improving Zero-Shot ObjectNav with Generative Communication
+                                                    Vishnu Sashank Dorbala*1 , Vishnu Dutt Sharma*1 , Pratap Tokekar1 and Dinesh Manocha1
+                                                                                    1
+                                                                                        University of Maryland, College Park
+                                               Supplementary materials, including Code, Video, and Datasets, can be found at https://gamma.umd.edu/gencom/
+
+                                            Abstract— We propose a new method for improving zero-
+                                        shot ObjectNav that aims to utilize potentially available envi-
+                                        ronmental percepts for navigational assistance. Our approach
+                                        takes into account that the ground agent may have limited
+                                        and sometimes obstructed view. Our formulation encourages
+                                        Generative Communication (GC) between an assistive overhead
+arXiv:2408.01877v3 [cs.RO] 2 Oct 2024
+
+                                        agent with a global view containing the target object and
+                                        the ground agent with an obfuscated view; both equipped
+                                        with Vision-Language Models (VLMs) for vision-to-language
+                                        translation. In this assisted setup, the embodied agents com-
+                                        municate environmental information before the ground agent
+                                        executes actions towards a target. Despite the overhead agent
+                                        having a global view with the target, we note a drop in
+                                        performance (−13% in OSR and −13% in SPL) of a fully
+                                        cooperative assistance scheme over an unassisted baseline. In
+                                        contrast, a selective assistance scheme where the ground agent       Fig. 1: Overview: We tackle zero-shot ObjectNav in an assisted
+                                        retains its independent exploratory behaviour shows a 10%            setup, where the ground agent aims to improve performance by
+                                        OSR and 7.65% SPL improvement. To explain navigation                 seeking assistance from other available environmental percepts. We
+                                        performance, we analyze the GC for unique traits, quantifying        consider an overhead agent (as shown) with a clear view of the
+                                        the presence of hallucination and cooperation. Specifically, we      target and a ground agent with an obstructed view of the target
+                                        identify the novel linguistic trait of preemptive hallucination in   that convey environmental information to each other via freeform,
+                                        our embodied setting, where the overhead agent assumes that          unconstrained Generative Communication (GC). We use GC to
+                                        the ground agent has executed an action in the dialogue when         develop two novel assisted navigation schemes and present results
+                                        it is yet to move, and note its strong correlation with navigation   in both simulated and real-world environments, inferring that GC
+                                        performance. We conduct real-world experiments and present           is useful only in a selective setup where the ground agent retains
+                                        some qualitative examples where we mitigate hallucinations via       its independent exploration capability.
+                                        prompt finetuning to improve ObjectNav performance.
+                                                                                                             occluding objects. To improve zero-shot performance, we
+                                                              I. I NTRODUCTION                               consider making better use of potentially available environ-
+                                           Finding and navigating to an object in an unseen environ-         mental percepts, particularly considering a setup with an
+                                        ment, or ObjectNav, is a well-studied problem in Embodied            overhead camera having a global view containing the target,
+                                        AI [1]–[3]. To accomplish this task, an embodied agent               providing assistive guidance to a ground agent via generative
+                                        must interpret its surroundings based on its observations and        natural language.
+                                        move towards areas with a higher likelihood of containing               Prior work by Patel et al. [20] demonstrates the benefit
+                                        the target object. Learning-based approaches have been used          of an overhead view for such navigation, although with
+                                        for these tasks [2], [4], but they require training and are          emergent communication, which requires training a commu-
+                                        not generalizable. Moreover, they can result in poor out-of-         nication module. Given the existence of monitoring cameras
+                                        domain performance, motivating development of zero-shot              in industrial and commercial settings and the proliferation
+                                        techniques [5]. In zero-shot ObjectNav, an embodied ground           of smart home devices equipped with cameras for various
+                                        agent navigates to a target object specified by a natural            applications [21], it is beneficial to utilize them for assis-
+                                        language label without any prior training or knowledge of            tance. This is analogous to unmanned aerial vehicles (UAVs)
+                                        the environment. Several works have recently explored this           guiding ground robots by acting as scouts [22]–[24].
+                                        variation [6]–[12], coming up with various solutions for                To this end, we assume a collaborative setup where a
+                                        navigation without any fine-tuning or pre-training. This has         dynamic ground agent communicates with a static overhead
+                                        involved using foundation models including vision-language           agent seeking to improve its ObjectNav performance. Using
+                                        models (VLMs) and large language models (LLMs) for                   the expansive view of the environment, the overhead agent
+                                        commonsense reasoning and planning [13], [14]. An embod-             is expected to guide the ground agent towards regions with
+                                        ied agent equipped with such models can reason about the             high likelihood of containing the target object. The ground
+                                        possible locations of the target object with open-set scene          agent reports the details of the environment to provide better
+                                        understanding [15]–[17].                                             context to the overhead agent about its own location and
+                                           While several zero-shot approaches for ObjectNav have             surroundings. In such collaborative setups, effective com-
+                                        been proposed, task performance still remains poor due to            munication is necessary for meaningful collaboration [20].
+                                        the difficulty in accurately estimating a target’s location in       The translation of complex perceptual cues into a shared
+                                        a completely unknown environment [2]. This challenge is              and sufficiently descriptive language for precise navigational
+                                        further exacerbated in single-agent setups [18], [19] with           actions is a necessity in this regard. We can leverage the
+                                        only one agent independently exploring the environment               powerful translational capabilities of VLMs [25]–[27], by
+                                        using a local view limited by the camera field-of-view and           equipping both ground and overhead agents with VLMs to
+perform vision-to-language translation. Our goal is to de-         robotic task planning and scene understanding. This has
+velop new methods for zero-shot ObjectNav through the lens         led to traditional and deep learning-based approaches being
+of VLM-based Generative Communication (GC) between                 replaced by zero-shot, LLMs/VLMs-based approaches for
+these agents.                                                      navigation [7], [16], [33]–[35], manipulation [36]–[38] and
+   A few prior works have studied collaborative setups among       general-purpose robots [39].
+embodied agents, particularly dealing with emergent commu-            LLMs can also act as a natural language to code transla-
+nication [28]–[30]. These methods mainly deal with develop-        tors, making human-robot collaboration more feasible than
+ing symbolic language with limited vocabularies for effective      prior approaches. Such approaches have been explored to ob-
+communication as opposed to using natural language, which          tain a plan as a PDDL [40] or python code [41]. For VLMs,
+offers a broader and more interpretable vocabulary. Guo et         recent works have also successfully used visual prompting
+al. [31] study emergent communication in embodied agents           to help robots [42], [43] with visual cues grounded using the
+equipped with LLMs but consider a predefined leadership            robot’s capabilities. This has been used for effective human-
+hierarchy on homogeneous agents of the same type.                  robot collaboration. But it has given rise to the question: How
+Main Results: We study the zero-shot ObjectNav task in             would a team of multiple such robots behave? Historically,
+an assisted setup and present two novel cooperative schemes        the information exchanged between agents in a multi-agent
+that utilize the GC between a dynamic ground agent and             team has been handcrafted [20] or learned during task-
+a static overhead agent for generating navigation actions.         specific training [44]. Natural language-based, generative
+Despite the overhead agent having a global view with the           communication for multi-agent teams of embodied agents
+target in its field-of-view, we observe that a fully cooperative   is a fairly recent and relatively unexplored domain. Guo et
+approach where the ground agent follows instructions with-         al. [31] evaluate this situation and show that communication
+out judgement performs poorly, and that a selective scheme         leadership improves team efficiency for such LLM-powered
+which retains independent exploration of the ground agent          agents. However, they focus only on a team of homogeneous
+shows improved performance. We further investigate this            agents.
+result by defining and analyzing linguistic traits from the
+GC that have a direct impact on navigation performance.            B. Ground-Overhead Agent Collaboration
+The novel components of our work include:                             A team of embodied agents with different viewpoints
+   • Assisted Task Setup: We tackle the zero-shot Object-          can enhance team capabilities by combining their respective
+      Nav task in an assisted setup, where the embodied            strengths. For example, in a team of a UAV (unmanned aerial
+      ground agent seeks help from an overhead agent with a        vehicle) and a UVG (unmanned ground vehicle) deployed
+      global view. Our results are presented in both simulator     for rescue in a disaster area, the UAV can act as a scout,
+      and real-world environments.                                 observing a large area and guiding the UGV to reach affected
+   • GC-Driven Navigation Schemes: We present two                  people. The UGV can then perform long-range navigation
+      novel navigation schemes (Fully and Selective Coop-          and carry a heavy payload in the form of supplies, which a
+      eration) on this setup, establishing a benchmark for         UGV may not be able to carry for a long time. Thus, effective
+      zero-shot ObjectNav in an assisted setting. Our navi-        collaboration would depend upon communication. Chen et.
+      gation schemes utilize generative communication (GC)         al. in [45] studied natural language-based communication
+      between VLM-equipped ground and overhead agents.             coming from LLMs for heterogeneous agents in various
+   • Improving Zero-Shot ObjectNav: On the RoboTHOR                situations. Their focus, however, is on scalability, and they
+      simulator [32], our Selective Cooperation scheme where       perform experiments in simple grid-like environments. Our
+      the ground agent exhibits self-judgment results in a         work instead focuses on embodied agents in indoor environ-
+      performance improvement of 10% in OSR and 7.65%              ments, specifically how communication influences Object-
+      in SPL over a non-assistive baseline. In contrast, a Fully   Nav performance. Along with studying the communication
+      Cooperative scheme results in a 13% performance de-          length, similar to [45], we also develop metrics to measure
+      cline (both OSR and SPL), indicating that following the      hallucination in generating communication originating from
+      overhead agent’s guidance as is hinders performance,         LLMs and its effect on collaboration.
+      despite its global view of the target.
+   • Novel Lingustic Traits: We measure 4 novel linguistic         C. Communication in Cooperating Agents
+      traits in the GC to help explain our navigation perfor-         When multiple agents communicate with each other to
+      mance. In particular, we note that the trait of Preemptive   accomplish a task together, they effectively engage in a
+      Hallucination (HPE ) is abundant in the GC, showing a        referential game [46]. Earlier approaches studying referential
+      strong correlation with navigation performance in the        games used symbolic communication [47]–[49], but with the
+      Fully Cooperative scheme.                                    advancements in deep learning, attention shifted to com-
+   • Real World Experiments: Finally, we present quali-            municating with embeddings, often learned over time with
+      tative real-world results using a Turtlebot as a Ground      reinforcement learning [50]. The development of language
+      Agent and a GoPro as the Overhead Agent. We show             models then spurred an interest in natural language-driven
+      that environment-specific fine-tuning of VLM prompts         methods [51], [52]. Visual signals have also been explored
+      can help mitigate hallucinations for real-world success.     to enhance emergent communication [53], [54]. These works,
+                   II. R ELATED W ORKS                             however, involve learning to communicate, which forms the
+                                                                   basis for emergent traits. Unlike ’selective communication‘ in
+A. LLMs and VLMs for Embodied Agents                               most multi-agent simulation work [55], [56] where the agent
+  LLMs and VLMs have been used for various robotics                chooses which of the other agents it wishes to communicate
+applications. These models are trained on internet-scale data      with, in our work, we consider ‘selective execution’, where
+and thus exhibit the ability to act as world models for            the agent chooses whether or not to act on the information
+Fig. 2: Approach: We consider 3 different setups for assisted ObjectNav on a ground agent (GA) using an overhead agent (OA). The
+No Comm. case (brown arrows) is a baseline ObjectNav setup where the GA is prompted directly by a VLM for navigation actions for
+the ground agent. This is illustrated on the left. For the remaining two cases, both agents first go through a Comm. phase (C) for a fixed
+number of interactions Clen . We then summarize the dialogues for decision-making. In the Cooperative Action case (blue arrows), we
+pass the Generative Communication (GC) to an LLM that predicts an action for the GA. In the Selective Execution case (green arrows),
+the GA’s VLM is prompted with the suggested action and asked if it wants to cooperate with the LLM prediction. If not, it performs
+independent exploration like the No. Comm. case. We later analyze the dialogue generated to measure generative communication traits.
+
+given. Would we observe such traits when an LLM or a                  2) An Overhead Agent (OA) that has a global view of
+VLM is used in a zero-shot manner? Guo et. al. in [31]                the environment containing the target object. This agent is
+looked at some such traits but for homogeneous agents with            stationary and aims to assist the GA reach the target.
+a predefined leadership hierarchy. We aim to identify and                As a baseline, we consider a no-communication setup,
+analyze these traits for homogeneous agents in our approach.          where the GA aims to perform ObjectNav with VLM inde-
+   Prior work by Patel et al. [20] is the closest to our work,        pendentally. In the assisted ObjectNav setup, our approach
+addressing the issues above by proposing a framework using            involves an interplay between two phases: a Communica-
+limited pre-defined vocabulary acting as a black box for              tion Phase, C, where both agents generate dialogue with
+communication rendering limited specific to limited envi-             information about their respective egocentric views, and an
+ronments. Furthermore, they use specific types of objects             Execution Phase, E, where the GA receives a maneuvering
+(colored cylinders) as goals. In our work, we deal with               recommendation from the other agent and must then decide
+the case of fully generated natural language not limited by           what action the ground agent must execute. Fig. 1 presents
+vocabulary or environments to find objects.                           an overview of our setup for the baseline ObjectNav and the
+                                                                      assisted ObjectNav tasks.
+                        III. A PPROACH
+A. Definitions                                                        B. No Communication Baselines
+Assisted ObjectNav Task: We introduce a variation of the                 We consider a baseline case where the GA uses its VLM to
+ObjectNav task called assisted ObjectNav. In this task, an            guide itself independently toward the target object. The agent
+embodied ground agent must consider using environmental               processes its egocentric viewpoint along with a prompt about
+assistance to optimize its path towards a target object. In           navigating to a target object to get a directional command
+this work, we tackle a baseline case for this task, where the         to execute. The prompts used are in the Appendix. We also
+ground agent receives assistance from one static agent with           present a Random decision-making approach where the GA
+a different viewpoint of the environment. In this dual-agent          randomly chooses and executes a directional command to
+setup, the agents constitute a vertical hierarchy [57] and are        highlight the utility of informed actions.
+equipped with VLMs for collaborative decision-making. The
+agents are expected to communicate and cooperate to identify          C. Communication Phase (C)
+and navigate towards the target. We further that the agents              Improving collaborative task success requires agents to
+are always within each other’s communication range and use            both gather information about the environment with their
+the same type of VLM.                                                 percepts as well as effectively translate perception data to
+Agents: We consider two VLM-equipped agents:                          robot language. Both the GA and the OA are equipped with
+1) A Ground Agent (GA) that has a local view of the                   VLMs capable of generating natural language conversations.
+environment and can perform physical maneuvers to reach               The GA seeks assistance from the OA and prompts the OA
+the target. This is the embodied agent physically performing          for a dialogue. We specify to the OA that it must communi-
+the ObjectNav task.                                                   cate for a length of CLen , asking the GA queries that would
+             (a) Dialogue Hallucinations: Different CLen examples.            (b) Comparing GC Traits across various Communication Lengths.
+Fig. 3: Dialogue Hallucinations H: We study hallucinations in dialogues to explain assisted ObjectNav performance. In the left figure,
+the target object is a PepperShaker, showing examples of hallucinations at different communication lengths. The right figure compares
+hallucinations (HP E , HGO ), Cooperation Rate CR and Dialogue Similarity DS between cooperative and selective actions. Among all the
+traits, notice that HP E stands out, getting worse as communication length increases, despite explicitly prompting for concise information.
+
+help guide it to the target object. The GA then responds               A. Dialogue Hallucinations - H
+to the generated dialogue, and this cycle happens back and                Motivated by the high human-verified GPT-4 classification
+forth for CLen times. At the end of the communication period,          accuracy reported by [31] on dialogue analysis, we adopt a
+we concatenate all the dialogues into a summary containing             GPT-4 classifier for finding hallucinations in GC. We look
+potentially useful information about the environment for               at the following:
+making navigation decisions. We consider this dialogue as              Preemptive Actions (HP E ): We notice that in many cases,
+Generative Communication or GC (see Fig. 2).                           one of the agents assumes that the GA has moved during C,
+                                                                       even though the GA can only move after the completion of C
+D. Execution Phase (E)                                                 (Refer CLen = 5 in Fig. 3a). We refer to these as preemptive
+   While successful communication protocols have tradition-            Actions. To quantify it, we prompt a GPT-4 agent to classify
+ally been learned using RL and improve performance on                  whether the dialogue in an episode indicates a preemptive
+the heterogeneous ObjectNav task [20], to investigate the              action hallucination. The labels obtained are averaged over
+performance of GC in our setup, we consider the two zero-              all the conversations. This can be defined as:
+shot execution variants: Cooperative Action and Selective                                             N
+Action.                                                                                            1 X L(GC)i
+                                                                                          HP E =
+   In the Cooperative Action setup, the agents exchange                                           N i=1      k
+dialogue of varying lengths (CLen ) in C. After this, in E,
+the GC is passed to an LLM, which then suggests an action              where L(GC) is the GPT-based classifier for preemptive
+for the GA to take. The GA fully cooperates with the LLM’s             actions.
+prediction and directly executes the prescribed action.                   We also look for perceptual hallucinations of objects
+   In the Selective Action setup, the GA is presented with             not present in the environment (or ghost objects) HGO in
+a choice on whether it wishes to cooperate with the LLM’s              the dialogue. This is quantified as the overlap between a
+decision. The GA is prompted with the LLM action output                vocabulary consisting of objects in the environment and the
+for a “Yes/No” on whether it should cooperate with the                 dialogue generated. More details on HGO and the prompts
+LLM’s recommendation. If it decides to cooperate (Yes),                we use for classification are in the appendix.
+then the action recommended by the LLM is executed. If                 B. Communication Length - CLen
+the GA declines to cooperate (No), then we again prompt                  The length of communication, CLen , sets the limit on the
+it to ask for its recommendation on the action to take given           amount of information that can be exchanged between the
+the GA’s egocentric image. The former allows us to measure             two agents (especially with a fixed number of generated
+a cooperation rate or CR of the agents, while the latter is            tokens). We ablate on CLen of 1, 3, and 5 for our approach
+similar to the No Communication phase (Sec. III-B), where              and study its effect on other metrics.
+the action is taken directly from the ground VLM agent.
+   Both Cooperative Action and Selective Action are situ-              C. Cooperation Rate - CR
+ations where the GA must communicate with the OA. We                     In the Selective Action setting, the GA may choose to not
+additionally investigate a scenario where the GA first decided         comply with the LLM recommendation, instead choosing to
+whether to initiate a conversation with the OA. More details           act independently. We measure this cooperation rate as the
+about these ablations are in the Appendix.                             number of times the agent chooses to cooperate, averaged
+                                                                       over an episode.
+       IV. G ENERATIVE C OMMUNICATION T RAITS                                                           N
+                                                                                                     1 X ci
+  In this section, we look at quantifying various qualities that                             CR =             ,
+                                                                                                    N i=1 k
+emerge during the VLM-based generative communication
+between the agents. We derive these from the dialogue                  where ci is the number of times the GA decided to cooperate
+generated during the communication phase and use them to               in the ith episode with k steps, and N is the total episode
+assess the influence of GC on ObjectNav performance.                   count.
+                                                                 Navigation                     Generative Comm. Traits
+        Comm. Length (CLen )        Execution          OSR % ↑                SPL% ↑    HP E % ↓    HGO % ↓      CR %     DS%
+                                Random (No VLM)          15.00                  11.69        N/A         N/A      N/A     N/A
+                  0
+                                No Comm. Baseline        22.00                  21.50        N/A         N/A      N/A     N/A
+                                Cooperative Action    19.00 (-3.0)      18.38 (-3.1)        48.20       34.55    100      91.5
+                  1
+                                 Selective Action     26.00 (+4.0)      24.13 (+2.6)        34.55       42.51    23.20    92.2
+                                Cooperative Action    19.00 (-3.0)      17.94 (-3.5)        77.90       32.73    100      91.6
+                  3
+                                 Selective Action     24.00 (+2.0)      22.19 (+0.6)        78.00       34.55    22.80    91.6
+                                Cooperative Action    9.00 (-13.0)      8.50 (-13.0)        81.60       32.73    100      92.4
+                  5
+                                 Selective Action     32.00 (+10.0)     29.15 (+8.0)        80.70       32.73    18.90    92.1
+
+TABLE I: ObjectNav Results and GC Traits: We measure OSR and SPL across different CLen . Note the improved Navigation
+performance both on SPL and OSR in the Execution cases with Selective Actions. The GA in these cases retains its independent
+navigation capability, and is given a choice on whether to follow the recommended action or not. On the GC traits, we infer that VLM
+hallucination gets progressively worse in assuming preemptive agent motion (HP E ) with increasing CLen , which could be attributed to
+cascading [58]. The decreasing cooperation rate CR and increasing HP E Selective Action cases further suggest that when given a choice
+to cooperate, the GA would not trust actions produced from hallucinated summaries, explaining the superior performance.
+
+   A lower cooperation rate would indicate more independent               During the communication phase, C, the agents use their
+exploration, with the GA choosing to ignore the recom-                 respective camera views and talk to each other to devise
+mended actions. Further, this could be an indirect indicator           a plan to reach the target object. Then we share generated
+for hallucinated communication resulting in unfeasible ac-             communication between the agents, the past action, and
+tions.                                                                 the result of it (success, collision, etc.) with the decision-
+   In addition to these, we also quantify the dialogue sim-            making agent during the execution phase E. In a non-
+ilarity, DS, as the cosine similarity between the BERT                 cooperative setup, the agent uses its camera view to decide
+embeddings of dialogues across episodes at each step. Details          the appropriate action to reach the target object.
+about this can be found in the appendix.                               Navigation Inferences: Table I presents simulation results
+              V. E XPERIMENTS & R ESULTS                               on Zero-Shot ObjectNav and the GC traits obtained. We
+                                                                       make two inferences: 1) An agent using Selective Actions
+   We measure ObjectNav and GC performance via ex-                     performs far better (10% OSR over baseline) than one that
+periments in RoboTHOR as well as a real-world setup.                   follows OA suggestions without judgement (Cooperative
+RoboTHOR allows us to conduct large-scale experiments                  Action). This setup performs even worse than if the agent
+in a simulated environment, allowing us to measure task                were not communicating at all. This holds true across all
+performance objectively via Oracle Success Rate (OSR) and              CLen , and is especially worse on CLen 5 with a dip of 13%.
+Success Weighted by Path Length (SPL) as defined by [1]. In            This indicates that even when assisted, an agent must be
+the real world, we present some unique qualitative findings            provided with the choice to reject suggestions and inde-
+on differences in the GC and visual localization of the                pendently explore to improve performance. 2) There is a
+overhead agent, in contrast with simulator experiments. In             drastic drop in Cooperative Action performance at CLen = 5,
+both cases, we compute and validate the previously defined             especially with SPL. We infer that actions predicted from
+GC Traits.                                                             longer communications tend to be worse and negatively
+A. Simulation: RoboThor                                                impact the performance of a fully cooperative agent.
+Setup: We use 100 rooms from the training split of Proc-               Hallucination Inferences: Fig. 3b shows the trends GC
+THOR [59] for our experiments. In each room, we place                  traits across comm. lengths. Note the increasing preemptive
+a LoCoBot robot with an RGB camera as the GA and                       hallucinations HP E with increasing CLen . We also find that
+add an overhead camera. The overhead camera, our OA, is                HGO remains almost constant across CLen . This indicates
+located at a height of 7.25m. We crop the images from the              that while GPT-4V is consistent with regards to describing
+overhead camera to minimize the views outside the house                the content in images, it tends to hallucinate a lot more
+before passing them to the VLM. We use GPT-4-turbo as                  when it comes to generating preemptive actions. Examples
+the VLM in all the experiments.                                        of such conversations are provided in Fig. 3a. Despite being
+   At the start of each episode, the GA spawns at the default          explicitly prompted to converse only about visual elements
+location for the room in the ProcTHOR setup. As the target             during the conversation and being told that the agent cannot
+object, we randomly select an object from the scene such that          execute actions, GPT-4 tends to hallucinate in assuming that
+only one instance of it is available. We take 10 action steps          the agent has moved.
+during each episode and keep track of its outcome. We use                 Further, note the decreasing Cooperation Rate, CR, with
+the standard discrete action primitives used in the embodied           increasing hallucinations. This relation explains the improved
+ObjectNav tasks [1], [4]. Hence, the ground robot is allowed           ObjectNav performance, showing that an agent with Selec-
+to take one of the following actions: MoveAhead, MoveBack,             tive Actions cooperates less with hallucinated instruction. We
+RotateLeft, RotateRight, or DoNothing. All the movements               also found that the dialogue similarity DS is almost similar
+result in the GA moving by 0.25m in the indicated direction.           across all approaches and as such is not a good metric to
+The rotation actions result in 90◦ rotation while staying at the       evaluate the dialogue sensitivity. Our preemptive Hallucina-
+same place. DoNothing lets the GA stay where it is without             tion metric HP E is far more informative in allowing us to
+any change.                                                            gauge the performances of these approaches.
+Fig. 4: Real World Experiments: We carry out a real-world experiment with a Turtlebot as a Ground Agent (GA) and a GoPro camera
+mounted to the roof as an Overhead Agent (OA) in various environment settings. Note the incorrect action taken in the cooperative
+execution case (red arrows) in comparison to the selective case (green arrows). The actions predicted are in yellow. Section V-B below
+discusses various hallucinations with different environment settings we encounter and how we finetune VLM prompts for better results.
+
+B. Qualitative Real World Experiments
+Setup: We recreate our dual agent setup in the real world
+using Turtlebot 2 as the ground agent and a GoPro Hero
+7 as the overhead agent (Fig. 4). We use GPT-4V as our
+VLM, noting the very poor performance of other VLMs,
+particularly InstructBLIP and LLaVA. More details on these
+results are in the appendix. We arrange objects in our lab
+environment as obstacles, asking the agent to find unique
+objects such as white basket, whiteboard, yellow chair, etc.,
+with different lighting settings, humans and clutter.
+Poor VLM Localization: We notice that GPT-4 often
+misidentifies the position of the robot or target from an           Fig. 5: Top-View Localization: Notice the poor localization of
+overhead view [60], resulting in incorrect guidance to the          GPT-4V on an overhead image when asked to identify the location
+GA. Environmental artifacts may also confound the VLM,              of the robot. Adding an orange marker on the robot helps alleviate
+hindering performance. One such instance we encountered             this issue.
+was where the OA thought the reflection of light on the floor
+was white tables, leading to incorrect suggestions to the GA.
+Also, while looking for a white basket as the target, the VLM
+sometimes misinterpreted the reflections as the target. These
+are illustrated in Fig. 5 and Fig. 6, with more examples in
+the appendix.
+   We seek to mitigate such hallucinations via prompt fine-
+tuning with prior knowledge of the environment.
+   • Prompt Finetuning: We conduct experiments in var-
+     ious environment settings, including dimly lit rooms
+     with humans, clutter, and unique objects. For improving
+     VLM localization, we put an orange box on top of the
+     robot, as shown in Fig. 4, and modify the OA prompt
+     accordingly. Similarly, we describe the presence of light      Fig. 6: Interpreting VLM Localization: We add numbers to the
+     reflections in the prompts, leading to better decision-        image taking inspiration from recent works [42], [43] to better
+     making. We share more detailed discussion on these             interpret VLM localization. On the left image, note VLM prediction
+                                                                    error in predicting the wrong cell, which is mitigated by adding an
+     experiments in the appendix.                                   orange marker on the turtlebot.
+   • Selective vs Fully Cooperative: Similar to the simula-
+     tion experiments, we find that selective actions result in
+     better navigation compared to fully cooperative ones.
+     In Fig. 4 note the faulty Cooperative Action in red,                 suggesting the GA to rotate left while looking for a
+     steering wheel in the environment. In the Selective                     [10] A. Majumdar, G. Aggarwal, B. Devnani, J. Hoffman, and D. Batra,
+     Action case, notice the GA ignores this suggestion. This                     “Zson: Zero-shot object-goal navigation using multimodal goal embed-
+                                                                                  dings,” Advances in Neural Information Processing Systems, vol. 35,
+     could be due to a part of steering wheel being visible                       pp. 32 340–32 352, 2022.
+     on the right side of the image, prompting it to ignore                  [11] J. Ma, H. Dai, Y. Mu, P. Wu, H. Wang, X. Chi, Y. Fei, S. Zhang, and
+     the suggestion, rotate right, and finally reach the target.                  C. Liu, “Doze: A dataset for open-vocabulary zero-shot object nav-
+                                                                                  igation in dynamic environments,” arXiv preprint arXiv:2402.19007,
+                                                                                  2024.
+                         VI. C ONCLUSION                                     [12] P. Wu, Y. Mu, B. Wu, Y. Hou, J. Ma, S. Zhang, and C. Liu, “Voronav:
+                                                                                  Voronoi-based zero-shot object navigation with large language model,”
+   We present an approach to improve zero-shot ObjectNav                          arXiv preprint arXiv:2401.02695, 2024.
+using assistance from potentially available environmental                    [13] G. Sarch, Y. Wu, M. Tarr, and K. Fragkiadaki, “Open-ended in-
+                                                                                  structable embodied agents with memory-augmented large language
+percepts. Using VLM-equipped ground and overhead agents,                          models,” in Findings of the Association for Computational Linguistics:
+we develop two generative communication (GC) driven                               EMNLP 2023, 2023.
+schemes for cooperative navigation. Despite the overhead                     [14] A. Padmakumar, M. Inan, S. Gella, P. L. Lange, and D. Hakkani-
+                                                                                  Tur, “Multimodal embodied plan prediction augmented with synthetic
+agent having a global view with the target in it, we observe a                    embodied dialogue,” in Proceedings of the 2023 Conference on
+dip in performance when generated instructions and actions                        Empirical Methods in Natural Language Processing, 2023, pp. 6114–
+are followed without judgment. In contrast, our selective                         6131.
+                                                                             [15] V. S. Dorbala, J. F. Mullen Jr, and D. Manocha, “Can an embodied
+cooperation approach that retains the agent’s independent                         agent find your “cat-shaped mug”? llm-based zero-shot object naviga-
+exploration capability while selectively choosing guidance                        tion,” IEEE Robotics and Automation Letters, 2023.
+improves zero-shot ObjectNav performance in OSR and SPL;                     [16] D. Shah, M. R. Equi, B. Osiński, F. Xia, B. Ichter, and S. Levine,
+                                                                                  “Navigation with large language models: Semantic guesswork as a
+indicating the importance of an agent retaining its explo-                        heuristic for planning,” in Conference on Robot Learning. PMLR,
+ration capability while seeking external help. We explain                         2023, pp. 2683–2699.
+navigation results by defining GC traits, noting the strong                  [17] B. Pan, R. Panda, S. Jin, R. Feris, A. Oliva, P. Isola, and Y. Kim,
+negative correlation of ‘preemptive hallucinations’ during                        “Langnav: Language as a perceptual representation for navigation,”
+                                                                                  arXiv preprint arXiv:2310.07889, 2023.
+communication, and present qualitative results for mitigating                [18] L. Zhang, Q. Zhang, H. Wang, E. Xiao, Z. Jiang, H. Chen, and R. Xu,
+such hallucinations with environment-specific prompt fine-                        “Trihelper: Zero-shot object navigation with dynamic assistance,”
+tuning to enhance zero-shot ObjectNav in the real-world.                          arXiv preprint arXiv:2403.15223, 2024.
+                                                                             [19] T. Guan, Y. Yang, H. Cheng, M. Lin, R. Kim, R. Madhivanan, A. Sen,
+We hope our established benchmarks on assistive zero-shot                         and D. Manocha, “Loc-zson: Language-driven object-centric zero-
+ObjectNav will lead towards the development of more robust                        shot object retrieval and navigation,” arXiv preprint arXiv:2405.05363,
+methods for cooperative embodied navigation. Our approach                         2024.
+                                                                             [20] S. Patel, S. Wani, U. Jain, A. G. Schwing, S. Lazebnik, M. Savva,
+is limited to a one-on-one dialogue between two agents.                           and A. X. Chang, “Interpretation of emergent communication in
+To make better use of environmental percepts, future work                         heterogeneous collaborative embodied agents,” in Proceedings of the
+will consider generalizing our scheme to multiple overhead                        IEEE/CVF International Conference on Computer Vision, 2021, pp.
+                                                                                  15 953–15 963.
+and ground agents. This would require arbitration between                    [21] N. H. Tan, R. Y. Wong, A. Desjardins, S. A. Munson, and J. Pierce,
+multiple VLM-based agents to reach a consensus on what                            “Monitoring pets, deterring intruders, and casually spying on neigh-
+information is potentially useful for improving zero-shot                         bors: Everyday uses of smart home cameras,” in Proceedings of the
+                                                                                  2022 CHI Conference on Human Factors in Computing Systems, 2022,
+performance.                                                                      pp. 1–25.
+                                                                             [22] V. Sharma, M. Toubeh, L. Zhou, and P. Tokekar, “Risk-aware plan-
+                            R EFERENCES                                           ning and assignment for ground vehicles using uncertain perception
+                                                                                  from aerial vehicles,” in Proceedings of the IEEE/RSJ International
+ [1] P. Anderson, A. Chang, D. S. Chaplot, A. Dosovitskiy, S. Gupta,              Conference on Intelligent Robots and Systems (IROS), 2020.
+     V. Koltun, J. Kosecka, J. Malik, R. Mottaghi, M. Savva et al.,          [23] A. B. Asghar, G. Shi, N. Karapetyan, J. Humann, J.-P. Reddinger,
+     “On evaluation of embodied navigation agents,” arXiv preprint                J. Dotterweich, and P. Tokekar, “Risk-aware recharging rendezvous for
+     arXiv:1807.06757, 2018.                                                      a collaborative team of uavs and ugvs,” in 2023 IEEE International
+ [2] J. Sun, J. Wu, Z. Ji, and Y.-K. Lai, “A survey of object goal navi-          Conference on Robotics and Automation (ICRA). IEEE, 2023, pp.
+     gation,” IEEE Transactions on Automation Science and Engineering,            5544–5550.
+     2024.                                                                   [24] N. Karapetyan, A. B. Asghar, A. Bhaskar, G. Shi, D. Manocha, and
+ [3] K. Yadav, R. Ramrakhya, S. K. Ramakrishnan, T. Gervet, J. Turner,            P. Tokekar, “Ag-cvg: Coverage planning with a mobile recharging
+     A. Gokaslan, N. Maestre, A. X. Chang, D. Batra, M. Savva et al.,             ugv and an energy-constrained uav,” in 2024 IEEE International
+     “Habitat-matterport 3d semantics dataset,” in Proceedings of the             Conference on Robotics and Automation (ICRA). IEEE, 2024, pp.
+     IEEE/CVF Conference on Computer Vision and Pattern Recognition,              2617–2623.
+     2023, pp. 4927–4936.                                                    [25] F.-L. Chen, D.-Z. Zhang, M.-L. Han, X.-Y. Chen, J. Shi, S. Xu, and
+ [4] L. Weihs, M. Deitke, A. Kembhavi, and R. Mottaghi, “Visual room              B. Xu, “Vlp: A survey on vision-language pre-training,” Machine
+     rearrangement,” in Proceedings of the IEEE/CVF conference on com-            Intelligence Research, vol. 20, no. 1, pp. 38–56, 2023.
+     puter vision and pattern recognition, 2021, pp. 5922–5931.              [26] Y. Du, Z. Liu, J. Li, and W. X. Zhao, “A survey of vision-language
+ [5] V. S. Dorbala, G. Sigurdsson, R. Piramuthu, J. Thomason, and G. S.           pre-trained models,” arXiv preprint arXiv:2202.10936, 2022.
+     Sukhatme, “Clip-nav: Using clip for zero-shot vision-and-language       [27] X. Li, X. Yin, C. Li, P. Zhang, X. Hu, L. Zhang, L. Wang, H. Hu,
+     navigation,” arXiv preprint arXiv:2211.16649, 2022.                          L. Dong, F. Wei et al., “Oscar: Object-semantics aligned pre-training
+ [6] S. Y. Gadre, M. Wortsman, G. Ilharco, L. Schmidt, and S. Song, “Cows         for vision-language tasks,” in Computer Vision–ECCV 2020: 16th Eu-
+     on pasture: Baselines and benchmarks for language-driven zero-shot           ropean Conference, Glasgow, UK, August 23–28, 2020, Proceedings,
+     object navigation,” in Proceedings of the IEEE/CVF Conference on             Part XXX 16. Springer, 2020, pp. 121–137.
+     Computer Vision and Pattern Recognition, 2023, pp. 23 171–23 181.       [28] S. Kottur, J. M. Moura, S. Lee, and D. Batra, “Natural language
+ [7] N. H. Yokoyama, S. Ha, D. Batra, J. Wang, and B. Bucher, “Vlfm:              does not emerge’naturally’in multi-agent dialog,” arXiv preprint
+     Vision-language frontier maps for zero-shot semantic navigation,”            arXiv:1706.08502, 2017.
+     in 2nd Workshop on Language and Robot Learning: Language as             [29] A. Lazaridou and M. Baroni, “Emergent multi-agent communication
+     Grounding, 2023.                                                             in the deep learning era,” arXiv preprint arXiv:2006.02419, 2020.
+ [8] Y. Kuang, H. Lin, and M. Jiang, “Openfmnav: Towards open-set zero-      [30] Y. Mu, S. Yao, M. Ding, P. Luo, and C. Gan, “Ec2: Emergent com-
+     shot object navigation via vision-language foundation models,” arXiv         munication for embodied control,” in Proceedings of the IEEE/CVF
+     preprint arXiv:2402.10670, 2024.                                             Conference on Computer Vision and Pattern Recognition, 2023, pp.
+ [9] W. Cai, S. Huang, G. Cheng, Y. Long, P. Gao, C. Sun, and H. Dong,            6704–6714.
+     “Bridging zero-shot object navigation and foundation models through     [31] X. Guo, K. Huang, J. Liu, W. Fan, N. Vélez, Q. Wu, H. Wang, T. L.
+     pixel-guided navigation skill,” in 2024 IEEE International Conference        Griffiths, and M. Wang, “Embodied llm agents learn to cooperate in
+     on Robotics and Automation (ICRA). IEEE, 2024, pp. 5228–5234.                organized teams,” arXiv preprint arXiv:2403.12482, 2024.
+[32] M. Deitke, W. Han, A. Herrasti, A. Kembhavi, E. Kolve, R. Mottaghi,       [56] Y. Zhai, B. Ding, X. Liu, H. Jia, Y. Zhao, and J. Luo, “Decentralized
+     J. Salvador, D. Schwenk, E. VanderBilt, M. Wallingford et al.,                 multi-robot collision avoidance in complex scenarios with selective
+     “Robothor: An open simulation-to-real embodied ai platform,” in                communication,” IEEE Robotics and Automation Letters, vol. 6, no. 4,
+     Proceedings of the IEEE/CVF conference on computer vision and                  pp. 8379–8386, 2021.
+     pattern recognition, 2020, pp. 3164–3174.                                 [57] W. Chen, Y. Su, J. Zuo, C. Yang, C. Yuan, C. Qian, C.-M. Chan,
+[33] M. Chang, T. Gervet, M. Khanna, S. Yenamandra, D. Shah, S. Y. Min,             Y. Qin, Y. Lu, R. Xie et al., “Agentverse: Facilitating multi-agent
+     K. Shah, C. Paxton, S. Gupta, D. Batra et al., “Goat: Go to any thing,”        collaboration and exploring emergent behaviors in agents,” arXiv
+     arXiv preprint arXiv:2311.06430, 2023.                                         preprint arXiv:2308.10848, vol. 2, no. 4, p. 6, 2023.
+[34] D. Shah, B. Osinski, B. Ichter, and S. Levine, “Lm-nav: Robotic           [58] J. Spracklen, R. Wijewickrama, A. Sakib, A. Maiti, and M. Jadli-
+     navigation with large pre-trained models of language,” Vision, and             wala, “We have a package for you! a comprehensive analysis of
+     Action, 2022.                                                                  package hallucinations by code generating llms,” arXiv preprint
+[35] Q. Xie, T. Zhang, K. Xu, M. Johnson-Roberson, and Y. Bisk, “Rea-               arXiv:2406.10279, 2024.
+     soning about the unseen for efficient outdoor object navigation,” arXiv   [59] M. Deitke, E. VanderBilt, A. Herrasti, L. Weihs, K. Ehsani, J. Salvador,
+     preprint arXiv:2309.10103, 2023.                                               W. Han, E. Kolve, A. Kembhavi, and R. Mottaghi, “Procthor: Large-
+[36] J. Zhang, J. Zhang, K. Pertsch, Z. Liu, X. Ren, M. Chang, S.-                  scale embodied ai using procedural generation,” Advances in Neural
+     H. Sun, and J. J. Lim, “Bootstrap your own skills: Learning to                 Information Processing Systems, vol. 35, pp. 5982–5994, 2022.
+     solve new tasks with large language model guidance,” arXiv preprint       [60] C. Li, C. Zhang, H. Zhou, N. Collier, A. Korhonen, and I. Vulić,
+     arXiv:2310.10021, 2023.                                                        “Topviewrs: Vision-language models as top-view spatial reasoners,”
+[37] J. Gao, B. Sarkar, F. Xia, T. Xiao, J. Wu, B. Ichter, A. Majumdar, and         arXiv preprint arXiv:2406.02537, 2024.
+     D. Sadigh, “Physically grounded vision-language models for robotic        [61] Y.-C. Liu, J. Tian, N. Glaser, and Z. Kira, “When2com: Multi-agent
+     manipulation,” arXiv preprint arXiv:2309.02561, 2023.                          perception via communication graph grouping,” in Proceedings of the
+                                                                                    IEEE/CVF Conference on computer vision and pattern recognition,
+[38] H. Ha, P. Florence, and S. Song, “Scaling up and distilling down:              2020, pp. 4106–4115.
+     Language-guided robot skill acquisition,” in Conference on Robot          [62] S. H. Arul, A. S. Bedi, and D. Manocha, “Dmca: Dense multi-
+     Learning. PMLR, 2023, pp. 3766–3777.                                           agent navigation using attention and communication,” arXiv preprint
+[39] Y. Hu, Q. Xie, V. Jain, J. Francis, J. Patrikar, N. Keetha, S. Kim,            arXiv:2209.06415, 2022.
+     Y. Xie, T. Zhang, Z. Zhao et al., “Toward general-purpose robots
+     via foundation models: A survey and meta-analysis,” arXiv preprint
+     arXiv:2312.08782, 2023.
+[40] T. Silver, V. Hariprasad, R. S. Shuttleworth, N. Kumar, T. Lozano-
+     Pérez, and L. P. Kaelbling, “Pddl planning with pretrained large
+     language models,” in NeurIPS 2022 foundation models for decision
+     making workshop, 2022.
+[41] J. Liang, W. Huang, F. Xia, P. Xu, K. Hausman, B. Ichter, P. Florence,
+     and A. Zeng, “Code as policies: Language model programs for em-
+     bodied control,” in 2023 IEEE International Conference on Robotics
+     and Automation (ICRA). IEEE, 2023, pp. 9493–9500.
+[42] S. Nasiriany, F. Xia, W. Yu, T. Xiao, J. Liang, I. Dasgupta,
+     A. Xie, D. Driess, A. Wahid, Z. Xu et al., “Pivot: Iterative visual
+     prompting elicits actionable knowledge for vlms,” arXiv preprint
+     arXiv:2402.07872, 2024.
+[43] A. J. Sathyamoorthy, K. Weerakoon, M. Elnoor, A. Zore, B. Ichter,
+     F. Xia, J. Tan, W. Yu, and D. Manocha, “Convoi: Context-aware
+     navigation using vision language models in outdoor and indoor en-
+     vironments,” arXiv preprint arXiv:2403.15637, 2024.
+[44] L. Zhou, V. D. Sharma, Q. Li, A. Prorok, A. Ribeiro, P. Tokekar, and
+     V. Kumar, “Graph neural networks for decentralized multi-robot target
+     tracking,” in 2022 IEEE International Symposium on Safety, Security,
+     and Rescue Robotics (SSRR). IEEE, 2022, pp. 195–202.
+[45] Y. Chen, J. Arkin, Y. Zhang, N. Roy, and C. Fan, “Scalable multi-robot
+     collaboration with large language models: Centralized or decentralized
+     systems?” arXiv preprint arXiv:2309.15943, 2023.
+[46] A. Lazaridou, A. Peysakhovich, and M. Baroni, “Multi-agent co-
+     operation and the emergence of (natural) language,” arXiv preprint
+     arXiv:1612.07182, 2016.
+[47] S. Havrylov and I. Titov, “Emergence of language with multi-agent
+     games: Learning to communicate with sequences of symbols,” Ad-
+     vances in neural information processing systems, vol. 30, 2017.
+[48] A. Lazaridou, K. M. Hermann, K. Tuyls, and S. Clark, “Emergence
+     of linguistic communication from referential games with symbolic and
+     pixel input,” arXiv preprint arXiv:1804.03984, 2018.
+[49] S. Kottur, J. M. Moura, S. Lee, and D. Batra, “Natural language
+     does not emerge’naturally’in multi-agent dialog,” arXiv preprint
+     arXiv:1706.08502, 2017.
+[50] A. Lazaridou and M. Baroni, “Emergent multi-agent communication
+     in the deep learning era,” arXiv preprint arXiv:2006.02419, 2020.
+[51] A. Lazaridou, A. Potapenko, and O. Tieleman, “Multi-agent commu-
+     nication meets natural language: Synergies between functional and
+     structural language learning,” arXiv preprint arXiv:2005.07064, 2020.
+[52] Y. Kim, S. Seo, J. Park, M. Bennis, S.-L. Kim, and J. Choi, “Knowl-
+     edge distillation from language-oriented to emergent communication
+     for multi-agent remote control,” arXiv preprint arXiv:2401.12624,
+     2024.
+[53] K. Evtimova, A. Drozdov, D. Kiela, and K. Cho, “Emergent commu-
+     nication in a multi-modal, multi-step referential game,” arXiv preprint
+     arXiv:1705.10369, 2017.
+[54] Y. Mu, S. Yao, M. Ding, P. Luo, and C. Gan, “Ec2: Emergent com-
+     munication for embodied control,” in Proceedings of the IEEE/CVF
+     Conference on Computer Vision and Pattern Recognition, 2023, pp.
+     6704–6714.
+[55] Z. Ma, Y. Luo, and J. Pan, “Learning selective communication for
+     multi-agent path finding,” IEEE Robotics and Automation Letters,
+     vol. 7, no. 2, pp. 1455–1462, 2022.
+                        A PPENDIX                                 Overhead Agent - User Prompt
+  Following are the prompts used for our experiments. The
+variables passed to the prompts are indicated by chevrons         Give me a dialogue to pass to the ground
+(< · >).                                                          agent to reach the target. Respond with
+                                                                  just the dialogue.
+A. No Comm. - Ground                                              You must query about the environment
+   System Prompt                                                  Clen times before giving any form of
+                                                                  instruction.
+   I am a mobile ground robot equipped with
+   a camera. You are a helper agent with                          <Dialogue between the agents>
+   access to the camera feed.
+   I am trying to reach an object in an                           Additionally, the image from the overhead agent’s camera
+   indoor environment, and you should help                     is provided.
+   me by giving me an action command to
+   accomplish this task successfully.                             Ground Agent - System Prompt
+   You are only allowed to give me one of
+   the following commands:                                        You are a ground agent with an
+   - MoveAhead: moves the robot in the                            egocentric view. You need to reach the
+   forward direction by 0.25 meters.                              <target object>.
+   - MoveBack: moves the robot in the back                        You will be questioned by an overhead
+   direction by 0.25 meters while looking                         agent. Be very concise with your
+   forward.                                                       answers.
+   - RotateRight: rotates the robot towards
+   right by 90 degrees while staying at the
+   same location.                                                 Ground Agent - User Prompt
+   - RotateLeft: rotates the robot towards
+   left by 90 degrees while staying at the                        <Dialogue between the agents>
+   same location.
+   - DoNothing: the robot does not do                             Additionally, the image from the ground agent’s camera
+   anything and stays in place.                                is provided.
+   Give only an action command as the
+   answer.                                                     C. Execution
+
+   User Prompt                                                   1) Cooperative Action:
+                                                                  Overhead Agent - System Prompt
+   The target object is <target object>.
+   The last action was <last                                      You are an Overhead Agent (OA) tasked
+   action>. The agent executed it                                 with helping a Ground Agent (GA)
+   <successfully/unsuccessfully> and                              equipped with a camera. You must guide
+   the resulting distance to the target                           GA to reach the <target object> by
+   object is <shortest path distance to the                       prescribing an action command. You will
+   target.>                                                       be given your conversation with the GA
+                                                                  about the environment as well as the
+   If the agent is unsuccessful in executing the action, the      overhead image you currently see to make
+following is also added to the user prompt:                       the decision.
+                                                                  Make sure to verify if you can see the
+                                                                  <target object> and if the conversation
+   The agent failed to execute it for the                         would lead it there.
+   following reason: <blocking object> is
+   blocking the agent from moving.                                The GA has not moved even if the
+                                                                  conversation suggests so. Please look
+                                                                  at the conversation and give one of
+   Additionally, the image from the ground agent’s camera         the following commands from the GA’s
+is provided.                                                      perspective:
+B. Communication                                                  - MoveAhead
+                                                                  - MoveBack
+   Overhead Agent - System Prompt
+                                                                  - RotateRight
+   You are an overhead agent with a top                           - RotateLeft
+   view in an environment. You must guide a                       - DoNothing
+   ground robot agent to reach the <target
+   object>.                                                       Give an action command as the answer.
+   Overhead Agent - User Prompt                              D. Preemptive Actions Classifier
+
+   The target object is <target object>.                         System Prompt
+   Conversation: <Conversation between the
+   agents>.                                                      You will be given a conversation between
+                                                                 an overhead agent and a ground agent.
+                                                                 They are expected to talk about the
+                                                                 environment around them and nothing
+  The ground agent follows the action provided by the
+                                                                 else.
+overhead agent.
+                                                                 No actions should be assumed to have
+  2) Selective Action: First, we obtain a command from the       been taken during the period of the
+overhead agent using the prompt in subsection C.1. Then          conversation. Can you tell me if
+we ask the ground agent whether it wishes to follow the          the conversation has any ’preemptive
+overhead agent’s suggestion using the following prompt.          motions’?
+                                                                 For example, dialogues such as <’I have
+                                                                 moved towards the room’> are ’preemptive
+   Ground Agent - System Prompt                                  motions’, as they assume the agent has
+                                                                 already executed a motion in the past.
+   I am a mobile ground robot equipped with                      If the motion is yet to be executed,
+   a camera. You are a helper agent with                         and it is in the future, it is NOT a
+   access to the camera feed.                                    ’preemptive motion’. Answer only with
+   I am trying to reach an object in an                          Yes or No.
+   indoor environment. There is another
+   agent with an overhead camera feed who
+   is providing me with an instruction for                       User Prompt
+   this task.
+   Following are the valid action commands                       <Conversation between the agents>
+   and their meaning for me:
+   - MoveAhead: moves the robot in the
+   forward direction by 0.25 meters.
+   - MoveBack: moves the robot in the back
+   direction by 0.25 meters while looking
+   forward.
+   - RotateRight: rotates the robot towards
+   right by 90 degrees while staying at the
+   same location.
+   - RotateLeft: rotates the robot towards
+   left by 90 degrees while staying at the
+   same location.
+   - DoNothing: the robot does not do
+   anything and stays in place.
+   I will tell you the target object and
+   the action command that the overhead
+   agent has given to me. You should tell
+   me whether I should trust and follow
+   the overhead agent’s command (Yes) or
+   whether I should disregard it and decide                  Fig. 7: Environment-Specfic Finetuning: Upon passing the sim-
+   on my own (No).                                           ulator prompts for conversation to this image, the overhead agent
+   You must answer in Yes or No.                             would misidentify the lights as a table. Explicitly mentioning the
+                                                             presence of white lights on the floor alleviates this issue.
+
+                                                                In our simulation experiments, we found that some obser-
+   Overhead Agent - System Prompt
+                                                             vations may be perceived as adversarial or CAPTCHA-like
+   The target object is <target object>.                     inputs, resulting in error from GPT-4-turbo.
+   The overhead agent prescribed the                            Fig. 8 shows some examples of such image inputs. As
+   following action: <action command>.                       evident from these, images mainly containing uninterest-
+                                                             ing features such as walls cause the error. This could be
+                                                             due to safety measures put in place for GPT-4-turbo to
+                                                             avoid adversarial attacks. Regardless, these cases showcase
+   Additionally, the image from the ground agent’s camera    a vulnerability for robots equipped with similar LLMs. It
+is provided.                                                 is not uncommon for the robots to face walls during their
+   If the ground agent decides not to follow the overhead    navigation. However, observations from such trivial cases
+agent’s suggestion, we execute No Comm. scenario using       may require adding measures for embodied agents to deal
+the prompt given in subsection A.                            with potential failures. We did not use the episodes with
+             (a)                                (b)
+
+             (c)                                (d)
+
+                               (e)                                  Fig. 9: LLaVA Communication Failiure: The target here is the
+Fig. 8: Agent observations which result in error with GPT-4-turbo   steering wheel. Notice that the agent is far away from it, and also
+                                                                    that there are multiple objects in the way. The LLaVA conversation
+                                                                    fails to capture the objects, and also fails to localize the ground
+                                                                    agent’s location. Instead, it mentions that there are no objects or
+such examples in our evaluation.                                    features blocking it’s path to the steering wheel. This hallucination
+                                                                    leads to poor action prediction.
+E. Finetuning Prompts
+   Our prompt in the simulator is described in Appendix .
+In the real world, we add additional constraints to allow the
+agent to localize the agent with the targets detected.                  Ground Agent - System Prompt
+
+    Overhead Agent - System Prompt                                      You are a Ground Agent with an
+                                                                        egocentric view. You need to reach the
+    You are an Overhead Agent (OA) with a                               <target object>.
+    top view in an environment. You must                                You will be questioned by an Overhead
+    identify and guide a Ground Agent (GA)                              Agent about things you see. Be very
+    to reach the <target object>.                                       concise with your answers.
+    The GA is a turtlebot with a circular
+    orange box on it. Be sure to use the
+    ground agent’s perspective. Also, note                              Ground Agent - User Prompt
+    there is a reflection from multiple
+    rectangular white lights on the black                               <Dialogue between the agents>
+    floor.
+
+    Overhead Agent - User Prompt                                       Note here that we ask the OA to use environmental
+                                                                    cues to figure out the position and orientation of the agent
+    Give me a dialogue questioning the GA                           in the communication phase. This explicit mention helps
+    about its surroundings. The GA can not                          curb preemptive hallucinations. Additionally, we also provide
+    move while speaking with you.                                   unique identifying details about the ground agent (with an
+    You must query the GA about the                                 orange box here, for instance).
+    environment and try to estimate its                                Additional information such as “note there is a reflection
+    position and orientation with respect                           from multiple rectangular white lights on the black floor” is
+    to the <target object>. You have CLen -                         environment-specific, and allows the VLM to adapt better.
+    1 questions left to ask.                                        Prior to providing such an instruction, the agent kept hallu-
+    <Dialogue between the agents>                                   cinating the white reflections on the floor to be a table. This
+                                                                    is illustrated in Fig. 7.
+F. VLM Ablations                                                    Conversation with LLaVA-1.5-13B
+   Apart from GPT-4V, we also conducted experiments with                 OA: Hello GA, can you tell me
+InstructBLIP with FLAN-T5 and Vicuna-7B bases, as well as                where you are in relation to the
+LLaVA-1.5 finetuned on LORA. However, we observe that                    steering wheel? Are you close to
+the conversations with these models suffers from significant             it or far away? Also, can you see
+hallucination in the form of repetition and false information.           any other objects or obstacles in
+We combine the system and user prompts presented earlier                 your path that might be blocking
+and pass this as a single prompt here. For instance, consider            your way to the steering wheel?
+the example below:                                                       GA: I am in a room with a table
+                                                                         and a chair. The steering wheel
+   Conversation with InstructBLIP-FlanT5-XXL                             is located in the room, but I am
+                                                                         not close to it. There are no
+        OA: Ground Agent, What do you see                                obstacles in my path, but I need
+        in front of you?                                                 to navigate through the room to
+        GA: There is a table and chairs.                                 reach the steering wheel.
+        OA: What color is the table?                                     OA: Great, GA. Now, can you tell
+        GA: It is blue.                                                  me the direction you need to take
+        OA: What color is the chair?                                     to reach the steering wheel? Is
+        GA: It is red.                                                   it to your left, right, or
+        OA: What color is the carpet?                                    straight ahead? Also, can you see
+        GA: It is black.                                                 any other objects or features in
+        OA: What color is the wall?                                      the room that might help you
+        GA: It is white.                                                 navigate towards the steering
+        OA: What color is the door?                                      wheel?
+        GA: It is blue.                                                  GA: I need to take a right turn
+        OA: What color is the window?                                    to reach the steering wheel. In
+        GA: It is green.                                                 the room, there is a table and a
+        OA: What color is the sky?                                       chair, which might help me
+        GA: It is blue.                                                  navigate towards the steering
+        OA: What color is the grass?                                     wheel.
+        GA: It is green.                                                 OA: Thank you for the
+        OA: What color is the water?                                     information, GA. Now, can you
+        GA: It is blue.                                                  tell me if there are any other
+                                                                         objects or features in the room
+  Notice the conversation starts off with an expected query              that might be blocking your path
+asking about what was in front of the agent, but quickly                 or making it difficult to reach
+derails into dialogue that is not useful in guiding the ground           the steering wheel? Also, can you
+agent. The questions also become more vague towards the                  see any other objects or
+end, and are not grounded in the environment anymore.                    obstacles in the room that might
+                                                                         be helpful in guiding you towards
+   Conversation with InstructBLIP-Vicuna-7B                              the steering wheel?
+                                                                         GA: There are no objects or
+        OA: Can you describe what you see                                features in the room that are
+        around you?                                                      blocking my path or making it
+        GA: I’m sorry, but I’m a Ground                                  difficult to reach the steering
+        Agent with a limited view of the                                 wheel. The table and chair in the
+        area. I can’t see what’s going on                                room might be helpful in guiding
+        up there.                                                        me towards the steering wheel.
+        OA: I’m sorry, but I’m an
+        Overhead Agent with a bird’s-eye                            In the LLaVA conversation, notice that the GA assues the
+        view of the area. I’m looking for                        OA that there are no objects in its path to reach the steering
+        a Ground Agent to guide me to the                        wheel. It also mentions a table and chair. However, upon
+        steering wheel.                                          seeing the actual OA and GA images (Figure 9), we note that
+                                                                 neither the steering wheel is clearly ahead, nor is there only
+   Despite Vicuna-7B being finetuned on conversa-                a table or chair in the room. Moreover, the OA does not even
+tions/dialogue data, notice the apparent confusion that          attempt to utilize it’s own understanding of the environment
+occurs here. The overhead agent assumes that the ground          to identify and guide the GA as it was asked to.
+agent is going to guide it to the steering wheel, while the
+opposite is being explicitly stated to the OA, i.e. ”You         G. Localization Failures
+must identify and guide a Ground Agent (GA) to reach the            In a communication setup, one may expect the cross-view
+<target object>.”                                                localization to be trivial as VLM can match the objects in
+                                                                 the two images (from GA and OA) to guess the location of
+the robot. However, we found that VLM struggles at doing              When asked to provide a reason, GPT-4 responded with
+so.                                                                the following:
+   For this experiment, we use a Turtlebot2 robot in an indoor     OA: Based on the overhead image and the Ground Agent’s
+environment with a few other objects (carts with objects           plan to rotate 180 degrees, a single command of ”Rotate
+inside, whiteboard, driving simulator, etc). The Turtlebot2        Right” will initiate this maneuver.
+is black in color and has a range sensor with an orange cap           We also note that the GA described the objects behind
+on top. For the overhead view, we put a GoPro 7 camera             it even though it can only get observations from the front-
+on top. Inspired from PIVOT [42], we added labels to the           looking camera. OA was able to correctly estimate the GA’s
+overhead image and asked the VLM agent to find ‘a black            location relative to the white basket as it gathered information
+Turtlebo2 robot with an orange sensor on top’. To add the          about its observations to correctly estimate its pose.
+labels, we split the image into grids with 16, 36, 64, and 144        While communication with the OA helps the GA with
+cells and varied the label sizes to ensure that the labels were    ObjectNav, bandwidth, and cost restrictions may require a
+equally spaced without any overlap. As shown in Fig. 10,           selective approach toward initiating communication [61],
+the results are comparatively better with smaller grids but        [62]. To investigate such situations, we developed a variation
+not none of the results are precise. A closer look reveals that    of Cooperative Action where the ground agent is first asked
+the VLM may be confused due to similar-looking objects             if it wishes to seek help from the overhead agent. The
+in the scene (a grey cart with red and range objects inside).      view from the ground agent camera is used as an additional
+This is also shown in Fig. 11, which shows the Turtlebot at        input here. We use the simulation setup as described in
+different locations and the position predicted by the VLM.         section V-A for 100 episodes and report our findings in
+   We also tried adding the egocentric images from the             Table II. We observe that such a selective communication
+camera on Turtlebot, as shown in Fig. 12, as additional inputs     setup results in an improvement over the Cooperative Action
+to VLM to help with cross-view localization, but they do not       setup, suggesting a judicious assistance-seeking behavior.
+improve the results.                                               However, we note that it comes at the cost of additional
+                                                                   prompting at every episode.
+H. Identifying Correct Action from Dialogue
+                                                                            Comm. Length (CLen )    OSR % ↑     SPL % ↑
+   In many cases, the planning failure occurs due to the
+preemptive action hallucination in the conversation. During                           1               20.00         19.20
+the execution phase, E, the OA looks at this conversation and                         3               23.00         21.65
+                                                                                      5               26.00         24.49
+tries to execute an action to continue toward the target object.
+However, it may provide the right action if prompt fine-
+tuning reduces the preemptive action hallucination. Fig. 13        TABLE II: Selective Communication Performance: We find that
+shows this case where the target is the white basket on the        letting the GA choose whether to communicate with the agent or
+ground and the GA is currently looking towards the center          not results in a better ObjectNav performance than Cooperative
+                                                                   Action, but requires additional prompting at each step.
+of the image.
+   Conversation Phase:
+OA: Can you describe any nearby objects or structures that            To identify the patterns in GC, we look at the word
+are directly in front of you?                                      cloud over the communication between GA and OA. Fig. 14
+GA: Directly in front of me, there is a work area with             shows the word clouds for the Selective Action setup. We
+several desks and office chairs. There’s a person sitting          observe that across all CLen , the ‘rooms’, ‘see’, and ‘visible’
+at one of the desks, working on a computer. To the left,           are prominent as the OA always asks GA questions about
+there’s a door, and overhead are strip lighting fixtures and       surroundings and whether it sees the target object.
+exposed ceiling infrastructure. The foreground shows a                For CLen = 1, we also see more prominence of action
+metal cart with various items, possibly tools or mechanical        commands such as ‘forward’ and ‘move’ as the limited com-
+components. OA: What do you see to your right and behind           munication length may make the OA may suggest actions to
+you?                                                               reach the target right away. Some of these suggestions may
+GA: To my right, there is an office area with multiple             instruct the GA to ‘reach’ certain objects before reaching
+desks equipped with computer monitors and an office chair.         the target object. We also see ‘hello’ having more weight
+Behind me, there is more of the workspace visible, including       for this case compared to other communication lengths as
+additional desks and chairs. A whiteboard is visible on the        the OA greets the GA at the beginning of the conversation
+right wall, and there’s a large technical rigging above the        in most episodes.
+workspace, likely part of the lab or office’s infrastructure.         CLen = 3 have similar word clouds for words related to
+OA: Based on the information you provided and the                  queries about the surroundings. Due to the large communi-
+overhead view, you are currently facing away from the              cation length, the OA may have the chance to suggest going
+small white basket on the floor. To reach the basket, first        to other rooms through ‘doors’. We observe similar trends
+rotate 180 degrees, then move forward until you reach the          for the Cooperative Action setup as well.
+basket positioned on your left side after the turn.
+GA: Understood. I will rotate 180 degrees and then advance
+to locate the small white basket positioned to the left after
+the turn.
+
+  Execution Phase:
+Prescribed Action: RotateRight
+                      (a) Predicted position: 6                                          (a) Predicted position: 16
+
+                     (b) Predicted position: 16                                          (b) Predicted position: 30
+
+                      (c) Predicted position: 21                                         (c) Predicted position: 16
+
+                     (d) Predicted position: 42                                          (d) Predicted position: 9
+Fig. 10: Localization response from GPT-4-turbo for varying extent   Fig. 11: Localization response from GPT-4-turbo for different
+of labelling                                                         locations of the Turtlebot2
+                    (a) Predicted position: 16                    Fig. 13: Corrective Action with GA: In this case, the agent decides
+                                                                  to rotate by 180 degrees first and then move towards the left. The
+                                                                  OA in the execution phase correctly suggests that the same can be
+                                                                  accomplished by rotating towards right.
+
+                    (b) Predicted position: 10
+
+                                                                                      (a) Word cloud for CLen = 1
+
+                    (c) Predicted position: 16                                        (b) Word cloud for CLen = 3
+
+                                                                                      (c) Word cloud for CLen = 5
+                                                                  Fig. 14: World clouds over the communication between the GA
+                    (d) Predicted position: 10                    and OA in Selective Action setup. Communication in Cooperative
+                                                                  Action setup also exhibits similar patterns.
+Fig. 12: Egocentric images from the camera on Turtlebot2. These
+images correspond to images of robot locations shown in Fig. 11

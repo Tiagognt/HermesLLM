@@ -1,0 +1,422 @@
+InterAct: Exploring the Potentials of ChatGPT as a
+                                                         Cooperative Agent
+                                                                                Po-Lin Chen and Cheng-Shang Chang, Fellow, IEEE
+
+                                           Abstract—This research paper delves into the integration of              Scholarly works such as ReAct [6] and Reflexion [7] showcase
+                                        OpenAI’s ChatGPT into embodied agent systems, evaluating its                the decision-making, action-initiation, and reflective powers
+                                        influence on interactive decision-making benchmark. Drawing a               of LLMs, paving the way for remarkable progress in a range
+                                        parallel to the concept of people assuming roles according to
+                                        their unique strengths, we introduce InterAct. In this approach,            of text-based performance metrics. However, they all utilize a
+arXiv:2308.01552v1 [cs.AI] 3 Aug 2023
+
+                                        we feed ChatGPT with varied prompts, assigning it a numerous                single language model (InstructGPT) which, despite numerous
+                                        roles like a checker and a sorter, then integrating them with               iterations of thought and reflection, often repeatedly commits
+                                        the original language model. Our research shows a remarkable                the same mistakes. In this research, we devise a novel model,
+                                        success rate of 98% in AlfWorld, which consists of 6 different              InterAct, which is founded on the architecture of the ReAct
+                                        tasks in a simulated household environment, emphasizing the
+                                        significance of proficient prompt engineering. The results high-            model [6]. It undergoes alterations in prompt formulations,
+                                        light ChatGPT’s competence in comprehending and performing                  incorporates different ChatGPT for support. In particular, we
+                                        intricate tasks effectively in real-world settings, thus paving the         add a checker module to tackle the issue of object misidentifi-
+                                        way for further advancements in task planning.                              cation. The initial basic prompt has also been revised to bolster
+                                          Keywords: ChatGPT, AlfWorld, Task planning, InterAct.                     InterAct’s capabilities in constructing comprehensive search
+                                                                                                                    paths. This approach effectively addresses the previously men-
+                                                                 I. I NTRODUCTION
+                                                                                                                    tioned shortcomings of the ReAct model. Consequently, this
+                                           The advent of large language models (LLMs), underpinned                  approach yielded a success rate of 98% in this benchmark, a
+                                        by transformative advancements in natural language process-                 significant improvement from the base ReAct agent’s accuracy
+                                        ing (NLP), has stimulated a revolution across a wide range                  of 75%. These experiments provide critical insights into the
+                                        of applications. Exemplified by models such as Transformer                  potential benefits and limitations of implementing ChatGPT
+                                        [1], T5 [2], GPT-4 [3], these language models have achieved                 in AI-driven systems and technologies.
+                                        impressive results in diverse tasks like paragraph summary,                    In conclusion, the main insight of the paper is the advance-
+                                        language translation, and code optimization. These achieve-                 ment of AI language models like ChatGPT presents an excit-
+                                        ments can be attributed to their ability to absorb and process              ing opportunity to revolutionize and reshape our interaction
+                                        massive amounts of data, making sense of the patterns and                   with technology. By leveraging these models, we can build
+                                        structures within the text.                                                 more intuitive, responsive, and smart technologies that can
+                                           ChatGPT [4] is an AI language model created by OpenAI,                   effectively understand and respond to human requirements.
+                                        which has been trained using a combination of pretraining                   The key contributions of our research are summarized below:
+                                        and fine-tuning with human feedback. This advanced model is                    (1)    We introduce InterAct, an improved method where
+                                        built on Transformer model, enabling it to produce responses                          each agent, like ChatGPT, can showcase unique
+                                        that closely resemble human language. By undergoing exten-                            abilities, adeptly rectifying the limitations found in
+                                        sive training on vast volumes of text data, ChatGPT excels in                         the ReAct model, such as object misidentification
+                                        understanding and generating text in various languages and                            and inefficient planning.
+                                        fields, answering queries, and engaging in dialogues. Unlike                   (2)    We have designed new trajectory prompts that enable
+                                        its predecessors that operate primarily based on a single                             the agent to flawlessly locate items during its search
+                                        prompt, ChatGPT combines text generation with code syn-                               process.
+                                        thesis, thereby significantly enhancing its interactive abilities.             (3)    In a decision-making test within the AlfWorld sim-
+                                           In this paper, we assess the ability of ChatGPT to make                            ulated environment, InterAct demonstrated a 98%
+                                        decisions within the context of an AlfWorld simulated envi-                           success rate, significantly higher than the 75% accu-
+                                        ronment [5]. The aim is to understand the model’s proficiency                         racy of the base ReAct agent, suggesting its potential
+                                        in absorbing and processing data to make rational decisions.                          benefits in AI-centric systems and technologies.
+                                          The authors are with the Institute of Communications Engineering,                              II. R ELATED WORK
+                                        National Tsing Hua University, Hsinchu 300044, Taiwan R.O.C. Email:
+                                        b220954335@gmail.com; cschang@ee.nthu.edu.tw.                                   Dominance of Transformers for Robots Transformers
+                                                                                                                    have emerged as the dominant architecture in various fields.
+                                          This work was supported in part by the National Science and Technology,
+                                        Taiwan, under Grant 111-2221-E-007-045-MY3, and in part by Qualcomm         Initially prominent in NLP [8], [9], [10], they have now
+                                        Technologies under Grant SOW NAT-487844-2.                                  extended their influence to include vision-based tasks [11],
+[12] and even reinforcement learning [13], [14]. In the realm       challenges of planning in open-ended environments such as
+of robotics, Transformers have found practical applications         Minecraft. This innovative system adeptly manages intricate
+in diverse areas such as path planning [15], [16], object           tasks that demand meticulous, multi-step reasoning, effec-
+recognition [17], and grasping [18].                                tively prioritizing sub-goals according to the agent’s prox-
+   One notable example is RT-1 [19], which takes the uti-           imity. Notably, DEPS has exhibited remarkable results in
+lization of Transformers that takes images from a robot’s           enhancing the success rate of Minecraft tasks by offering
+camera and natural language task instructions as inputs and         insightful explanations for errors encountered during sub-task
+directly outputs tokenized actions. RT-1 can also acquire           execution. As a groundbreaking planning agent, DEPS has
+new skills by observing other robots’ experiences, opening          achieved an unprecedented positive success rate in conquering
+opportunities for enhanced robot capabilities through multi-        the formidable ObtainDiamond task, marking a significant
+robot datasets. Another instance is SayCan [20], a study            milestone in the field.
+conducted by Google’s AI team and Everyday Robots. This                A different strategy called DERA [33] presents an alter-
+research employs PaLM [21] and an affordance function to            native approach by structuring a dialogue as a conversation
+empower robots to carry out complex tasks based on natural          between two agent types: ”Researcher” and ”Decider.” The
+language instructions. The resulting system, PaLM-SayCan,           Researcher agent analyzes information and identifies key com-
+transforms user instructions into actionable plans for the robot.   ponents of the problem, while the Decider agent autonomously
+Inner Monologue [22] has made further advancements by               combines the Researcher’s insights and makes judgments on
+incorporating injected feedback from the environment. The           the final output. This approach has demonstrated notable
+work in [23] demonstrated that even without any training, siz-      enhancements compared to the baseline performance of GPT-
+able language models can be effectively prompted to produce         4 [3] in evaluations conducted by human experts and quanti-
+credible action plans driven by goals. They also suggested          tative metrics. Particularly, DERA has showcased significant
+multiple techniques to enhance the model’s ability to generate      advancements in safety-critical domains like healthcare.
+executable outputs, all without the need for invasive probing          Additionally, the studies by [7], [34] have also incorporated
+or modifications to the underlying model.                           reflection actions into the model. These reflection actions
+   GPT for Robotics Moreover, recent publications, includ-          allow the model to refine its actions based on feedback
+ing [24], [25], and [26], have successfully incorporated models     received during the execution of tasks. By iteratively adjusting
+such as ChatGPT and GPT3.5 into the realm of robotics ap-           its actions and incorporating self-feedback, the model can
+plications. These advancements facilitate interaction between       improve its decision-making process and adapt to changing
+the models and the environment or users, allowing for the           conditions.
+correction of the robot’s behavior. These papers showcase              Our research aims to provide additional evidence supporting
+various prompts and outline a pipeline for the implementation       the effectiveness of ChatGPT in language-conditioned robotic
+of ChatGPT in robotics tasks. Additionally, they conduct            learning simultaneously introducing novel architectures that
+experimental evaluations to assess ChatGPT’s capability to          facilitate reasoning through the coordination of various roles
+execute a wide range of robotics tasks while striving to bridge     performed by LLMs.
+the gap between natural language and actionable robot actions.
+   LLM for Robotics reasoning The process of reasoning                         III. M ETHOD : I NTER ACT S TRUCTURE
+in robotics involves breaking down complex tasks into simpler          In this section, we use the AlfWorld benchmark to test
+subtasks that can be more easily solved by the LLM itself or        ChatGPT’s reasoning capabilities, examining how it accom-
+with the aid of tools. Various approaches [27], [28] have been      plishes household tasks step by step when provided only with
+introduced to enable natural language agents to select their        a few-shot example. We will use not only ChatGPT but also
+next action in text-based environments.                             a similar language model called InstructGPT (text-davinci-
+   One prominent approach is Chain-of-thought (CoT) reason-         002). InstructGPT is particularly adept at tasks demanding
+ing, as proposed in [29]. This approach leverages emergent          succinct responses or benefiting from k-shot examples. In
+properties, such as reasoning and commonsense, to solve tasks       this particular task, unlike the previous demostration, the
+through multiple steps. It enables the LLM to reason through a      model is required to integrate task-oriented actions with verbal
+series of intermediate actions, leading to the desired outcome.     reasoning. The model needs to possess the ability to think and
+   Another approach called faithful reasoning, introduced in        reason like a human. When faced with dead ends , the model
+[30], decomposes multi-step reasoning into three distinct           should be capable of adjusting its planning based on logical
+steps, each handled by a dedicated LLM. By dividing the             reasoning.
+task into these steps, faithful reasoning facilitates the LLM’s
+ability to tackle complex computations effectively. Similar         A. AlfWorld Dataset
+approaches like Scratchpad [31], which involves fine-tuning            AlfWorld is a suite of text-based environments that chal-
+an LLM on intermediate computation steps, resulting in              lenge an agent to solve multi-step tasks in a variety of
+improved performance on multi-step computation problems.            interactive environments with ALFRED [35] benchmark. The
+   The Describe, Explain, Plan, and Select (DEPS) approach,         ALFRED benchmark focuses on tasks that require an agent
+introduced in [32], specifically developed to tackle the unique     to accomplish high-level goals in a simulated household
+environment by navigating and interacting through text-based        although ReAct achieves state-of-the-art performance overall,
+actions. In AlfWorld, there are six types of tasks that chal-       there exists a small subset of tasks that remain unsolved due
+lenge the agent’s ability to plan, track subgoals, and explore      to minor imperfections in a single model.
+systematically.
+   For example, a task in AlfWorld could be to ”examine
+a paper under a desklamp.” To achieve this goal, the agent
+needs to navigate to specific locations within the simulated
+household and interact with objects using text commands. The
+agent might need to issue commands like ”go to coffeetable
+1,” ”take paper 2,” and ”use desklamp 1” to complete the task.
+   The complexity of the tasks in AlfWorld is intentionally
+designed to be challenging. Task instances can have more
+than 50 locations and may require an expert policy more than
+50 steps to solve. This complexity encourages the agent to
+effectively plan its actions, keep track of subgoals, and explore   Fig. 1. The architecture of both ReAct and InterAct. InterAct involves the
+the environment systematically. For example, the agent may          integration of LLM with various agents to facilitate smoother interaction with
+                                                                    the environment.
+need to check all desks one by one to find the desklamp.
+   One of the challenges presented in AlfWorld is the need             To address these challenges, InterAct leverages the com-
+to determine likely locations for common household items.           bined strength of agents with distinct purposes, such as
+For instance, a desklamp is likely to be found on desks,            checker and sorter, to enhance the areas where ReAct is
+shelves, or dressers. This aspect of the environment provides       susceptible to errors. In addition, we have modified the
+an opportunity for language models like LLMs to leverage            original basic prompt to enhance InterAct’s ability to plan
+their pretrained commonsense knowledge to make informed             comprehensive search paths when looking for multiple items,
+decisions about the likely locations of objects.                    ensuring that no possible locations are overlooked. This op-
+   In each environment of AlfWorld, the agent has the option        timization greatly improves the efficiency of the tasks being
+to select an action from a list of permissible actions, denoted     performed.
+as At at time step t. Upon executing an action, the agent              Sorter When processing environmental data, ReAct ini-
+receives an observation, Ot , and a reward, R(st , at ), from       tially needs to determine the likelihood of objects appearing
+the environment, which then determines the next state of the        in specific locations. However, this ranking process often falls
+agent.                                                              short, leading to less efficient planning. This inefficiency may
+   AlfWorld offers a diverse set of six tasks and a total           arise from the fact that the the InstructGPT model (text-
+of over 3000 unique environments. These environments test           davinci-002) is not sufficiently trained in factual knowledge
+the agent’s ability to understand the task at hand, formulate       and common-sense reasoning. On the other hand, ChatGPT
+a sequential plan consisting of subtasks, and carry out the         has been fine-tuned using Reinforcement Learning with Hu-
+necessary actions within the given environment. In our trials,      man Feedback (RLHF) and has demonstrated a more nuanced
+we utilize the ReAct problem-solving strategy [6], which has        understanding of various situations. It excels at making well-
+demonstrated superior performance across a wide array of            informed decisions, as depicted in Figure 2. To improve the ef-
+sequential decision-making tasks. ReAct is a strategy that          ficiency of predicting object locations, we integrate ChatGPT
+allows the agent to reason and act by articulating its current      as a decision-making component. Whenever ReAct requires
+thoughts and performing actions based on these thoughts. At         this procedure, it can autonomously utilize ChatGPT, thus
+each time step, the agent has the option to execute < think >:      enhancing the effectiveness of its object search operations.
+thought action to verbalize its internal thought process, or
+< action >: to induce a response from the environment. The
+set of possible actions in each state is not explicitly defined,
+providing the agent with full autonomy in determining its next
+moves. To prevent syntactic errors, we provide the agent with
+two domain-specific few-shot trajectories.
+B. Model architecture                                               Fig. 2. The left image was generated using text-davinci-002 for search
+  We introduced a novel model called InterAct, which is             ranking, while the right image was generated using ChatGPT. It can be
+                                                                    observed that ChatGPT exhibits higher logical reasoning in finding objects
+built upon the foundation of ReAct. The architectural dia-          compared to text-davinci-002.
+gram of InterAct can be observed in Figure 1. While ReAct
+has demonstrated impressive accuracy in diverse decision-              Checker Another issue with text-davinci-002 is that it
+making and knowledge-intensive tasks, it occasionally en-           tends to mistakenly categorize similar objects as the same.
+counters common errors, including Perception Error, Object          For example, it might treat a pan and a pot as identical items,
+Misidentification, and Inefficient Planning. In simpler terms,      leading to the problem of Object Misidentification, as depicted
+in Figure 3. To address this issue, we employ ChatGPT as a
+checker by providing it with appropriate prompts. We have
+observed that ChatGPT can successfully distinguish between
+similar objects. Furthermore, we utilize the results from this
+checker as observations and feed them back to the LLM, as
+illustrated in Figure 1. This approach helps us resolve the
+problem related to object misidentification.
+
+Fig. 3. Object Misidentification. In this scenario, the objective is to locate a
+pan; however, ReAct mistakenly misidentifies another object as the pan.
+
+   Trajectory planning In the AlfWorld environment, we
+encountered a mission type named ”pick 2”, where the agent
+is required to find two identical objects. We observed that
+ReAct alone tends to forget its previous locations, resulting
+in inefficient trajectories characterized by frequent revisits to
+the same place. In some instances, this led to hallucinations,
+defined as consecutive identical actions with the environment
+responding similarly. To address this issue, we made changes
+to the original model’s prompt. After finding the first object
+and placing it in the corresponding receptacle, we allow the
+model to autonomously generate a trajectory while ensuring
+that this path does not overlook areas where the second object
+might be present, as shown in Figure 4.                                            Fig. 4. Trajectory planning. In the initial scenario, the agent fails to retrieve
+                                                                                   the second pillow from the armchair after placing the first pillow on the
+   More details about prompts, we refer the reader to Ap-                          sofa. Consequently, the agent cannot find the second pillow, resulting in
+pendix A.                                                                          an incomplete task. In the revised scenario, InterAct addresses this issue
+                                                                                   by considering the future search trajectory. It prioritizes returning to the
+                                                                                   armchair to search for the second pillow before exploring the other areas. This
+                            IV. E VALUATION                                        approach improves the chances of successfully locating the second pillow and
+                                                                                   completing the task.
+   In this section, we present a comparative analysis of the
+performance enhancement provided by the helpers (sorter or
+checker) and the new trajectory planning when compared to
+the baseline model. Our findings demonstrate that InterAct
+consistently outperforms ReAct on AlfWorld (as shown in
+Table I) across all tasks. On AlfWorld, the top-performing
+InterAct trial achieves an impressive average success rate of                                                         TABLE I
+98%, falling short in only 2 out of 134 tasks. This performance                                   A LF W ORLD TASK - SPECIFIC SUCCESS RATES (%).
+is significantly better than the best trials of ReAct (73%) and
+BUTLER (37%). Indeed, InterAct has demonstrated excep-
+                                                                                          Method         Pick     Clean     Heat    Cool     Look      Pick2     All
+tional proficiency in handling these tasks, as evidenced by
+                                                                                        BUTLERg           33        6        70       76       17       12       46
+achieving a 100% success rate in four out of the six tasks.
+This performance showcases InterAct’s remarkable ability to                             BUTLER            65        39       83       76       55       24       57
+effectively manage and succeed in various tasks. Notably, even                              Act           88        41       76       67       73       43       46
+when ReAct is augmented only with a checker or sorter, the                                ReAct           88        55       90       81       75       53       73
+overall average performance surpasses that of ReAct without                          ReAct+checker        85        81      100       87       92       75       86
+helpers by a significant margin. The tasks that show the                              ReAct+sorter        84        76       88       73       80       67       78
+most substantial improvement are ”pick2” and ”clean,” with                               InterAct         100       96      100       94      100       100      98
+an approximate gain of 47% and 41%. From a qualitative
+standpoint, we observed that ReAct, without any helper, faces
+difficulties in accurately determining the presence of items in
+a specific location or employing ineffective search strategies.
+             V. D ISCUSSION AND L IMITATIONS                       role in shaping future real-world interactions. As we continue
+A. Scalability of InterAct                                         to delve into their capabilities, we are on the cusp of a new
+                                                                   technological era marked by not only intelligence but also
+   Our InterAct model is scalable and adaptable to different
+                                                                   intuitiveness and responsiveness to human needs.
+datasets and scenarios. For instance, if there’s a need for a
+feature similar to ’memories,’ we can develop an interpreter to                                  R EFERENCES
+describe the current path, among other things, without having       [1] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez,
+to train numerous different language models. This is possible           Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” Advances in
+                                                                        Neural Information Processing Systems, vol. 30, 2017.
+because ChatGPT serves as an excellent backbone for such            [2] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena,
+extensions.                                                             Y. Zhou, W. Li, and P. J. Liu, “Exploring the limits of transfer
+                                                                        learning with a unified text-to-text transformer,” The Journal of Machine
+B. Error assessment with a supervisor module                            Learning Research, vol. 21, no. 1, pp. 5485–5551, 2020.
+                                                                    [3] OpenAI, “GPT-4 technical report,” arXiv, 2023.
+   Despite achieving an impressive average performance of           [4] “OpenAI, ChatGPT. https://chat.openai.com.” 2023.
+98% on the AlfWorld dataset, our analysis of failed trajecto-       [5] M. Shridhar, X. Yuan, M.-A. Côté, Y. Bisk, A. Trischler, and
+                                                                        M. Hausknecht, “Alfworld: Aligning text and embodied environments
+ries uncovered certain limitations. One notable drawback is             for interactive learning,” arXiv preprint arXiv:2010.03768, 2020.
+the model’s heavy reliance on prompt completeness within            [6] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao,
+InterAct. When our examples contain missing or unaddressed              “ReAct: Synergizing reasoning and acting in language models,” arXiv
+                                                                        preprint arXiv:2210.03629, 2022.
+components, the model fails to detect these errors, resulting       [7] N. Shinn, B. Labash, and A. Gopinath, “Reflexion: an autonomous
+in repetitive actions, even for trivial mistakes. To overcome           agent with dynamic memory and self-reflection,” arXiv preprint
+this issue, we explored the possibility of using an alternative         arXiv:2303.11366, 2023.
+                                                                    [8] W. Fedus, B. Zoph, and N. Shazeer, “Switch transformers: Scaling
+ChatGPT model as a supervisor to identify such errors. How-             to trillion parameter models with simple and efficient sparsity,” The
+ever, it’s important to acknowledge that the accuracy of the            Journal of Machine Learning Research, vol. 23, no. 1, pp. 5232–5270,
+supervisor’s judgment cannot be guaranteed, and there may               2022.
+                                                                    [9] T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal,
+be occasional misidentifications leading to ”action errors.”            A. Neelakantan, P. Shyam, G. Sastry, A. Askell et al., “Language models
+   In order to tackle the challenge of error detection, we              are few-shot learners,” Advances in Neural Information Processing
+conducted a comparison between ChatGPT and GPT-4. The                   systems, vol. 33, pp. 1877–1901, 2020.
+                                                                   [10] L. Zhuang, L. Wayne, S. Ya, and Z. Jun, “A robustly optimized bert
+results demonstrated a significant improvement in error de-             pre-training approach with post-training,” in Proceedings of the 20th
+tection performance with GPT-4. Unfortunately, GPT-4 is                 Chinese national conference on computational linguistics, 2021, pp.
+currently unavailable as an open-source model and cannot                1218–1227.
+                                                                   [11] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, and B. Guo,
+be accessed free of charge. Conducting extensive simulations            “Swin transformer: Hierarchical vision transformer using shifted win-
+using GPT-4 requires funding support.                                   dows,” in Proceedings of the IEEE/CVF international conference on
+                                                                        computer vision, 2021, pp. 10 012–10 022.
+C. Insufficiency of the dataset                                    [12] J. Liang, J. Cao, G. Sun, K. Zhang, L. Van Gool, and R. Timofte,
+                                                                        “Swinir: Image restoration using swin transformer,” in Proceedings of
+   While AlfWorld is a valuable platform for assessing AI per-          the IEEE/CVF international conference on computer vision, 2021, pp.
+formance, it has certain limitations. Primarily, it encompasses         1833–1844.
+only six types of tasks, and even within these categories, the     [13] L. Chen, K. Lu, A. Rajeswaran, K. Lee, A. Grover, M. Laskin,
+                                                                        P. Abbeel, A. Srinivas, and I. Mordatch, “Decision transformer: Re-
+task quantity is quite limited. These restrictions neither fully        inforcement learning via sequence modeling,” Advances in Neural
+test nor make optimal use of the AI systems’ capabilities.              Information Processing systems, vol. 34, pp. 15 084–15 097, 2021.
+If we move to an environment offering a larger range and           [14] K.-H. Lee, O. Nachum, M. S. Yang, L. Lee, D. Freeman, S. Guadarrama,
+                                                                        I. Fischer, W. Xu, E. Jang, H. Michalewski et al., “Multi-game decision
+diversity of tasks, as well as a broader and more varied set of         transformers,” Advances in Neural Information Processing Systems,
+locations, our model will still need improvement to maintain            vol. 35, pp. 27 921–27 936, 2022.
+its current level of accuracy. This aspect will be our focus for   [15] K. Alexis, C. Papachristos, R. Siegwart, and A. Tzes, “Uniform cov-
+                                                                        erage structural inspection path–planning for micro aerial vehicles,”
+future research.                                                        in 2015 IEEE international symposium on intelligent control (ISIC).
+                                                                        IEEE, 2015, pp. 59–64.
+                      VI. C ONCLUSION                              [16] D. S. Chaplot, D. Pathak, and J. Malik, “Differentiable spatial planning
+   Our research is centered on enhancing the task planning              using transformers,” in International Conference on Machine Learning.
+                                                                        PMLR, 2021, pp. 1484–1495.
+capabilities of large language models. We developed a new          [17] K. He, X. Chen, S. Xie, Y. Li, P. Dollár, and R. Girshick, “Masked
+model, InterAct, built upon the framework of the ReAct                  autoencoders are scalable vision learners,” in Proceedings of the
+model. InterAct is a culmination of various ’helpers’ (like             IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+                                                                        2022, pp. 16 000–16 009.
+checkers and sorters) and aims to improve upon the existing        [18] D. Park and S. Y. Chun, “Classification based grasp detection using
+trajectory. We evaluated this framework in the AlfWorld sim-            spatial transformer network,” arXiv preprint arXiv:1803.01356, 2018.
+ulated environment, where it showed a substantial increase in      [19] A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn,
+                                                                        K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu et al., “Rt-1:
+decision-making accuracy, soaring from 75% to an impressive             Robotics transformer for real-world control at scale,” arXiv preprint
+98%. This highlights the vast potential of these models in AI-          arXiv:2212.06817, 2022.
+driven systems and technologies.                                   [20] M. Ahn, A. Brohan, N. Brown, Y. Chebotar, O. Cortes, B. David,
+                                                                        C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog et al., “Do as
+   In essence, this study underscores the revolutionary poten-          i can, not as i say: Grounding language in robotic affordances,” arXiv
+tial of AI language models like ChatGPT and their pivotal               preprint arXiv:2204.01691, 2022.
+[21] A. Chowdhery, S. Narang, J. Devlin, M. Bosma, G. Mishra, A. Roberts,           drawer 4, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a
+     P. Barham, H. W. Chung, C. Sutton, S. Gehrmann et al., “Palm: Scaling          garbagecan 1, a microwave 1, a sinkbasin 1, a stoveburner
+     language modeling with pathways,” arXiv preprint arXiv:2204.02311,             4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a
+     2022.                                                                          toaster 1.
+[22] W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang, P. Florence, A. Zeng,            Your task is to: heat some egg and put it in diningtable.
+     J. Tompson, I. Mordatch, Y. Chebotar et al., “Inner monologue: Embod-          > think: To solve the task, I need to find and take an egg, then
+     ied reasoning through planning with language models,” arXiv preprint           heat it with microwave, then put it in diningtable.
+     arXiv:2207.05608, 2022.                                                        OK.
+[23] W. Huang, P. Abbeel, D. Pathak, and I. Mordatch, “Language models              > think: First I need to find an [[egg]].
+     as zero-shot planners: Extracting actionable knowledge for embodied            OK.
+     agents,” in International Conference on Machine Learning. PMLR,                > sorting(egg)
+     2022, pp. 9118–9147.                                                           [a fridge 1, a countertop 1, a countertop 2, a countertop 3, a
+[24] S. Vemprala, R. Bonatti, A. Bucker, and A. Kapoor, “Chatgpt for                diningtable 1, a sinkbasin 1, a garbagecan 1, a microwave 1,
+     robotics: Design principles and model abilities,” 2023, 2023.                  a cabinet 1, a cabinet 2, a cabinet 3, a cabinet 4, a cabinet 5, a
+[25] N. Wake, A. Kanehira, K. Sasabuchi, J. Takamatsu, and K. Ikeuchi,              cabinet 6, a cabinet 7, a cabinet 8, a cabinet 9, a cabinet 10, a
+     “Chatgpt Empowered Long-Step Robot Control in Various Environ-                 stoveburner 1, a stoveburner 2, a stoveburner 3, a stoveburner
+     ments: A Case Application,” arXiv preprint arXiv:2304.03893, 2023.             4, a drawer 1, a drawer 2, a drawer 3, a drawer 4, a drawer 5, a
+[26] G. Lu, S. Li, G. Mai, J. Sun, D. Zhu, L. Chai, H. Sun, X. Wang, H. Dai,        drawer 6, a coffeemachine 1, a toaster 1]
+     N. Liu et al., “AGI for agriculture,” arXiv preprint arXiv:2304.06136,         > think: Based on the sorting provided, I can check fridge (1),
+     2023.                                                                          countertop (1-3), diningtable (1), sinkbasin (1), garbagecan (1),
+[27] H. W. Chung, L. Hou, S. Longpre, B. Zoph, Y. Tay, W. Fedus, E. Li,             microwave (1), cabinet (1-10), stoveburner (1-4), drawer (1-6),
+     X. Wang, M. Dehghani, S. Brahma et al., “Scaling instruction-finetuned         coffeemachine (1), toaster (1) one by one to find egg, starting
+     language models,” arXiv preprint arXiv:2210.11416, 2022.                       with fridge 1.
+[28] J. Wei, Y. Tay, R. Bommasani, C. Raffel, B. Zoph, S. Borgeaud,                 OK.
+     D. Yogatama, M. Bosma, D. Zhou, D. Metzler et al., “Emergent abilities         > go to fridge 1
+     of large language models,” arXiv preprint arXiv:2206.07682, 2022.              The fridge 1 is closed.
+[29] J. Wei, X. Wang, D. Schuurmans, M. Bosma, E. Chi, Q. Le, and                   > open fridge 1
+     D. Zhou, “Chain of thought prompting elicits reasoning in large                egg is not here.
+     language models,” arXiv preprint arXiv:2201.11903, 2022.                       > go to countertop 1
+[30] A. Creswell and M. Shanahan, “Faithful reasoning using large language          egg is not here.
+     models,” arXiv preprint arXiv:2208.14271, 2022.                                > go to countertop 2
+[31] M. Nye, A. J. Andreassen, G. Gur-Ari, H. Michalewski, J. Austin,               egg is not here.
+     D. Bieber, D. Dohan, A. Lewkowycz, M. Bosma, D. Luan et al., “Show             > go to countertop 3
+     your work: Scratchpads for intermediate computation with language              On the countertop 3, you see a bowl 1, a butterknife 1, a egg 2,
+     models,” arXiv preprint arXiv:2112.00114, 2021.                                a kettle 2, a plate 1, a sink 1, and a spatula 2.
+[32] Z. Wang, S. Cai, A. Liu, X. Ma, and Y. Liang, “Describe, explain,              > think: Now I find an egg (2). Next, I need to take it.
+     plan and select: Interactive planning with large language models enables       OK.
+     open-world multi-task agents,” arXiv preprint arXiv:2302.01560, 2023.          > take egg 2 from countertop 3
+[33] V. Nair, E. Schumacher, G. Tso, and A. Kannan, “DERA: enhanc-                  You pick up the egg 2 from the countertop 3.
+     ing large language model completions with dialog-enabled resolving             > think: Now I take an egg (2). Next, I need go to a microwave
+     agents,” arXiv preprint arXiv:2303.17071, 2023.                                (1) and heat it.
+[34] A. Madaan, N. Tandon, P. Gupta, S. Hallinan, L. Gao, S. Wiegreffe,             OK.
+     U. Alon, N. Dziri, S. Prabhumoye, Y. Yang et al., “Self-refine: Iterative      > go to microwave 1
+     refinement with self-feedback,” arXiv preprint arXiv:2303.17651, 2023.         The microwave 1 is closed.
+[35] M. Shridhar, J. Thomason, D. Gordon, Y. Bisk, W. Han, R. Mottaghi,             > heat egg 2 with microwave 1
+     L. Zettlemoyer, and D. Fox, “Alfred: A benchmark for interpret-                You heat the egg 2 using the microwave 1.
+     ing grounded instructions for everyday tasks,” in Proceedings of the           > think: Now I heat an egg (2). Next, I need to put it in/on
+     IEEE/CVF conference on computer vision and pattern recognition,                diningtable 1.
+     2020, pp. 10 740–10 749.                                                       OK.
+                                                                                    > go to diningtable 1
+                         A PPENDIX A                                                On the diningtable 1, you see a apple 2, a bread 3, a egg 1, a
+               A LF W ORLD E XPERIMENT DETAILS                                      kettle 1, a knife 1, a mug 1, a papertowelroll 1, a peppershaker
+                                                                                    2, a potato 1, a soapbottle 1, and a spatula 1.
+  Here’s an example in the prompt of InterAct in heat task.                         > put egg 2 in/on diningtable 1
+In the prompt, we enclose the items that need to be found                           You put the egg 2 in/on the diningtable 1.
+within double square brackets, so that they can be fed to the
+checker and sorter later. InterAct will search for the items                        In the ”pick2” task, we have incorporated new trajectory
+based on the sorting result. Each time we arrive at a location,                  planning. After locating and placing the first object in the
+we ask the checker to find the required item. If it is found,                    appropriate receptacle, we enable the model to independently
+we consider the things present at that location as observations                  generate a trajectory, ensuring that the path does not overlook
+and return them to the LLM. If the item is not found, we ask                     areas where the second object may be located.
+the checker to return the message ”Object is not here.”.
+                                                                                                        <picktwo> Prompt
+                            <heat> Prompt
+                                                                                    You are in the middle of a room. Looking quickly around
+    You are in the middle of a room. Looking quickly around                         you, you see a armchair 2, a armchair 1, a bed 1, a countertop
+    you, you see a cabinet 10, a cabinet 9, a cabinet 8, a cabinet                  1, a diningtable 1, a drawer 2, a drawer 1, a dresser 1, a
+    7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet                laundryhamper 1, and a sidetable 1.
+    2, a cabinet 1, a coffeemachine 1, a countertop 3, a countertop                 Your task is to: put two creditcard in dresser.
+    2, a countertop 1, a diningtable 1, a drawer 6, a drawer 5, a                   > think: To solve the task, I need to find and take the first
+creditcard, then put it in dresser, then find and take the second
+creditcard, then put it in dresser.
+OK.
+> think: First I need to find the first [[creditcard]].
+OK.
+> sorting(creditcard)
+[countertop 1, diningtable 1, sidetable 1, armchair 1, armchair
+2, bed 1, drawer 1, drawer 2, dresser 1, laundryhamper 1]
+> think: Based on the sorting provided, I can check couter-
+top (1), diningtable (1), sidetable (1), armchair (1-2), bed (1),
+drawer (1-2), dresser (1), laundryhamper (1) one by one to find
+creditcard, starting with countertop 1.
+OK.
+> go to countertop 1
+creditcard is not here.
+> go to diningtable 1
+On the diningtable 1, you see a cellphone 2, a creditcard 4, a
+creditcard 3, a creditcard 2, a mirror 1, a pencil 2, and a pencil
+1.
+> think: Now I find the first creditcard (2). Next, I need to take
+it.
+OK.
+> take creditcard 2 from diningtable 1
+You pick up the creditcard 2 from the diningtable 1.
+> think: Now I take the first creditcard (2). Next, I need to put
+it in/on dresser 1.
+OK.
+> go to dresser 1
+On the dresser 1, you see a mug 1, and a television 1.
+> put creditcard 2 in/on dresser 1
+You put the creditcard 2 in/on the dresser 1.
+> think: Now I put the first creditcard in dresser. Next, I
+need to find the second [[creditcard]]. I should go back to
+diningtable 1 to see if there is more creditcard. If not, I will
+continue to check sidetable (1), armchair (1-2), bed (1), drawer
+(1-2), dresser (1), laundryhamper (1) one by one to find credit-
+card.
+OK.
+> go to diningtable 1
+On the diningtable 1, you see a cellphone 2, a creditcard 4, a
+creditcard 3, a mirror 1, a pencil 2, and a pencil 1.
+> think: Now I find the second creditcard (3). Next, I need to
+take it.
+OK.
+> take creditcard 3 from diningtable 1
+You pick up the creditcard 3 from the diningtable 1.
+> think: Now I take the second creditcard (3). Next, I need to
+put it in/on dresser 1.
+OK.
+> go to dresser 1
+On the dresser 1, you see a creditcard 2, a mug 1, and a
+television 1.
+> put creditcard 3 in/on dresser 1
+You put the creditcard 3 in/on the dresser 1.

@@ -1,0 +1,544 @@
+DC-MRTA: Decentralized Multi-Robot Task Allocation and Navigation
+                                                           in Complex Environments
+                                                              Aakriti Agrawal1 , Senthil Hariharan1 , Amrit Singh Bedi1 , Dinesh Manocha1
+
+                                           Abstract— We present a novel reinforcement learning (RL)         to be decoupled and solved separately [6]. The tasks are
+                                        based task allocation and decentralized navigation algorithm        typically allocated based on greedy and auction based ap-
+                                        for mobile robots in warehouse environments. Our approach           proaches [7], [8]. The navigation paths can be computed
+                                        is designed for scenarios in which multiple robots are used to
+                                        perform various pick up and delivery tasks. We consider the         via different centralized or decentralized algorithm [9]–[14].
+                                        problem of joint decentralized task allocation and navigation       In centralized navigation systems [11], [12], [15], [16], a
+arXiv:2209.02865v1 [cs.RO] 7 Sep 2022
+
+                                        and present a two level approach to solve it. At the higher         single controller plans the path of all agents and instructs
+                                        level, we solve the task allocation by formulating it in terms      the agent in real time during execution. Agents, also need
+                                        of Markov Decision Processes and choosing the appropriate           to provide feedback to the central controller in real time.
+                                        rewards to minimize the Total Travel Delay (TTD). At the
+                                        lower level, we use a decentralized navigation scheme based         This approach is regarded as more stable, provides better
+                                        on ORCA that enables each robot to perform these tasks              guarantees in terms of reaching the goal, avoids deadlock,
+                                        in an independent manner, and avoid collisions with other           and can handle narrow passages in the environment. How-
+                                        robots and dynamic obstacles. We combine these lower and            ever, a centralized system requires major investment in terms
+                                        upper levels by defining rewards for the higher level as the        of a central control system, a communication system and a
+                                        feedback from the lower level navigation algorithm. We perform
+                                        extensive evaluation in complex warehouse layouts with large        highly accurate navigation system. Furthermore, it creates a
+                                        number of agents and highlight the benefits over state-of-the-art   bottleneck [17]. A failure in terms of centralized computation
+                                        algorithms based on myopic pickup distance minimization and         could lead to complete system failure or small errors or
+                                        regret-based task selection. We observe improvement up to 14%       miscommunication can lead to accidents, since the robots
+                                        in terms of task completion time and up-to 40% improvement          cannot make independent collision-free navigation decisions.
+                                        in terms of computing collision-free trajectories for the robots.
+                                                                                                            Furthermore, these centralized techniques may not be able
+                                                              I. I NTRODUCTION                              to handle unstructured environments with human co-workers
+                                           Multiple robots are ubiquitous and are used to perform           or unknown obstacles. Some of the MAPF methods used
+                                        various tasks in different applications such as planetary ex-       in such warehouses generate piece-wise linear paths that
+                                        ploration [1], search and rescue missions [2], and automated        involve “stop and turn” maneuvers, and this may not work
+                                        manufacturing [3]. Recently, there has been considerable            well for non-holonomic agents [18].
+                                        interest in using robots for warehouse automation. These               In this work, our goal is to develop efficient methods that
+                                        environments are based on large-scale fulfillment centers that      can utilize decentralized navigation schemes [10], as they
+                                        organize inventory using several movable pods. The pods get         can handle dynamic obstacles and unknown environments.
+                                        transported by a team of robots to different picking stations,      These decentralized methods can scale to a large number
+                                        where each item gets picked by a human operator [4], [5].           of agents without using a centralized controller and perform
+                                           A key issue is designing a multi-robot decision making           local navigation to compute collision-free trajectories. Fur-
+                                        system that can improve the overall throughput and result           thermore, they can be used for robots with car-like or non-
+                                        in safe navigation of robots. The overall problem consists          holonomic constraints [19], [20]. Moreover, we would like to
+                                        of two challenges for each robot: task allocation and navi-         treat these two problems of task allocation and navigation as
+                                        gation. The problem is challenging because these two parts          part of an overall coupled warehouse automation system [21]
+                                        are coupled with each other. The task allocation controls           to improve the overall efficiency in terms of task completion
+                                        the starting and destination of the navigation part, and the        time and navigation metrics.
+                                        navigation part decides the next tasks to be allocated. As             Main Results: We present a novel and coupled solution
+                                        large numbers of robots are deployed, another key challenge         for multi-robot task allocation and decentralized navigation
+                                        is collision-free path computation. Not only does each robot        (DC-MRTA). In our coupled task-allocation formulation,
+                                        needs to avoid collisions with static obstacles and other           tasks are allocated to the agents simultaneously during navi-
+                                        moving robots in the scene, but it must also avoid any              gation. We use a reinforcement learning (RL)-based strategy
+                                        dynamic obstacles or humans moving in the environment.              that can be combined with state-of-the-art decentralized
+                                           In the existing literature, the problems of multi robot          MAPF methods [10]. Our goal is to assign tasks in a manner
+                                        task allocation and multi robot navigation are assumed              that the total time taken to do nothing called total travel time
+                                                                                                            (TTD) is minimized. It also further improves the (makespan).
+                                          1 University   of   Maryland,   College   Park,   MD,     USA     Our approach is general and does not make any assumptions
+                                        {agrawal5,sarul1,amritbd,dmanocha}@umd.edu
+                                          2 This work was supported in part by ARO Grants W911NF1910069,    about the environment or the number of robots or the tasks.
+                                        W911NF2110026 and U.S. Army Cooperative Agreement W911NF2120076     The main novel results include:
+  •  We propose a novel two level approach for the problem         improve the collision avoidance performance and compute
+     of joint decentralized task allocation and navigation in      shorter time to goal. Our approach is general and can be
+     warehouse environments. We formulate the problem of           combined with any of these decentralized schemes.
+     decentralized multi-robot task allocation as a Markov
+     Decision Processes and use a reinforcement learning           B. Multi-Robot Task Allocation (MRTA)
+     (RL) based strategy to solve it, which can be combined           MRTA involves the opti9mal assignment of robots to
+     with any decentralized navigation method.                     tasks. It is a variant of the multiple Traveling Salesman
+   • We present a novel coupled architecture to solve the          Problem (mTSP), which is known to be NP-hard to solve
+     problem in a warehouse environment. Our architecture          optimally [30], [31]. Extensive surveys are available in [32]–
+     can handle variable number of robots and tasks, which         [34]. Warehouse task allocation is studied as integer linear
+     is particularly important in decentralized navigation         program in [5]. In [35], an optimal task allocation algorithm
+     settings.                                                     is proposed for heterogeneous agents. These methods, opti-
+                                                                   misation based, assume all agents are available at once for
+   • The rewards for the high level RL method are defined
+                                                                   optimal matching.
+     based on the feedback from the low-level navigation
+                                                                      Thus are two widely used approaches for solving these
+     algorithm. In particular, we use total travel delay (TTD),
+                                                                   problems: (1) market-based approaches and (2) optimization-
+     which is generated from the decentralized navigation
+                                                                   based approaches for different environments [36]. Auction-
+     algorithm, as a reward to train the policy for task
+                                                                   based approaches [37] (CBBA, CBAA), which are part
+     allocation. The trained policy can be easily combined
+                                                                   of market-based approaches, have also been proposed for
+     with other decentralized methods like ORCA.
+                                                                   decentralized task allocation. These algorithms use local
+We perform extensive evaluations and compare against               information to assign tasks and consensus to improve global
+the state-of-the-art greedy baselines myopic pickup dis-           objective. Variants of CBBA have been proposed [38] like
+tance minimization (MPDM) and regret-based task-selection          deep-RL based communication aware variants [39] for
+(RBTS). We test performance on different warehouse layouts         environments with limited bandwidth. We use one regret
+with varying number of robots and show an improvement of           based auction method in our baseline comparisons.
+up to 14% in terms of task completion time for 500 tasks.             There is some work [40]–[42] on decentralized task-
+Our scales well with the number of agents and can handle           allocation and navigation. [40] is a RL based method coupled
+thousands of agents. For dense scenarios, our approach also        with navigation but does not show scalability. [41] proposes
+reduces the number of inter-agent collisions by 40%.               a decentralised task-robot matching method based on bipar-
+                    II. R ELATED W ORK                             tite graph. It performs task-clustering followed by maximal
+                                                                   matching for task allocation. Overall its performance is about
+A. Multi-Robot Decentralized Navigation                            7 − 28% of the optimal cost obtained using centralized
+   Multi-robot navigation is a widely researched topic in          schemes. These decentralised methods have not been tested
+robotics and related areas that involves the computation           along with decentralised navigation algorithms, complex
+of collision-free paths for robots in a multi-agent setting.       environments and large number of robots and tasks.
+Centralized and decentralized methods are two categories
+of navigation algorithms that differ based on the decision-            III. BACKGROUND AND P ROBLEM F ORMULATION
+making entity and available knowledge of its environment.            In this section, we give an overview of our problem
+   Our approach is based on decentralized planners, where          of task allocation and navigation in complex, warehouse
+the agents use the knowledge of their local environment to         environments.
+make independent navigation decisions. The agent’s local
+information includes the position (and velocity) and the           A. Decentralized Multi-Robot Task Allocation and Naviga-
+dimension information of their neighbors. Velocity Obstacles       tion
+(VO) [22] presents an influential class of decentralized algo-        We consider a group of n holonomic, disk shaped robots
+rithms that compute a set of velocities that could result in a     operating in an environment W ⊂ R2 . For any agent Ai ,
+collision. RVO [23] improve upon VO by accounting for the          its geometry is represented by Ai . The agent’s position is
+agent’s reactive behavior, thus reducing oscillations in trajec-   given by pi , and we consider our agents to be velocity
+tories. RVO was further posed as a linear convex optimization      (vi ) controlled. Agents within a defined sensing radius of
+in ORCA [10] and extended to different agent dynamics [24],        agent i are considered its neighbors, and are represented
+[25]. Buffered Voronoi Cell (BVC) [26] constructs retracted        by the set Ni . We formulate a decentralized navigation
+Voronoi cells to limit the agent’s local motion to free space.     problem where each robot makes independent decision to
+In contrast to VO-based methods, BVC only uses the position        perform these tasks and avoid collisions with other agents
+information of its neighbors. Decentralized methods can be         and static/dynamic obstacles using the local environment
+scaled to large number of agents, however it is difficult to       knowledge. We assume each agent Ai knows its neighbors’
+guarantee optimality or deadlock-free navigation especially        positions, where neighbors are agents located within a cer-
+in obstacle rich environments or narrow passages. More             tain radius of Ai . This information can be obtained using
+recently, RL-based methods [27]–[29] can also be used to           perception or communication modules. Overall, Agent Ai
+Fig. 1: Task Allocation and Decentralized Navigation: We highlight our approach which uses RL-based task allocation
+followed by ORCA-based decentralized navigation. We highlight the coupling between the high level RL algorithm and
+the low level navigation method. Our task allocation method uses heuristics that tend to reduce congestion in terms of
+multi-agent navigation, while the feedback from collision avoidance is used to formulate the reward functions for RL agents.
+Our proposed RL agent is able to deal with variable number of tasks and agents shown by the weighted averaging block to
+form global task and agent embeddings.
+
+local knowledge includes pj , vj j ∈ Ni . Similarly, it has          does not overlap with its neighbors or static or dynamic
+a representation of all the obstacles in the environment. We         obstacles. Assuming m obstacles in the environment, their
+use the standard A* method to compute a path for each agent          geometries can be represented by Oj , j ∈ 1, 2, ..., m. The
+that avoids collisions with all the static obstacles.                agent sequentially reaches the goals in the goal set (G) while
+   A task is represented by a tuple (oi , di ) which includes        avoiding collisions. That is, at each time step the agent moves
+the origin oi and destination di locations in the environment.       towards its immediate goal (gi ∈ Gi = {oi , di }). Our goal is
+The goal is to allocate a task to available agent i effectively.     to design navigation methods that tend to reduce or eliminate
+After the task assignment, the agent’s goal is set as Gi =           any collisions.
+{oi , di }, as it represents the pickup and drop location. This is
+an important difference here from the standard decentralized                     min kgi −pi k
+navigation problems where there is no dependence of goal                          Ai ∩ Aj = ∅,      ∀j ∈ Ni                      (1)
+on another task allocation module. Instead the time taken by                      Ai ∩ Oj = ∅,      ∀j ∈ {1, 2, ..., m}.
+the navigation algorithm to compute a path also affects the
+performance of the task allocation scheme.                              On reaching the destination location (di ), the task is
+                                                                     considered to be complete and the agent is once again
+B. Metrics                                                           available to be allocated a task. We note that in problem
+                                                                     (1), the objective kgi − pi k is not fixed and depends upon
+   Our goal is to design a scheme where we consider single-          the task allocation. Therefore, jointly solving the problem for
+task robots which execute only a single task at any given            optimal gi at each i, and then designing robot trajectories is
+time. We assume that all the tasks are single robot tasks and        difficult in practice.
+task assignment is instantaneous, where the task is instan-
+taneously allocated at each decision timestep. Our approach          IV. DC-MRTA: O UR T WO L EVEL C OUPLED A PPROACH
+is designed in terms of a sequential-lifelong solution, where           In this section, we present our approach to solve the joint
+new tasks are continuously generated and task is allocated           problem in Equation (1) using a two level scheme. Our
+to a robot as soon as it becomes available. We would like to         proposed solution is summarized in Fig. 1 and algorithm
+maximize the sum of utilities over time, that is, assign tasks       1. On the higher level, we design a reinforcement learning
+at each instant in such a way that the total time taken to           based task allocation strategy, and on the lower level, a multi
+execute a specific number of tasks makespan as well as TTD           robot decentralized navigation algorithm (ORCA) is used.
+is minimized. TTD is defined as the time taken to travel from        We describe both the levels next in detail.
+the current location of the robot pi to the starting location
+of the allocated task oi .                                           A. Lower level:Decentralized Navigation
+   Given a specific task, our next step is to navigate the              We first consider the case when gi fixed. We consider
+robot from their current position pi to oi , and then to di ,        simple navigation schemes based on A* and also use Optimal
+while remaining collision-free. At any timestep, an agent            Reciprocal Collision Avoidance (ORCA) algorithm to move
+Ai is said to be collision-free provided its geometry (Ai )          the robot to that goal location with no inter-agent collisions.
+The specification of gi actually comes from the higher            available at different time instances. This makes it hard to
+level task allocation algorithm. Given n homogeneous, disk-       solve with existing optimization based approaches, especially
+shaped agents with position pi , velocity vi , and radius ri ,    we also take into account the constraints of the navigation
+ORCA computes a suitable collision-free velocity to drive         scheme. Additionally, the number of robots and tasks is
+each agent towards their respective goal location gi , while      also not fixed a priori which further makes the problem
+avoiding collisions with other obstacles and agents.              more challenging. To address these issues, we formulate the
+                                       τ
+    For any two agents i, j, the V Oi|j   is a set of relative    problem as a reinforcement leaning based task allocation in
+velocities that can lead to collision within the time horizon     warehouse environments. The RL formulation is non-trivial
+τ . Geometrically, it is represented by                           because it requires defining a Markov Decision Process
+     τ                                                            (MDP) which includes the design of state spaces, action
+  V Oi|j = {v|∀t ∈ [0, τ ], tv ∈ D(pj − pi , ri + rj )},    (2)
+                                                                  spaces, and rewards etc. We proceed next to describe this
+where, D(p, r) represents a disk with center p and radius         MDP in detail.
+r. Assuming the agent uses the velocities viopt and vjopt , the      An MDP here is defined by a tuple M := (S, A, R, P, γ),
+agents are collision bound if viopt − vjopt ∈ V Oi|j
+                                                   τ
+                                                     . Let u be   where state space S, action space A, and R(s, a) denotes the
+                                           τ
+the closest point on the boundary of V Oi|j . Then, u provides    reward. Here P describes the transition probability matrix
+the minimum change in relative velocity to avoid collision.       where Pa (s, s0 ) is the probability of transition to state s0 ∈ S
+Taking n as the outward normal at (viopt − vjopt ) + u, the       from state s ∈ S after taking action a ∈ A. In MDP, γ ∈
+set of collision-free velocities for agent i can be represented   (0, 1) denotes the discount factor. To solve the problem, we
+geometrically as a half-plane, given by                           need to explicitly define the terms in MDP M. We denote
+                                                                  time instance as t ∈ N, M as number of robots given by
+                                         1
+         ORCAτi|j = {v|(v − (viopt + u)) · n ≥ 0}.                R = {1, 2, · · · , M }. The task allocation flow is described as
+                                         2                        follows.
+A suitable velocity is chosen from the set ORCAτi|j by               After the task allocation at t, we remove the allocated
+minimizing the distance with vipref which is the agent’s          task from the queue and a new task is added. Since we are
+preferred velocity directed towards the goal.                     looking at the joint task allocation and navigation problem,
+   ORCA uses these conservative constraints to provide colli-     we assume for tractability that only one robot is available
+sion avoidance guarantees [10]. For each neighboring agent,       at any instance t. We take one step further from t to t + 1
+the ORCA constraint is represented as a half-plane (Equation      as soon as a robot becomes available. Next, we define in
+2). If there is a feasible solution to the linear programming     detail the state space S, action space A, and reward R for
+formulation, that provides a sufficient condition. However,       the warehouse environment.
+there may be no feasible solution, especially if there are           State: Each task i ∈ P is mathematically represented
+dense scenarios with a large number of agents in close            by a tuple (oi , di , ki , li ), where oi is the origin of the
+proximity or narrow passages. In other words, scenarios with      task, di is the destination, ki denotes the distance between
+high level of congestion can result in possible collisions. Our   the selected robot’s current position to oi , and li is the
+goal is to design a task-allocation scheme such that it tends     length (distance between oi and di ) of the task. Each robot
+to minimize congestion. As a result, we need to develop           j ∈ R is also represented by a tuple (pj , rj ), where pj
+methods that can:                                                 is position (X − Y coordinates) in the 2D map and rj is
+   • The task allocation procedure needs to choose appro-         the time left to complete the allocated task (i.e., the task
+      priate task positions, (di ), for a robot such that it is   completion time). Let jsel denotes the available robot for
+      not in close proximity to the other agents or result in     task allocation. Then, the state s encapsulates the robots’
+      congested scenarios. Another goal is to avoid deadlock      positions, their task completion times, and the task list P,
+      scenarios where some agents can block other scenarios       which consists of tuples (oi , di , ki , li ) for all the tasks and
+      or multiple agents are in narrow passages.                   selected robot jsel . Collectively, we write the state s :=
+                                                                  the
+   • The decentralized navigation scheme uses local infor-          (pj , rj )∀j∈R , (oi , di , ki , li )∀i∈P , jsel and the collection
+      mation for collision avoidance with the agents and          of all possible states s constitutes the state space S.
+      obstacles. The underlying scheme used to modify the            Action: An action a in the environment is used to select
+      velocity of each agent to avoid collisions is used to       which task to execute from the list of N available tasks in the
+      design the appropriate reward functions for our RL          queue. We define a policy π : S → D(A) (here D denotes
+      methods.                                                    the set of possible distributions defined over A) which takes
+                                                                  the current state as input and outputs a distribution across
+B. Higher Level: RL based Task Allocation                         the all possible actions a ∈ A. Note that in our formulation,
+   The problem of multi-robot task allocation is mainly           A constitutes the list of all available tasks from which we
+solved via optimization methods in the existing literature        need to select a particular task for the selected robot jsel .
+[43]. Such methods won’t work in our setting because we           During the training time, we select the action a ∼ π(· · · | s)
+are working with decentralized navigation schemes and ac-         where π(· | s) is the probability distribution across the tasks.
+count for the criteria highlighted above. Since robots behave     During the test time, we select the action in a deterministic
+independently in the warehouse environment, they become           manner by choosing a task to accomplish with maximum
+probability in π(· | s). Further, it is important to choose the     Algorithm 1 Decentralised Task-Allocation and Navigation
+specific policy architecture for our approach. In the literature,
+                                                                                 
+                                                                      Let s := (pj , rj )∀j∈R , (oi , di , ki , li )∀i∈P , jsel be cur-
+common choices for policy is to define a deep neural network          rent state of the system.
+(DNN) [44] denoted as πθ (· | s), where θ corresponds to              Each robot j ∈ R is executing a task (oj , dj )
+neural network weights. The design of policy architecture is          Robot’s current position is denoted as pj .
+important because it actually defines the space of policies           Let time be t
+over which we search for the optimal actions. One could try           while True do
+a simple NN architecture where we pass all the available                  Update pj for all j ∈ R by unit amount using ORCA.
+robot information (locations, availability) to the network                t←t+1
+and train it. But unfortunately, such simple designs doesn’t              if Any pj == dj then
+result in convergence and also not scalable with respect to                   jsel ← j
+number of robots and tasks. Hence, we carefully designed                      (ojsel , djsel ) ← MRTA(jsel , s)
+the architecture using attention based mechanisms [45] to                 end if
+make sure that policy network supports variable number of             end while
+robots and tasks.
+C. Coupling via Reward Design                                         function MRTA(jsel , s)
+                                                                         RL-policy takes state s as input and selects a task i ∈
+   Designing the reward signal for any RL problem is the              P as action.
+most crucial part. This is because the reward function decides           (ojsel , djsel ) ← (oi , di )
+the behavior of the policy we are interested in. We could                return (ojsel , djsel )
+design the reward in multiple ways which would eventually             end function
+decide whether there is any coupling between the lower level
+(navigation) and higher level (task allocation). One simple
+way to design a reward for the task allocation would be             schemes, layouts and navigation schemes. During training,
+to just consider 0/1 reward (reward is zero if the task is          we have used two different planning or navigation techniques
+accomplished, otherwise 1). This reward makes sense, but            to compute the reward : direct navigation and A*. In the
+it completely decouples the task allocation from navigation         direct navigation approach, the Euclidean distance between
+algorithm trajectories. For instance, this reward would be          the robot position and task origin is used to evaluate the
+agnostic to any collision which occurs during the robot             cost at each instant t. Our A* navigation scheme takes
+navigation, as highlighted in Section IV(A).                        into account the static obstacles in a scene and computes
+   In our approach, we use a more intelligent way to design         collision-free paths for the agents. As mentioned earlier Sec.
+rewards called coupled rewards, which utilizes information          IV(C), the negative of this calculated cost is defined as the
+from navigation algorithm to design efficient task allocation       reward in the environment and it also serves as a heuristic
+policy. For instance, we define our reward as                       to reduce congestion.
+                reward = −1 (Time(oi , pi )) ,               (3)    A. A*+ORCA:Decentralized Navigation
+                                                                       Our task allocation runs on model trained only on A*
+where pi is the current location of the robot, and                  for a specific layout as that accounts for the static obstacles
+(Time(oi , pi )) evaluates the time a robot takes to travel from    and uses that information to choose the appropriate rewards.
+pi to oi . This is also known as Total Travel Delay (TTD)           During testing, we also evaluated our method using a combi-
+and we are interested in minimizing it. This is evaluated           nation of A* and ORCA decentralised navigation algorithms
+by navigating the robot in the environment via a lower              along with direct navigation and A* navigation algorithms.
+level decentralized navigation algorithm and hence creates          In this case, the ORCA formulation tries to avoid collisions
+a coupling between lower and upper levels.                          between the moving agents. In order to travel through static
+   State-Transitions: At current state st , we have a task list     obstacles, we need a global navigation algorithm which can
+in queue P and one available robot (say i ∈ R). At this state,      generate trajectory points between start and goal points. We
+we take action at according to a policy π(· | st ) that decides     use single agent A* [9] to find the shortest path between two
+which task would be allocated to the free robot. The selected       locations that avoids the obstacles. That path is used as the
+task is removed from the list, new task gets added to the list,     initial guidance (or preferred velocity) for ORCA agent. It
+and the robot becomes unavailable. Our algorithm will wait          is modified to avoid collisions with other agents or dynamic
+until next robot becomes available which would mark our             obstacles.
+new state st+1 . Note that the state transitions do not happen         The default parameters used in our implementation are
+at regular time intervals here.                                     radius is 1.5 unit, time-step is 0.25 seconds, max velocity is
+                                                                    2 units/sec.
+            V. I MPLEMENTATION AND R ESULTS
+   In this section, we describe the implementation of our           B. Baselines
+network architecture and analyze its performance in different          We compare our algorithm, DC-MRTA, with minimum
+settings by varying the number of robots, task generation           pickup distance minimization (MPDM) and regret based task
+                                                                              Robot No.   MPDM      RBTS    DC-MRTA    % Imp. MPDM   % Imp. RBTS
+selection (RBTS) as our baselines. Both these baselines are          Direct      10        7285.2    7820    6984.3        4.13         10.68
+                                                                                100       12151.5   12048    11420.1       6.01          5.21
+used in prior literature.                                            Layout      10         6332     6233     6208         1.95          0.40
+   1) MPDM: algorithm chooses the task that is closest to              A        100         6836     7195     6616         3.21          8.04
+                                                                     Layout      10         5989     6351     5732         4.29          9.74
+the robot. It is optimal if there is only one robot in the system      B        100         7472     7609     7112         4.81          6.53
+                                                                     Layout      10         5992     6204     5804         3.13          6.44
+and the task utility equals the distance of the robot to the           C        100         7511     7664     7403         1.43          3.40
+                                                                     Layout      10         6157     6153     6117         0.64          0.58
+task start position [46]. MPDM is the one of the widely                D        100         7318     7117     6981          4.6          1.91
+used baseline model used for comparison in the literature            Layout
+                                                                       E
+                                                                                 10
+                                                                                100
+                                                                                            6248
+                                                                                            6847
+                                                                                                     6157
+                                                                                                     7644
+                                                                                                              6085
+                                                                                                              6774
+                                                                                                                           2.60
+                                                                                                                           1.06
+                                                                                                                                         1.17
+                                                                                                                                        11.38
+for decoupled task allocation and navigation [6].
+   2) RBTS: We use a modified version of RBTS used in               TABLE I: TTD time for 500 tasks in seconds. We assume
+[21]. It is inspired from [47], [48]. For every task in the list,   the robot moves 1 unit in 1 sec. We show results for Direct
+find the distance to the closest robot. Subtract the distance       navigation scheme, which assumes no obstacles, and for A*
+of the selected robot to each of these tasks with the previous      navigation scheme on various layouts of grid size 60 × 60.
+quantity. Choose the task with the maximum value (i.e., the         Our method based on RL and decentralized navigation results
+maximum regret).                                                    in improving the overall performance (task completion time)
+   For all our benchmarks, we run the test on a fixed task          over prior methods by 10.7%.
+set by fixing the seed of the random number generator and
+                                                                    layouts generated through Asprilo. Asprilo is an open source
+report TTD values for them. We train our model on the
+                                                                    framework used to simulate automated warehouse scenarios
+Nvidia GeForce RTX 2080T i GPU with 11GB of memory,
+                                                                    [49]. We generate different layouts with varying the level of
+for 5 different environments and batch size of 32. We run the
+                                                                    compactness for a specific size (see Fig. 2).
+training for 4 million iterations, which takes around 12 hours
+with our A* navigation algorithm. The network architecture          B. Simple Navigation Schemes
+is large and GPU usage during training is usually less than
+5-10 %. Next, we describe the different experimental settings          We highlight the results in Table I for direct navigation and
+and results.                                                        A* navigation, respectively. We use the layouts as shown in
+                                                                    Fig 2 for this evaluation. In this setting, training and testing
+                                                                    is performed on the same navigation algorithm i.e. direct and
+                                                                    A*.
+
+                                                                    C. Navigation with Multi-Agent Collision Avoidance
+         (a) Layout A.     (b) Layout B.   (c) Layout C.
+                                                                       We evaluate the performance of DC-MRTA on all the
+                                                                    layouts in Fig. 2 and compare the performance for 10 and
+                                                                    100 robots summarized in II. We train on A* navigation
+                                                                    algorithm and test on A*+ORCA (explained in section V-
+                   (d) Layout D. (e) Layout E.
+                                                                    A). The task queue length is 10 for all cases. As shown in
+                                                                    Table II, DC-MRTA outperforms greedy (MPDM) as well as
+Fig. 2: We highlight five different warehouse environment’s         regret-based (RBTS) baselines for all layouts and navigation
+layout which we consider for evaluation. They have many             scenarios. We also see that for 100 agents improvement is
+obstacles (shown in white) and narrow gaps between them.            lesser as compared to 10 agents. This is because crowding
+Many simple task allocation and navigation methods do not           situation occurs more with 100 agents and our decentralised
+work well, when we consider a large number of agents.               navigation scheme has to spend time to avoid obstacles. Thus
+                                                                    it deviates from the time duration taught during training.
+                         VI. E VALUATION                            But still it performs better than our baselines. We show
+A. Experimental Setting                                             visualisation of unallocated tasks left after 42.5 seconds for
+   We generate tasks randomly in the environment using a            our method and MPDM baseline in Fig. 3.
+designated method as explained below. We further explain
+                                                                              Robot No.   MPDM      RBTS    DC-MRTA    % Imp. MPDM   % Imp. RBTS
+the layout generation in detail, which we use for testing the        Layout      10        6499     6602      6251         3.82          5.32
+                                                                       A        100       10616     10699    10339         2.61          3.36
+proposed algorithm.                                                  Layout      10        5969     6526      5562         6.82         14.77
+   Task and Layout Generation: To the best of our knowl-               B        100        9156     8957      8876         3.06          0.90
+                                                                     Layout      10        6566     6661      6084         7.34          8.66
+edge, real data sets are not available for the problem of multi-       C        100        9709     9610      9590         1.23          0.21
+                                                                     Layout      10        5710     5845      5642         1.20          3.47
+robot task allocation and navigation. Mostly in literature, a          D        100        8969     8924      8608         4.02          3.54
+synthetic procedure is used to generate data and then test           Layout
+                                                                       E
+                                                                                 10
+                                                                                100
+                                                                                           5983
+                                                                                          11224
+                                                                                                    5852
+                                                                                                    10810
+                                                                                                              5538
+                                                                                                             10423
+                                                                                                                           7.44
+                                                                                                                           7.14
+                                                                                                                                         5.37
+                                                                                                                                         3.58
+the proposed algorithms [49]. In this work, we utilize the
+designated method for task generation (see [49] for further         TABLE II: TTD time for 500 tasks with 100 robots and 100
+details on this method). The idea is to define different regions    tasks (in seconds) for 100 robots for A*+ORCA navigation
+for pickup and delivery tasks and then generate random              scheme, respectively. The RL model is trained on only
+samples from them [50], [51]. For the layout generation,            A* navigation scheme for various layouts and tested on
+the authors in [49] describes publically available warehouse        A*+ORCA. We observe upto 14% improvement in the total
+                                                                    time using our approach.
+                                                                           VII. C ONCLUSION , L IMITATIONS , AND F UTURE WORK
+
+                                                                             We present a novel approach for the problem of joint
+                                                                          task allocation and decentralized multi-robot navigation in
+                                                                          a complex warehouse environments. We propose a novel
+                                                                          two level coupled approach approach, where lower level
+                                                                          collision free decentralized navigation is combine with high
+                                                                          level RL-based task allocation. The reward functions for
+                                                                          the RL method are defined based on the feedback from
+        (a) t = 0 sec.                                                    the navigation method. We have evaluated our method on
+                                           (b) t = 42.5 sec.
+                                                                          complex environments and obtain up to 14% improvement
+                                                                          over prior methods in terms of task completion time. Our
+                                                                          RL model can be combined with any decentralized method,
+                                                                          and we highlight its benefits in terms of collision avoidance
+                                                                          using ORCA.
+                                                                             Our approach has some limitations. The decentralized
+                                                                          schemes may not always result in optimal trajectories, or
+                                                                          collision-free paths. Our formulation of coupled rewards
+                                                                          can be further improved based on other feedback that takes
+                                                                          into account agent density and congestion. Our approach is
+        (c) t = 0 sec.                     (d) t = 42.5 sec.
+                                                                          limited to homogeneous agents with simple dynamics and
+Fig. 3: We compare the performance of DC-MRTA (top)                       assume that all agents have precise information about the
+with MPDM (bottom) for a set of 10 agents performing                      obstacles in the scene. There are many avenues for future
+10 tasks. Agents are shown in green. The goal locations                   work. We would like to evaluate other rewards functions
+computed by the task allocation scheme are shown in red,                  that can help reduce the congestion or challenging config-
+which correspond to the destination positions for the agents.             urations at runtime. We would like to further evaluate the
+The initial configuration at t = 0 is the same. At 42.5                   performance, where the layout changes or there are dynamic,
+seconds we observe that 10 tasks have been allocated with                 human-like obstacles. Another interesting future line of work
+our method (top), whereas the last task with MPDM is still                we aim to explore is limited communication. This means
+unallocated, as shown by the red position.                                that the agents in decentralised system even though cannot
+D. Collision Values                                                       communicate with the central server, it can communicate
+  We show number of inter-agent collisions with 10 agents                 with other surrounding agents. They will then take actions
+using A* and A*+ORCA navigation methods.                                  in coordination with the neighboring agents.
+
+                      Layout      A    B    C    D   E                                                R EFERENCES
+                        A*        5    6    2    4   2
+                     A*+ORCA      2    0    0    2   2                    [1] C. R. Weisbin and G. Rodriguez, “Nasa robotics research for planetary
+                                                                              surface exploration,” IEEE Robotics & Automation Magazine, vol. 7,
+TABLE III: This table highlights the number of inter-agents                   no. 4, pp. 25–34, 2000. 1
+collisions with two different navigation methods: A* and                  [2] J. S. Jennings, G. Whelan, and W. F. Evans, “Cooperative search
+A*+ORCA for 10 agents simulation with 10 tasks. Our RL                        and rescue with a team of mobile robots,” in 1997 8th International
+                                                                              Conference on Advanced Robotics. Proceedings. ICAR’97. IEEE,
+model can be easily combined with A* + ORCA at testing                        1997, pp. 193–200. 1
+time and results in 40% reduction in number of collisions.                [3] J. Tilley, “Automation, robotics, and the factory of the future,” McK-
+                                                                              insey. https://www. mckinsey. com/business-functions/operations/our-
+E. Scalability                                                                insights/automation-robotics-and-the-factory-of-the-future, 2017. 1
+                                                                          [4] M. Liu, H. Ma, J. Li, and S. Koenig, “Task and path planning for multi-
+   We show that DC-MRTA is scalable by performing exper-                      agent pickup and delivery,” in Proceedings of the International Joint
+iments with up to 1000 robots. For direct navigation, we used                 Conference on Autonomous Agents and Multiagent Systems (AAMAS),
+                                                                              2019. 1
+a 300 × 300 grid layout with no obstacles. For A* we used a               [5] F. Xue, H. Tang, Q. Su, and T. Li, “Task allocation of intelligent
+256×256 grid size of layout C. The results are summarized in                  warehouse picking system based on multi-robot coalition,” KSII Trans-
+Table IV. We note that DC-MRTA outperforms the baselines                      actions on Internet and Information Systems, vol. 13, no. 7, 2019. 1,
+                                                                              2
+even for higher number of robots and tasks.                               [6] H. Ma, J. Li, T. K. S. Kumar, and S. Koenig, “Lifelong multi-agent
+                                                                              path finding for online pickup and delivery tasks,” 2017. 1, 6
+       Grid Size     MPDM     RBTS     DC-MRTA   MPDM (%)      RBTS (%)   [7] A. Khamis, A. Elmogy, and F. Karray, “Complex task allocation
+        Direct       695816   681236    674089     3.12          1.04
+    A* on Layout B   413406   423368    403112     2.49          4.78         in mobile surveillance systems,” Journal of Intelligent and Robotic
+                                                                              Systems, vol. 64, pp. 33–55, 10 2011. 1
+TABLE IV: This table presents TTD in sec for 5000 tasks                   [8] M. B. Dias and A. Stentz, “A free market architecture for distributed
+                                                                              control of a multirobot system,” 2000. 1
+and 1000 robots for direct and A* navigation scheme. We
+                                                                          [9] M. Goldenberg, A. Felner, R. Stern, G. Sharon, N. Sturtevant, R. C.
+assume the robot moves 1 unit in 1 sec. Thus, our approach                    Holte, and J. Schaeffer, “Enhanced partial expansion a*,” J. Artif. Int.
+is scalable and results in improved performance.                              Res., vol. 50, no. 1, p. 141–187, May 2014. 1, 5
+[10] J. van den Berg, S. J. Guy, M. Lin, and D. Manocha, “Reciprocal n-                IEEE International Conference on Systems, Man, and Cybernetics,
+     body collision avoidance,” in Robotics Research. Berlin, Heidelberg:              2013, pp. 627–632. 2
+     Springer Berlin Heidelberg, 2011, pp. 3–19. 1, 2, 4                          [32] B. P. Gerkey and M. J. Matarić, “A formal analysis and taxonomy
+[11] M. Phillips and M. Likhachev, “Sipp: Safe interval path planning for              of task allocation in multi-robot systems,” The International Journal
+     dynamic environments,” in IEEE ICRA. IEEE, 2011, pp. 5628–5635.                   of Robotics Research, vol. 23, no. 9, pp. 939–954, 2004. [Online].
+     1                                                                                 Available: https://doi.org/10.1177/0278364904045564 2
+[12] G. Sharon, R. Stern, A. Felner, and N. R. Sturtevant, “Conflict-based        [33] A. Khamis, A. Hussein, and A. Elmogy, Multi-robot Task Allocation:
+     search for optimal multi-agent pathfinding,” Artificial Intelligence, vol.        A Review of the State-of-the-Art.        Cham: Springer International
+     219, pp. 40–66, 2015. [Online]. Available: https://www.sciencedirect.             Publishing, 2015, pp. 31–51. 2
+     com/science/article/pii/S0004370214001386 1                                  [34] I. Tkach and Y. Edan, Multi-agent Task Allocation. Cham: Springer
+[13] S. H. Arul and D. Manocha, “V-rvo: Decentralized multi-agent                      International Publishing, 2020, pp. 9–14. 2
+     collision avoidance using voronoi diagrams and reciprocal velocity           [35] N. Baras, A. Chatzisavvas, D. Ziouzios, and M. Dasygenis,
+     obstacles,” 2021. 1                                                               “Improving automatic warehouse throughput by optimizing task
+[14] R. Luna and K. E. Bekris, “Push and swap: Fast cooperative path-                  allocation and validating the algorithm in a developed simulation
+     finding with completeness guarantees,” in IJCAI, 2011. 1                          tool,” Automation, vol. 2, no. 3, pp. 116–126, 2021. [Online].
+[15] T. Schouwenaars, B. De Moor, E. Feron, and J. How, “Mixed integer                 Available: https://www.mdpi.com/2673-4052/2/3/7 2
+     programming for multi-vehicle path planning,” in 2001 European               [36] M. Badreldin, A. Hussein, and A. Khamis, “A comparative study
+     Control Conference (ECC), 2001, pp. 2603–2608. 1                                  between optimization and market-based approaches to multi-robot task
+[16] D. Mellinger, A. Kushleyev, and V. Kumar, “Mixed-integer quadratic                allocation.” Advances in Artificial Intelligence (16877470), 2013. 2
+     program trajectory generation for heterogeneous quadrotor teams,” in         [37] L. Brunet, H.-L. Choi, and J. How, “Consensus-based auction ap-
+     2012 IEEE International Conference on Robotics and Automation,                    proaches for decentralized task assignment,” in AIAA guidance, navi-
+     2012, pp. 477–483. 1                                                              gation and control conference and exhibit, 2008, p. 6839. 2
+[17] P. Velagapudi, K. Sycara, and P. Scerri, “Decentralized prioritized          [38] S. Choudhury, J. K. Gupta, M. J. Kochenderfer, D. Sadigh, and
+     planning in large multirobot teams,” in 2010 IEEE/RSJ International               J. Bohg, “Dynamic multi-robot task allocation under uncertainty and
+     Conference on Intelligent Robots and Systems. IEEE, 2010, pp. 4603–               temporal constraints,” Autonomous Robots, pp. 1–17, 2021. 2
+     4609. 1                                                                      [39] S. Raja, G. Habibi, and J. P. How, “Communication-aware consensus-
+[18] L. Cohen, T. Uras, T. S. Kumar, and S. Koenig, “Optimal and                       based decentralized task allocation in communication constrained
+     bounded-suboptimal multi-agent motion planning,” in Twelfth Annual                environments,” IEEE Access, vol. 10, pp. 19 753–19 767, 2022. 2
+     Symposium on Combinatorial Search, 2019. 1                                   [40] Y. Chen, U. Rosolia, and A. D. Ames, “Decentralized task and path
+[19] D. Wilkie, J. Van Den Berg, and D. Manocha, “Generalized velocity                 planning for multi-robot systems,” IEEE Robotics and Automation
+     obstacles,” in 2009 IEEE/RSJ International Conference on Intelligent              Letters, vol. 6, no. 3, pp. 4337–4344, 2021. 2
+     Robots and Systems. IEEE, 2009, pp. 5573–5578. 1                             [41] P. Ghassemi and S. Chowdhury, “Decentralized task allocation in
+[20] J. Alonso-Mora, A. Breitenmoser, M. Rufli, P. Beardsley, and                      multi-robot systems via bipartite graph matching augmented with
+     R. Siegwart, “Optimal reciprocal collision avoidance for multiple                 fuzzy clustering,” in International design engineering technical con-
+     non-holonomic robots,” in Distributed autonomous robotic systems.                 ferences and computers and information in engineering conference,
+     Springer, 2013, pp. 203–216. 1                                                    vol. 51753. American Society of Mechanical Engineers, 2018, p.
+[21] Z. Chen, J. Alonso-Mora, X. Bai, D. D. Harabor, and P. J. Stuckey,                V02AT03A014. 2
+     “Integrated task assignment and path planning for capacitated multi-         [42] L. Liu and D. A. Shell, “Optimal market-based multi-robot task
+     agent pickup and delivery,” IEEE Robotics and Automation Letters,                 allocation via strategic pricing.” in Robotics: Science and Systems,
+     vol. 6, no. 3, pp. 5816–5823, 2021. 1, 6                                          vol. 9, no. 1, 2013, pp. 33–40. 2
+[22] P. Fiorini and Z. Shiller, “Motion planning in dynamic environments          [43] G. A. Korsah, A. Stentz, and M. B. Dias, “A comprehensive taxonomy
+     using velocity obstacles,” The International Journal of Robotics Re-              for multi-robot task allocation,” The International Journal of Robotics
+     search, vol. 17, no. 7, pp. 760–772, 1998. 2                                      Research, vol. 32, no. 12, pp. 1495–1512, 2013. 4
+[23] J. van den Berg, M. Lin, and D. Manocha, “Reciprocal velocity obsta-         [44] L. Wang, Q. Cai, Z. Yang, and Z. Wang, “Neural policy gradient
+     cles for real-time multi-agent navigation,” in 2008 IEEE International            methods: Global optimality and rates of convergence,” CoRR, vol.
+     Conference on Robotics and Automation, 2008, pp. 1928–1935. 2                     abs/1909.01150, 2019. [Online]. Available: http://arxiv.org/abs/1909.
+[24] J. Van Den Berg, J. Snape, S. J. Guy, and D. Manocha, “Reciprocal                 01150 5
+                                                                                  [45] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N.
+     collision avoidance with acceleration-velocity obstacles,” in 2011
+     IEEE International Conference on Robotics and Automation. IEEE,                   Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” in
+                                                                                       NeuRIPS, 2017. 5
+     2011, pp. 3475–3482. 2
+                                                                                  [46] L. Zhang, T. Hu, Y. Min, G. Wu, J. Zhang, P. Feng, P. Gong, and J. Ye,
+[25] J. Alonso-Mora, A. Breitenmoser, M. Rufli, P. Beardsley, and R. Sieg-
+                                                                                       “A taxi order dispatch model based on combinatorial optimization,” in
+     wart, Optimal Reciprocal Collision Avoidance for Multiple Non-
+                                                                                       Proceedings of the 23rd ACM SIGKDD International Conference on
+     Holonomic Robots. Berlin, Heidelberg: Springer Berlin Heidelberg,
+                                                                                       Knowledge Discovery and Data Mining, ser. KDD ’17. New York,
+     2013, pp. 203–216. 2
+                                                                                       NY, USA: Association for Computing Machinery, 2017, p. 2151–2159.
+[26] D. Zhou, Z. Wang, S. Bandyopadhyay, and M. Schwager, “Fast, on-
+                                                                                       6
+     line collision avoidance for dynamic vehicles using buffered voronoi
+                                                                                  [47] F. A. Tillman and T. M. Cain, “An upperbound algorithm for the
+     cells,” IEEE Robotics and Automation Letters, vol. 2, no. 2, pp. 1047–
+                                                                                       single and multiple terminal delivery problem,” Management Science,
+     1054, 2017. 2
+                                                                                       vol. 18, no. 11, pp. 664–682, 1972. 6
+[27] T. Fan, P. Long, W. Liu, and J. Pan, “Distributed multi-robot collision
+                                                                                  [48] S. K. X. Zheng, C. Tovey, R. Borie, P. Kilby, V. Markakis, and
+     avoidance via deep reinforcement learning for navigation in complex
+                                                                                       P. Keskinocak, “Agent coordination with regret clearing,” in AAAI,
+     scenarios,” The International Journal of Robotics Research, 2020. 2
+                                                                                       2008. 6
+[28] S. H. Semnani, H. Liu, M. Everett, A. de Ruiter, and J. P. How,              [49] R. Stern, N. Sturtevant, A. Felner, S. Koenig, H. Ma, T. Walker, J. Li,
+     “Multi-agent motion planning for dense and dynamic environments via               D. Atzmon, L. Cohen, T. Kumar, E. Boyarski, and R. Barták, “Multi-
+     deep reinforcement learning,” IEEE Robotics and Automation Letters,               agent pathfinding: Definitions, variants, and benchmarks,” 06 2019.
+     vol. 5, no. 2, pp. 3221–3226, 2020. 2                                             6
+[29] Q. Tan, T. Fan, J. Pan, and D. Manocha, “Deepmnavigate: Deep                 [50] L. Cohen, T. Uras, and S. Koenig, “Feasibility study: Using highways
+     reinforced multi-robot navigation unifying local & global collision               for bounded-suboptimal multi-agent path finding,” in Eighth Annual
+     avoidance,” in 2020 IEEE/RSJ International Conference on Intelligent              Symposium on Combinatorial Search, 2015. 6
+     Robots and Systems (IROS). IEEE, 2020, pp. 6952–6959. 2                      [51] H. Ma, D. Harabor, P. J. Stuckey, J. Li, and S. Koenig, “Searching
+[30] M. Yousefikhoshbakht, F. Didehvar, and F. Rahmati, “Modification of               with consistent prioritization for multi-agent path finding,” in AAAI,
+     the ant colony optimization for solving the multiple traveling salesman           vol. 33, no. 01, 2019, pp. 7643–7650. 6
+     problem,” Romanian Journal of Information Science and Technology,
+     vol. 16, no. 1, pp. 65–80, 2013. 2
+[31] J. Li, Q. Sun, M. Zhou, and X. Dai, “A new multiple traveling
+     salesman problem and its genetic algorithm-based solution,” in 2013

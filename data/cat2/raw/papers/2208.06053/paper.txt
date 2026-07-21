@@ -1,0 +1,577 @@
+Adaptive Sampling of Latent Phenomena using
+                                                Heterogeneous Robot Teams (ASLaP-HR)
+                                                          Matthew Malencia, Sandeep Manjanna, M. Ani Hsieh, George Pappas, Vijay Kumar
+
+                                            Abstract—In this paper, we present an online adaptive
+                                         planning strategy for a team of robots with heterogeneous
+                                         sensors to sample from a latent spatial field using a learned
+arXiv:2208.06053v1 [cs.RO] 11 Aug 2022
+
+                                         model for decision making. Current robotic sampling methods
+                                         seek to gather information about an observable spatial field.
+                                         However, many applications, such as environmental monitoring
+                                         and precision agriculture, involve phenomena that are not
+                                         directly observable or are costly to measure, called latent
+                                         phenomena. In our approach, we seek to reason about the latent                                             (a) Spatial fields.
+                                         phenomenon in real-time by effectively sampling the observable
+                                         spatial fields using a team of robots with heterogeneous sensors,
+                                         where each robot has a distinct sensor to measure a different
+                                         observable field. The information gain is estimated using a
+                                         learned model that maps from the observable spatial fields to the
+                                         latent phenomenon. This model captures aleatoric uncertainty
+                                         in the relationship to allow for information theoretic measures.
+                                         Additionally, we explicitly consider the correlations among the
+                                         observable spatial fields, capturing the relationship between                        (b) Historical Data         (c) Multi-robot information gathering.
+                                         sensor types whose observations are not independent. We show
+                                         it is possible to learn these correlations, and investigate the              Fig. 1: An example scenario: (a) Farms can be described by various spatial
+                                         impact of the learned correlation models on the performance of               fields. A spatial map of nutrient levels is most informative to a farmer,
+                                         our sampling approach. Through our qualitative and quantita-                 but it requires costly and time-consuming sampling and analysis of leaves.
+                                         tive results, we illustrate that empirically learned correlations            Chlorophyll and soil conductivity spatial fields can be measured quickly and
+                                                                                                                      cheaply by in-situ sensors. (b) Historical data is used to train a model to
+                                         improve the overall sampling efficiency of the team. We simulate             predict nutrient levels using chlorophyll and soil conductivity measurements.
+                                         our approach using a data set of sensor measurements collected               (c) A team of robots can measure chlorophyll and soil conductivity relatively
+                                         on Lac Hertel, in Quebec, which we make publicly available.                  efficiently and use the learned model from (b) to make real-time decisions
+                                            Index Terms—Informative Path Planning, Heterogeneity,                     about where and what to sample next to get best estimates of nutrition.
+                                         Multi-Robot Systems
+                                                                                                                      choose sensing locations that best inform a latent phe-
+                                                                  I. I NTRODUCTION                                    nomenon? We formulate this question as an Adaptive Sam-
+                                            Robot teams have proven to be powerful tools for envi-                    pling of Latent Phenomena (ASLaP) problem and propose
+                                         ronmental monitoring, drastically improving efficiency over                  an informed path planning technique for a heterogeneous
+                                         fixed sensor networks or manual sampling [1]. This ef-                       team of robots (ASLaP-HR) that seeks to estimate a quasi-
+                                         fectiveness is driven in large part due to their ability to                  static latent spatial field. We assume that the observable and
+                                         move and collect samples from multiple locations, and due                    latent spatial fields change slowly or remain static at least
+                                         to the sampling strategies that decide where measurements                    for the time span of a robotic survey and that robot team’s
+                                         should be taken [2]. However, many applications involve                      communication is not constrained with the region.
+                                         phenomenon that either cannot be directly measured by                           Consider the example scenario presented in Fig. 1: A
+                                         sensors or require slow and costly sensors to measure,                       farmer monitors plant nutrition by sending leaf samples to
+                                         called latent phenomena or latent spatial fields. For ex-                    a lab for analysis. However, cheap and fast sensors, such
+                                         ample, in agricultural applications, chlorophyll is measured                 as chlorophyll and soil conductivity sensors, can provide in-
+                                         as a proxy for health or as an indicator of an infestation                   situ proxy measurements that estimate plant nutrition. Our
+                                         [3]. And in marine settings, scientists infer aquatic health by              approach to this scenario uses historical data of co-located
+                                         measuring various chemical concentration indicators [1]. In                  chlorophyll, soil conductivity, and analyzed leaf samples
+                                         this paper, we answer the question: how can robot teams                      to learn the relationship between the sensor measurements
+                                                                                                                      and nutrient levels. Then, a team of robots (equipped with
+                                           We gratefully acknowledge the support from ARL Grant DCIST CRA             soil conductivity and chlorophyll sensors) collaboratively
+                                         W911NF-17-2-0181, NSF Grant CNS-1521617, ARO Grant W911NF-13-1-              estimates the nutrition levels of the whole farm (or plot) by
+                                         0350, ONR Grants N00014-20-1-2822 and ONR grant N00014-20-S-B001,
+                                         and Qualcomm Research. The first author acknowledges support from the        using the learned model to inform where and which sensor
+                                         National Science Foundation Graduate Research Fellowship under Grant No.     measurements will provide the best estimate of nutrition.
+                                         DGE-1845298.                                                                    Current work on sampling approaches for robot teams
+                                           The authors are with GRASP Laboratory, Levine Hall 4th floor, University
+                                         of Pennsylvania, 3330 Walnut Street, Philadelphia, PA 19104-6228. corre-     either optimize objectives on observable spatial fields [4],
+                                         sponding authors emails: {malencia,msandeep}@seas.upenn.edu                  [5] or assume an exact proxy for a latent spatial field [6].
+   However, this does not necessarily align with optimizing        and fuel limitations [29]–[31]. Whereas Chand and Carnegie
+relevant information of the latent phenomenon of interest [7].     model different levels of sensing ability (e.g., low vs high),
+After collecting data of their observable spatial fields, these    we model qualitatively different sensor types, which all
+teams rely on human experts for higher level decision making       take high quality sensor measurements in their respective
+about the phenomenon of interest.                                  observable space. Manjanna et al. and Manderson et al.
+   Heterogeneity in robot teams has been considered in             investigate different robot types (sensor vs sampler, and aerial
+robotic sampling [8], with a focus on diverse robot types,         vs ground sensing, respectively), but their investigations focus
+e.g., aerial vs ground robots [9]. While some papers consider      on two prescribed roles. In this work, we do not consider
+sensor heterogeneity, this area is limited to sensors that align   heterogeneity in robot resources (e.g., computation power, or
+with prescribed roles [6] and sensors that are homogeneous         mobility type) but rather heterogeneity in sensor types; we
+in type but heterogeneous in cost, range, and accuracy             model an arbitrary number of sensor types where tasks and
+[10]. In this work, we investigate heterogeneity in sensor         roles are not pre-designed.
+types, where each type measures a different spatial field.            Recent work has only just begun to develop models and
+These diverse observations can combat uncertainty of the           algorithms to make real-time decisions with respect to a latent
+latent phenomenon because real world sensor spaces are not         phenomenon of interest. Arora et al. study multi-modal active
+independent and map nonuniformly to the latent spatial field.      perception, where measurements must be combined with
+   In order to leverage the strength of heterogeneous sen-         domain knowledge to deduce information about variables
+sors, we use data-driven methods to model the relationship         or phenomena that cannot be directly measured [7]. Their
+between the observable spatial fields and the latent phe-          paper investigates a single robot with multiple sensors that
+nomenon. Most machine learning methods are limited by              make discrete observations and maps the observations to the
+the resolution of the input data, e.g., using satellite data       variables of interest through an expert-designed Bayesian
+to make predictions about entire plots of land rather than         network. In this work, we consider a multi-robot team
+individual locations or crops [11], or they postprocess spatial    where sensor measurements are continuous and we learn a
+data to gain meaningful insights. Our work seeks to enable         continuous representation mapping from the observations to
+predictions that reason directly about the latent spatial field    the latent phenomenon of interest.
+in real time while also providing the precision of studying        B. Contributions
+localized phenomena.
+                                                                      We formalize adaptive informative sampling for multiple
+A. Related Work.                                                   continuous sensors to maximize information theoretic ob-
+                                                                   jective of a latent phenomenon. We use a robot team with
+   There are myriad problem spaces that involve path plan-         heterogeneous sensor types to measure observable spatial
+ning for mobile robots. Bayesian optimization approaches           fields. A learned model from historical data enables the robot
+seek to find the maximum of a spatial field [12]–[14]; ex-         team to infer about the latent spatial field in real time and use
+ploration and active mapping optimize the observation of an        these inferences to choose sample locations that maximize
+unknown area [15]–[17]; and active information gathering or        the information gain of the latent phenomenon. Additionally,
+target tracking focus on estimating the state of dynamic hid-      we learn correlations among the multiple observable spatial
+den states [18]–[20]. The objective functions studied among        fields; these correlations are learned offline and are used to
+these applications can be categorized as information-theoretic     make real-time sampling location decisions. We investigate
+driven [21], [22], such as mutual information [23], [24], and      the impact of these learned correlations on the adaptive
+sample driven, as is the case of hotspot sampling [25], [26].      sampling of the latent field. Our main contributions are:
+This work seeks to maximize the expected information gained
+                                                                      • We formulate the ASLaP problem as the maximization
+by a team of heterogeneous robots.
+                                                                         of the expected information of a latent spatial field.
+   Heterogeneity of multi-robot teams can vary drastically.
+                                                                      • We develop ASLaP-HR, an adaptive sampling approach
+Manjanna et al. use two autonomous surface vehicles, one
+                                                                         for a team of robots with heterogeneous sensors using
+with a water quality sensor and the other with a water
+                                                                         a learned mapping from observations to the latent phe-
+sampler, where the sensor vehicle explores to inform the
+                                                                         nomenon.
+sampler’s decisions [6]. Similarly, Manderson et al. use an
+                                                                      • We show that the learned correlations among the ob-
+aerial vehicle to inform the decisions of a ground vehicle [9].
+                                                                         servable spatial fields improve the sampling efficiency
+Chand and Carnegie investigated heterogeneous processing
+                                                                         of our adaptive sampling approach.
+and sensing capabilities to assign tasks to different robot
+types, where robots with low-value sensing do computa-                In Section II, we present a novel ASLaP problem formu-
+tion rather than exploration tasks [27]. Shi et al. use a          lation that is not restricted to myopic or non-myopic ap-
+Voronoi approach where the space is partitioned according          proaches, nor does it restrict motion uncertainties or arbitrary
+to heterogeneous capabilities, like mobility constraints in        sets of actions,1 though the methods presented in Section III
+ground versus aerial vehicles [10]. Similarly, Cai et al.          are myopic and do not consider motion uncertainty. We
+consider heterogeneous capabilities such as field of view          validate our approach by running experiments on real sensor
+and traversability of different environment types [28]. Others       1 The problem formulation considers a discrete action set. Using continu-
+still consider resource constraints such as energy budgets         ous dynamics would require slight reformulation.
+data collected on a lake. The sensor data, which we make
+publicly available 2 , includes co-located measurements of ten
+water quality parameters. Our experiments use three of the
+ten sensor fields, two as the sensor spaces and one as the
+latent variable of interest. The experimental results show that
+the learned correlations among the observable spatial fields
+improve overall sampling. Future work will investigate the
+online learning of these correlations.
+                  II. P ROBLEM D EFINITION
+   Consider a region of locations x ∈ R2 with a spatial field
+φ : x 7→ R, such as temperature.3 Adaptive informative
+                                                                               Fig. 2: The mutual information between different sensor types. Independent
+sampling seeks to estimate this spatial field φ. The estimate is               sensor types are independent sources of information. For perfectly correlated
+a belief model, φ̂ : x 7→ D, where D is the set of distributions               sensor types, co-located measurements from a second sensor type provide
+in R; for each x, φ̂(x) is a one-dimensional distribution that                 zero additional information. In reality, different sensor types (and the re-
+                                                                               spective measurable spatial fields), have complex dependencies with mutual
+estimates φ (x). To model φ̂, robots make observations at                      information that is complex, unknown function of the measurements. The
+locations x that maximizes information gain, I. Often, I is                    middle scatter plot above shows the relationship of real sensor data that is
+calculated using Shannon entropy, H. The information gain                      used in our experiments in Section IV.
+with respect to φ of a measurement at x is the change in                       collectively inform the estimate of the latent phenomenon
+entropy of the field estimate due to the new measurement:                      by using a mapping that is learned from historical data.
+Iφ̂ (x) = H(φ̂) − H(φ̂|x). Additionally, adaptive sampling                     Additionally, we investigate how learned correlation models
+problems often include resource constraints, such as energy                    among these observable spatial fields can be leveraged to
+budgets [32] or sampling budgets [6]. We limit the number of                   improve the efficiency of this team’s sampling.
+measurements using a time horizon constraint, T .4 Therefore,
+           PT a series of measurements x1 , . . . , xT that
+a robot seeks                                                                                              III. A PPROACH
+maximize t=1 Iφ̂ (xt ). This extends to a team of N robots
+                               (1)          (N )
+                                                                                  We consider a heterogeneous team of N robots with S
+where the vector ~xt = (xt , . . . , xT ). This type of problem                sensor types among the team, where S = N , which means
+formulation is found in the previous literature on informative                 that each robot has a distinct sensor type. It is possible to
+path planning [7], [25], [33], [34]. Conversely, we consider a                 extend our approach to an arbitrary number of robots sensor
+latent spatial field where φ is not directly observeable, yield-               combinations where S 6= N .5 Each sensor type measures
+ing the Adaptive Sampling of Latent Phenomena (ASLaP)                          a spatial field, and, as with real world observeable spatial
+problem formulation:                                                           fields, sensor measurements from different sensor types are
+Problem 1. ASLaP: Given a team of N agents, find obser-                        not independent of one another, as seen in Fig. 2. We use the
+vation locations xt at all time steps in time horizon T that                   index s = 1, . . . , S for both robots and sensors. Each robot
+                                                                                                                                            (s)
+maximize the sum of information gained relative to the latent                  rs can measure a spatial field z (s) : x 7→ R. Let xt be
+spatial field φ. Formally:                                                     the location of robot rs at time t and let the respective ob-
+                                                                                                     (s)
+                                     T
+                                                                               servation be z (s) (xt ). For ease of notation, the observation
+                                                                                                                                       (s)
+                                                                               made by robot rs at time t will be denoted by zt (x). Let
+                                     X
+                          arg max          Iφ̂ [~xt ]                   (1)
+                          ~
+                          x1 ,...,~
+                                  xT t=1                                       Z : x 7→ RS be the S-dimensional observable spatial field,
+                                                                               where Z(~x) = z (1) (x), . . . , z (S) (x) . The spatial field Z is
+   The novel problem formulation in Problem 1 is challenging                   unknown but observable, therefore, online measurements are
+because φ is a latent phenomenon. This breaks the funda-                       used to maintain a belief estimate Ẑ : x 7→ DS .
+mental assumption that the robots can directly measure the
+                                                                                  With this team of heterogeneous multisensor robots, we
+field φ, thus requiring new methods that enable inference
+                                                                               seek to build an estimate of the latent spatial field. To do
+over this latent spatial field. In addition to this novel problem
+                                                                               this, a mapping g from observations in Z to the latent
+formulation, this work is the first to take advantage of learned
+                                                                               spatial field φ is learned from historical data. Robots make
+spatial field correlation models to improve adaptive sampling.
+                                                                               measurements of Z, build an estimate of the observable
+   In the following section, we present an approach using
+                                                                               spatial field Ẑ, and then use the learned mapping g : Ẑ 7→ φ̂
+a team of robots with heterogeneous sensors, where the
+                                                                               to maintain the estimate of the latent spatial field φ̂. Learning
+different sensor types measure observable spatial fields to
+                                                                               g is challenging because the mapping from Ẑ ∈ DS to
+  2 This data is available at: https://github.com/SandeepManjanna/water_       φ̂ ∈ D has aleatoric uncertainty, meaning even an exact
+quality_dataset                                                                measurement of an observable spatial field yields an un-
+  3 We study 2-dimensional spatial fields in this work, though 3-dimensional
+                                                                               certain latent spatial field value. Multiple machine learning
+space could be considered.
+  4 The constraint T can be interpreted as an energy budget, assuming each     methods can capture this aleatoric uncertainty [35], such as
+action takes equal energy, or as a sensing budget of at most T measurements
+                                                                                5                            (s) robots per sensor type such that
+per robot (we assume one measurement is taken each time step). Other works     PSFor S(s) 6= N , there are N
+define a cost per action/measurement and constrain the sum of costs.            s=1 N      = N .
+the Gaussian Process approach that we use in Section IV.                      intractable, therefore, the variance of φ̂ is used as an estimate
+Because the goal of our approach is to create a good estimate                 of the expected information gain [36].
+                                                                                                   (s)
+of the latent phenomenon, the observation locations x are                        Next, sense(s, xt ) on line 8 returns a new sensor mea-
+chosen to maximize the information gain with respect to φ.                                (s)
+                                                                              surement zt . This new sensor measurement is used to refine
+Using the learned mapping g, the information gain is now                      the model hs using any measurements from other sensors that
+calculated by Ig(Ẑ) (x) = H(g(Ẑ)) − H(g(Ẑ|x)), which                                                   (s)
+                                                                              are located together at xt . We assume that GPS localizes
+yields the Adaptive Sampling of Latent Phenomena using                        the robots; the uncertainty in this localization does not hinder
+Heterogeneous Robots (ASLaP-HR) approach:                                     the estimate of the beliefs. The new sensor measurements
+ASLaP-HR. Given a team of S robots, each equipped with                        are communicated, and the correlation models hs are used
+                                                                                                                                   (s)
+a distinct sensor s, each robot s takes measurements of the                   in line 11 to update the beliefs Ẑ at the points xt . Line 12
+field z (s) to collectively form an estimate Ẑ of the entire                 updates the belief Ẑ, and line 13 updates the belief φ̂.
+observable spatial field. This in turn allows estimates of                    Algorithm 1 then repeats this sequence to iterate over all
+the latent spatial field by using g, a mapping from the                       T time steps, at the end returning the most up-to-date belief
+observable spatial fields to the latent spatial field that must               φ̂ of the latent phenomenon. The next section elaborates on
+be learned from historic data. At each time step t, choose the                the line 11 update of Ẑ.
+                                                (1)        (N )
+observation location for each robot, ~xt = (xt , . . . , xT ),
+                                                                              Algorithm 1 Pseudocode for ASLaP-HR Planner
+that maximize the information gain Ig(Ẑ) with respect to this
+latent phenomenon. Formally:                                                  Input: ~x0 , T, g, h1 , . . . , hS
+                                                                              Output: Estimated latent spatial field φ̂
+                                  T
+                                  X                                            1: Initialize φ̂, Ẑ
+                        arg max          Ig(Ẑ) [~xt ]                 (2)
+                        ~
+                        x1 ,...,~
+                                xT t=1                                         2: Measure Z(~    x0 )
+                                                                               3: Ẑ ←− update
+                                                                                             (Z(~x0 ))
+   While prior works reason about observable spatial fields,                   4: φ̂ ←
+                                                                                     − g Ẑ
+ASLaP-HR reasons about a latent phenomenon through g.
+                                                                               5: for t = 1, . . . , T do
+The following section presents an ASLaP-HR planning al-
+                                                                               6:    for s = 1, . . . , S do
+gorithm, which leverages a learned correlation among the                                  (s)
+observable spatial fields for improved information gathering.                  7:       xt ←  − arg max Ig(Ẑ) [~xt ]
+                                                                                                    x
+Section IV presents a specific implementation of this algo-                              (s)               (s)
+                                                                               8:       zt = sense(s, xt )
+rithm and shows the improvement gained by leveraging the                       9:       hs ←
+                                                                                                        (s) (s)
+                                                                                            − ref ine(xt , zt )
+learned correlation.                                                          10:    end for             
+                                                                                          (s)         (s)
+A. Planning Algorithm Details                                                 11:    Ẑ(xt ) = hs zt        ∀ s = 1, . . . , S
+   We present Algorithm 1 for ASLaP-HR, where a team of                       12:   Ẑ ←
+                                                                                       − update
+                                                                                            (Z(~xt ))
+S robots take measurements of Z, build an estimate of the                     13:   φ̂ ←
+                                                                                       − g Ẑ
+observable spatial field Ẑ, and then use the learned mapping                 14: end for
+g to build an estimate of the latent spatial field φ̂. Algorithm 1            15: return
+takes the following inputs:
+   • ~x0 ∈ R2xS           initial positions of all robots                     B. Learned Correlations among the Observable Spatial
+              +
+   • T ∈Z                 time horizon                                        Fields
+   • g : Ẑ 7→ φ̂          mapping from observations to latent
+      field                                                                      Through this point in Section III, we have presented the
+   • hs : z
+             (s)
+                 7→ Z correlation model for sensor type s                     basic structure of Algorithm 1. The last core piece, presented
+                                                                              here and investigated in Section IV, is the learned correlations
+   Algorithm 1 begins with each robot rs observing the spatial                among the observable spatial fields hs . Algorithm 1 does not
+                                        (s)
+field z (s) at their initial position xt , yielding measurements              require line 11. However, we hypothesize that heterogeneous
+Z(~x0 ). These measurements are used to update the belief                     robots can leverage the relationships between sensor-types
+Ẑ (line 3) which is then used by g in line 4 to update                       to achieve more efficient information gathering.
+the belief φ̂. In Section IV, we model Ẑ using Gaussian                         When g updates the belief of the latent spatial field at
+Processes, which produce inputs to the learned model g,                       a point x, it calculates φ̂(x) as a function of the entire
+which in turn outputs φ̂. The team then communicates the                      observable field Ẑ(x). Therefore, the precision of the value
+sensor measurements.6 For each time step t, and robot rs ,                    and variance of φ̂(x) depends on the precision of the entire
+                        (s)
+the next waypoint xt is selected to maximize the expected                     belief Ẑ. However, a robot rs measures only part of Ẑ,
+information gain. Calculating the information gain using                      specifically z (s) (x).
+Shannon Entropy (as shown in Section II) is computationally                      The precision of the variance of φ̂(x) is especially impor-
+  6 We assume robots can communicate with each other within the region,       tant because it informs the selection sensing locations. If φ̂(x)
+and that time needed for communication and belief updating is significantly   underestimates variance, line 7 calculates a lower expected
+shorter than the time-step duration.                                          information gain than is actually present, causing robots
+                                                                                   Lac Hertel Data. The historical data used in our simulated
+                                                                                experiments was collected on Lac Hertel in Mont Saint-
+                                                                                Hilaire, Quebec. The full data set, detailed in the Appendix,
+                                                                                is made publicly available. For this paper, we use temperature
+                                                                                and pH data as our observable spatial fields, and the oxidation
+                                                                                reduction potential (ORP) data as the latent phenomenon.
+Fig. 3: Our simulated environment includes two observable spatial fields:       ORP measures the ability of a lake or river to cleanse
+z (0) temperature (left), and z (1) pH (middle). These fields are unknown but
+observable:f z (0) can be measured by robot r0 and z (1) can be measured        itself or break down waste products; ORP is aligned with
+by robot r1 . The simulated environment also includes a latent spatial field    the "knowledge" that might be sought in the environmental
+φ of ORP values (right) which cannot be measured by either robot.               monitoring of a lake because it indicates whether drinking
+                                                                                water is sanitary or if the water is suitability for anaerobic
+to avoid informative measurements. If φ̂(x) overestimates
+                                                                                microbial processes. Additionally, we found that ORP, pH,
+variance, robots may take redundant measurements because
+                                                                                and temperature had well-formed relations that could be
+they expect more information than is actually available.
+                                                                                modeled. Let the historical data D = (XD , d0 , d1 , d2 ) be a
+   In Algorithm 1, we see that the observable spatial field
+                                                                                tuple of the sets of sample locations, XD , the sets of mea-
+correlation models hs are used to improve the estimate
+                                                                                surements from two observable spatial fields (temperature:d0
+of Ẑ, which in turn improves the estimate of φ̂. Given a
+                                                                                and pH:d1 ) and the set of measurements from the latent
+measurement z (s) (x), the correlation model hs estimates the
+                                                                                spatial field (ORP:d2 ). This historical data is used to learn
+value (with variance) of the entire observable spatial field
+                                                                                the mapping from observations to the latent spatial field g
+Ẑ(x). These models capture the aleatoric uncertainty in the
+                                                                                and the correlations h0 and h1 .
+correlations among the observable spatial fields. For example,
+                                                                                   Simulated Environment. To test Algorithm 1, we create a
+if there is low aleatoric uncertainty between two sensor types,
+                                                                                simulated environment of observable and latent spatial fields.
+one sensor acts almost as a noisy sensor of another spatial
+                                                                                Fig. 3 shows the three spatial fields of our simulated test
+field. Conversely, correlations with high aleatoric uncertainty
+                                                                                environment. All three fields are unknown. However, z ( 0) can
+only marginally diminish the variance of other spatial fields.
+                                                                                be measured by robot r0 and z ( 1) can be measured by robot
+The line 11 of Algorithm 1 shows how the correlation models
+                                                                                r1 . The latent field φ cannot be measured by the robot team;
+are used after a robot moves to a new x and takes a new
+                                                                                this spatial field is used only to evaluate the performance
+sample z (s) . The new sample is the input to model hs that
+                                                                                of our algorithm. We normalize all spatial fields to a scale
+provides updated estimates of the value and variance of the
+                                                                                from zero to one.7 To simulate our robots’ motion in this
+entire observable space at that location, Ẑ(x).
+                                                                                simulated environment, we discretize the region into a grid,
+                                                                                defining the set X of locations and corresponding ground
+                             IV. R ESULTS
+                                                                                truth sensor measurements GT = (gt0 , gt1 , gt2 ).
+   We present an instantiation of Algorithm 1 and investigate
+the impact of the correlations among the observable spa-                        B. Myopic Planner
+tial fields described in Section III-B. This section presents                      For our simulated experiments, we assume a robot can
+simulated experiments where a team of robots estimate a                         move to any adjacent cell during a time step. For a given lo-
+latent phenomenon. We use real sensor data collected from a                              (s)                                    (s)
+                                                                                cation xt−1 ∈ X , the possible next locations xt in line 7 are
+lake to create a simulated environment of two observable                        the eight grid cells surrounding the current location (exclud-
+spatial fields and a latent phenomenon of interest. In the                      ing cells outside of the boundary, i.e., ∈
+                                                                                                                         / X ). Lines 3 and 12
+following subsections, we present a marine data set, we                         create belief models of the observable spatial field Ẑ. At each
+overview a simple myopic planner that instantiates Algo-                        time step t, the sensor measurements and respective sample
+rithm 1, we describe the modeling of the correlations between                   locations are used to fit the belief model Ẑ of the observable
+the observable spatial fields, and we present results from                      fields using Gaussian Processes. To create these beliefs,
+simulated experiments. We show qualitatively that the learned                   we assume known spatial correlations (covariance kernels),
+correlations between the observable spatial fields hs improve                   which is a common assumption because underlying physics
+the performance by causing the robot team to spread their                       informs these correlation (e.g., how temperature changes
+samples out. Our quantitative evaluations show that these                       spatially). The belief model of the latent phenomenon, φ̂, is
+correlations improve the accuracy of the latent field estimate.                 created/updated using the pre-learned mapping g to predict
+                                                                                the mean and variance of the latent spatial field. The input
+A. Experimental Setup - Data and Simulated Environment
+                                                                                to g is Ẑ and the output is φ̂. Importantly, we do not assume
+   We simulate a team of two robots in a marine setting.                        known spatial correlations of the latent variable; Mean and
+One of the robots is equipped with a temperature sensor and                     variance predictions are strictly a function of the observable
+the other one with a pH sensor. Together, they are seeking                      spatial field belief model and the mapping g.
+information about oxidation reduction potential (ORP), the                         The mapping g can be learned by various machine learning
+latent phenomenon of interest in these simulated experiments.                   methods which capture the aleatoric uncertainty between
+Historical data temperature, pH, and ORP are needed to learn
+the correlation model g.                                                          7 Normalizing the sensor data aids in learning correlation models.
+                                                                            Fig. 5: Left: The ground truth of latent spatial field φ. Middle and right:
+                                                                            The belief model φ̂ of the latent phenomenon with robot measurements
+                                                                            shown in red (square) and blue (circle) for the temperature and humidity
+                          (a) Correlation models                            robot, respectively; their sensing locations are indicated by color, with darker
+                                                                            shades indicating later time steps. Middle: The correlation models hs are
+                                                                            not used by the robot team. Right: When using the correlation models hs ,
+                                                                            the team naturally spreads out their samples to maximize information gain.
+
+                                                                            both target values and variance. However, the data discussed
+                                                                            in Section IV-A does not include the target variance. For
+                                                                            example, learning the mapping from temperature to pH
+                                                                            requires the variance of pH for a given temperature data point,
+                                                                            but we only have (temperature, pH) value pairs, therefore, we
+                                                                            transform the data. To learn h0 , the d0 data binned and the
+                        (b) Mapping g from Z to φ
+                                                                            the mean and standard deviation of the respective d1 data are
+Fig. 4: (a) The learned correlation mappings h0 from the pH spatial field   calculated. GP regression takes the d0 bins as inputs and the
+to the temperature spatial field and h1 from temperature to pH. The solid
+line shows the mean prediction and the bars show the variance prediction.
+                                                                            d1 means and standard deviations as targets. For learning h1 ,
+(b) The learned mapping g from observations to the latent spatial field.    the process is the same, flipping d0 and d1 .
+                                                                               Fig. 4 shows the learned mappings h0 and h1 plotted
+observations and the latent spatial field [35]. Because we                  over the respective historical data d0 and d1 . These models
+are only considering S = 2 observable spatial fields, deep                  are used in line 11. When the robot equipped with the
+learning methods are not required. We use Gaussian Process                                                                         (0)
+                                                                            temperature sensor takes a measurement at the point xt , the
+Regression with inputs from d0 and d1 and targets of d2 to                                        (0)
+                                                                            sensor observation zt is used as the input to h0 to update
+train our mapping g. Then, to capture the uncertainty in the                  (1)                                (0)
+latent variable, we use samples at each location of our belief              zt (x), the belief of pH at point xt .
+Ẑ to capture the variance in the belief; we predict the value              D. Evaluation
+and variance of the latent spatial field for all samples; then,
+                                                                               We evaluate the performance of Algorithm 1 with and
+we calculate the mean and variance of the latent spatial field
+                                                                            without the correlation model, i.e., we omit line 11 in the lat-
+predictions at each point to create our latent belief φ̂.
+                                                                            ter. As the goal of Problem III is to maximize the information
+   To calculate the expected information gain in line 7,
+                                                                            with respect to the latent spatial field, the evaluation metric
+we use the variance of the latent phenomenon estimate,
+                                                                            we use is the mean squared error between the ground truth
+var(φ̂). This is an approximation of Shannon entropy that
+                                                                            of the latent phenomenon, gt2 , and the estimate φ̂, calculated
+is often used to reduce computational cost. The calculated
+                                                                            using all points x ∈ X in the discretized space:
+Shannon entropy exactly, H(φ̂)−H(φ̂|x), is computationally
+expensive because it requires that φ̂ be estimated for each                                         1 X                     2
+                                                                                         M SE =               gt2 (x) − φ̂(x)            (3)
+action under consideration. When using a GP belief model,                                          |X |
+                                                                                                              x∈X
+this requires a GP update for every action, for every robot, at
+each time step. The last piece of Algorithm 1 is the learned                   First, we run Algorithm 1 with the robots starting in the
+correlation model, hs , which we detail in the next section.                center of the region. The short time horizon mission in Fig. 5
+                                                                            shows a qualitative comparison of the algorithm’s behavior
+C. Modeling Correlations among Observable Spatial Fields                    with and without use of the correlation model. We see that
+   The core hypothesis of this work is that modeling corre-                 when the correlation model is used, the robot team naturally
+lations among observable spatial fields can improve infor-                  spreads out to explore different parts of the region. Because
+mation gathering. By capturing the aleatoric uncertainty in                 of the correlations among the observable spatial fields, the
+the relationship, robots can sense their own observable field               robots are able to better estimate the expected information
+and use the learned model to reduce the uncertainty of their                gain, finding that there is less information in the regions
+teammates’ observable spatial fields.                                       where other sensors have sampled because of the mutual
+   The goal here is to learn both h0 , the mapping from a                   information between the observable spaces.
+sensor measurement in z (0) to a predicted value and variance                  Next, we generate 200 trials by sampling sets of random
+in z (1) , as well as h1 , the mapping from z (1) to z (0) . Note           starting locations from X . We evaluate all time horizons up
+that h0 is not equivalent to the inverse of h1 because both h               to T = 150, reporting the MSE in Equation 3 for each time
+map to a variance, not just a predicted value. Learning such                horizon. Fig. 6 shows the median MSE among the 200 trials
+models requires supervised learning with input values and                   as well as the 25th to 75th percentile range for Algorithm 1.
+                                                                              of robots using a learned model for online decision
+                                                                              making. Additionally, our adaptive sampling strategy uses
+                                                                              learned correlation models among heterogeneous robots
+                                                                              to improve the performance of the team.
+                                                                                 We recognize that different sensor types in the real world
+                                                                              are not independent but rather have mutual information
+                                                                              that is a complex unknown function of their measurements.
+                                                                              Therefore, we hypothesize that these heterogeneous robots
+                                                                              can improve their information gathering by modeling this
+                                                                              mutual information. We use historical sensor data to learn
+                                                                              correlations among the observable spatial fields, and we use
+Fig. 6: The mean squared error (MSE) of the belief model φ̂ shows that        these learned models in our informed path planning approach.
+using learned correlations among the observable spatial fields improves the   To test the impact of these correlation models, we create
+performance of the adaptive sampling approach. The solid and dashed lines
+show the median MSE at each time step for our instantiation of Algorithm      a simulated environment of two observable spatial fields
+without and with correlation model hs , respectively. The shaded regions      (temp. and pH) and a latent spatial field (ORP). We run our
+show the 25th to 75th percentile range.                                       algorithm in this simulated environment and calculate the
+                                                                              mean squared error between the latent spatial field estimate
+The comparison of this algorithm with (dotted line) and                       returned by our algorithm and the ground truth latent spatial
+without (solid line) the learned correlations illustrates that                field. We aggregate our results across hundreds of random-
+the learned correlations among the observable spatial fields                  ized starting locations, showing that the learned correlations
+improve the efficiency of the adaptive sampling algorithm.                    improve the efficiency of our ASLaP-HR approach.
+   In the earlier phase of the sampling survey, the improve-
+ment is small because the mutual information between sensor                                      VI. F UTURE D IRECTIONS
+types can not yet be exploited and the randomness of starting                    As seen in Section I-A, there are myriad approaches to
+locations has a large impact on performance. On the other                     adaptive sampling and information gain with robot teams.
+hand, during the later phase of the sampling survey, the                      The many dimensions of these approaches can be incor-
+robot samples begin to cover the entirety of the space.                       porated into our latent sampling framework; this includes
+Therefore, both methods converge close to zero MSE and                        complex motion primitives, long planning horizons, time-
+zero variance. In practice, it is prohibitively expensive to                  varying phenomena, objectives such as seeking the maximum
+sample the entire space (and robot sampling capacity or                       of the latent spatial field, and uncertainty in sensors or
+battery life may preclude this). Therefore, adaptive sampling                 motion, to name a few. While these open problems are shared
+methods often exist in the middle ground of time horizons,                    among the adaptive sampling community, latent adaptive
+where enough samples are taken to provide good information                    sampling brings new open problems. For example, new learn-
+about the region, but not so many samples that it becomes                     ing methods are needed for the mapping g to better capture
+overly costly. In this realm, our method performs well, using                 aleatoric uncertainty in the relationship between observable
+the learned correlations among the observable spatial fields to               and latent spatial fields; current supervised learning methods
+maximize the amount of information gained about the latent                    focus on aleatoric uncertainty in classification, with less work
+phenomenon in a limited number of samples.                                    on regression. An important next step that this paper enables
+                                                                              is further investigation of the correlation models. Specifically,
+                      V. C ONCLUSION
+                                                                              these systems would benefit from online learning or continual
+   Real world robotic sampling methods often collect data                     learning of these models. Such approaches would require
+to be analyzed offline by humans or machine learning al-                      the robots to navigate the exploration-exploitation trade-off
+gorithms to gain information about a latent phenomenon.                       with respect to the correlation models. In this work, we
+However, the strength of robotic sampling is the ability                      assume full communication between the robots. One near
+for real-time adaptation. To bridge this gap, we present the                  future extension of this work will be to consider varying
+ASLaP problem, where robot sampling decisions are made                        communication ranges and intermittent communication [2].
+with respect to the information gain of a latent spatial field.
+We propose an informed path planning approach, ASLaP-HR                                                A PPENDIX
+to this problem using a team of heterogeneous robots.                            We make public the data set used in our second set of
+   Each robot on the team has a distinct sensor type that                     experiments. Data consist of water quality measurements
+can measure an observable spatial field. Collectively, the                    collected at Lac Hertel in Mont Saint-Hilaire, Quebec. This
+measurements made by the robot team inform an estimate                        data is collected using a multiparameter Sonde, Exo1 from
+of the latent spatial field by using a machine learning                       YSI. The sensor was mounted on an autonomous surface
+model trained on historical data. Importantly, this learned                   vehicle to collect these data measurements. The data in-
+model is used online by the robots to calculate the expected                  cludes geotagged and timestamped measurements of 10 water
+information gain of their actions with respect to the latent                  quality parameters measured using four sensors: tempera-
+phenomenon. Our method is among the firsts to explore                         ture, conductance, salinity, pH, oxidation reduction poten-
+adaptive sampling of a latent phenomenon with a team                          tial (ORP), depth, two turbidity measures and two optical
+dissolved oxygen measures. We are making this data public                        [17] M. Popović, T. Vidal-Calleja, J. J. Chung, J. Nieto, and R. Siegwart,
+through the following Github repository: https://github.com/                          “Informative path planning for active field mapping under localization
+                                                                                      uncertainty,” in 2020 IEEE Intl. Conf. on Robotics and Automation
+SandeepManjanna/water_quality_dataset                                                 (ICRA). IEEE, 2020, pp. 10 751–10 757.
+                                                                                 [18] M. Tzes, Y. Kantaros, and G. J. Pappas, “Distributed sampling-
+                                                                                      based planning for non-myopic active information gathering,” in 2021
+                                                                                      IEEE/RSJ Intl. Conf. on Intelligent Robots and Systems (IROS). IEEE,
+                                                                                      2021, pp. 5872–5877.
+                                                                                 [19] Y. Kantaros, B. Schlotfeldt, N. Atanasov, and G. J. Pappas, “Sampling-
+                                                                                      based planning for non-myopic multi-robot information gathering,”
+                                                                                      Autonomous Robots, vol. 45, no. 7, pp. 1029–1046, 2021, publisher:
+                                                                                      Springer.
+                                                                                 [20] T. Salam and M. A. Hsieh, “Adaptive Sampling and Reduced-Order
+                                                                                      Modeling of Dynamic Processes by Robot Teams,” IEEE Robotics and
+                                                                                      Automation Letters, vol. 4, no. 2, pp. 477–484, 2019.
+ (a) ASV collecting data at Lac Hertel            (b) Temperature measurements
+                                                                                 [21] N. Fung, J. Rogers, C. Nieto, H. I. Christensen, S. Kemna, and
+                                         Fig. 7                                       G. Sukhatme, “Coordinating multi-robot systems through environment
+                                                                                      partitioning for adaptive informative sampling,” in 2019 Intl. Conf. on
+                               R EFERENCES                                            Robotics and Automation (ICRA). IEEE, 2019, pp. 3231–3237.
+ [1] M. Dunbabin and L. Marques, “Robots for environmental monitoring:           [22] S. Bai, T. Shan, F. Chen, L. Liu, and B. Englot, “Information-Driven
+     Significant advancements and applications,” IEEE Robotics & Automa-              Path Planning,” Current Robotics Reports, vol. 2, no. 2, pp. 177–188,
+     tion Magazine, vol. 19, no. 1, pp. 24–39, 2012, publisher: IEEE.                 2021, publisher: Springer.
+ [2] S. Manjanna, M. A. Hsieh, and G. Dudek, “Scalable Multi-                    [23] K. H. Low, J. Dolan, and P. Khosla, “Information-theoretic approach
+     Robot System for Non-myopic Spatial Sampling,” arXiv preprint                    to efficient adaptive path planning for mobile robotic environmental
+     arXiv:2105.10018, 2021.                                                          sensing,” in Proceedings of the Intl. conf. on automated planning and
+ [3] K. Barker and T. H. Olthof, “Relationships between nematode popula-              scheduling, vol. 19, 2009, pp. 233–240.
+     tion densities and crop responses,” Annual Review of Phytopathology,        [24] A. Singh, A. Krause, C. Guestrin, and W. J. Kaiser, “Efficient infor-
+     vol. 14, no. 1, pp. 327–353, 1976, publisher: Annual Reviews 4139 El             mative sensing using multiple robots,” Journal of Artificial Intelligence
+     Camino Way, PO Box 10139, Palo Alto, CA 94303-0139, USA.                         Research, vol. 34, pp. 707–755, 2009.
+ [4] A. Quattrini Li, P. K. Penumarthi, J. Banfi, N. Basilico, J. M. O’Kane,     [25] K. H. Low, J. M. Dolan, and P. Khosla, “Adaptive multi-robot wide-
+     I. Rekleitis, S. Nelakuditi, and F. Amigoni, “Multi-robot online sensing         area exploration and mapping,” in Proceedings of the 7th Intl. Joint
+     strategies for the construction of communication maps,” Autonomous               Conf. on Autonomous agents and Multiagent systems-Volume 1, 2008,
+     Robots, vol. 44, no. 3, pp. 299–319, 2020, publisher: Springer.                  pp. 23–30.
+ [5] R. Almadhoun, T. Taha, L. Seneviratne, and Y. Zweiri, “A survey on          [26] S. Manjanna, H. V. Hoof, and G. Dudek, “Policy search on aggregated
+     multi-robot coverage path planning for model reconstruction and map-             state space for active sampling,” in Intl. Symposium on Experimental
+     ping,” SN Applied Sciences, vol. 1, no. 8, pp. 1–24, 2019, publisher:            Robotics. Springer, 2018, pp. 211–221.
+     Springer.                                                                   [27] P. Chand and D. A. Carnegie, “Mapping and exploration in a hierarchi-
+ [6] S. Manjanna, A. Q. Li, R. N. Smith, I. Rekleitis, and G. Dudek,                  cal heterogeneous multi-robot system using limited capability robots,”
+     “Heterogeneous Multi-Robot System for Exploration and Strategic                  Robotics and autonomous Systems, vol. 61, no. 6, pp. 565–579, 2013,
+     Water Sampling,” in 2018 IEEE Intl. Conf. on Robotics and Automation             publisher: Elsevier.
+     (ICRA), 2018, pp. 4873–4880.                                                [28] X. Cai, B. Schlotfeldt, K. Khosoussi, N. Atanasov, G. J. Pappas, and
+ [7] A. Arora, P. M. Furlong, R. Fitch, S. Sukkarieh, and T. Fong, “Multi-            J. P. How, “Non-Monotone Energy-Aware Information Gathering for
+     modal active perception for information gathering in science missions,”          Heterogeneous Robot Teams,” in 2021 IEEE Intl. Conf. on Robotics
+     Autonomous Robots, vol. 43, no. 7, pp. 1827–1853, 2019, publisher:               and Automation (ICRA). IEEE, 2021, pp. 8859–8865.
+     Springer.                                                                   [29] A. A. R. Newaz, T. Alam, J. Mondello, J. Johnson, and L. Bobadilla,
+ [8] T. Salam and M. A. Hsieh, “Heterogeneous robot teams for modeling                “Multi-Robot Information Gathering Subject to Resource Constraints,”
+     and prediction of multiscale environmental processes,” arXiv preprint            in 2021 30th IEEE Intl. Conf. on Robot & Human Interactive Com-
+     arXiv:2103.10383, 2021.                                                          munication (RO-MAN). IEEE, 2021, pp. 1–6.
+ [9] T. Manderson, S. Manjanna, and G. Dudek, “Heterogeneous robot               [30] G. Notomista, C. Pacchierotti, and P. R. Giordano, “Multi-robot per-
+     teams for informative sampling,” arXiv preprint arXiv:1906.07208,                sistent environmental monitoring based on constraint-driven execution
+     2019.                                                                            of learned robot tasks,” in ICRA 2022-IEEE Intl. Conf. on Robotics
+[10] Y. Shi, N. Wang, J. Zheng, Y. Zhang, S. Yi, W. Luo, and K. Sycara,               and Automation, 2022.
+     “Adaptive informative sampling with environment partitioning for            [31] S. Arora and S. Scherer, “Randomized algorithm for informative path
+     heterogeneous multi-robot systems,” in 2020 IEEE/RSJ Intl. Conf. on              planning with budget constraints,” in 2017 IEEE Intl. Conf. on Robotics
+     Intelligent Robots and Systems (IROS). IEEE, 2020, pp. 11 718–                   and Automation (ICRA). IEEE, 2017, pp. 4997–5004.
+     11 723.                                                                     [32] K. Tiwari and N. Y. Chong, Multi-Robot Exploration for Environmental
+[11] A. Chlingaryan, S. Sukkarieh, and B. Whelan, “Machine learning                   Monitoring: The Resource Constrained Perspective. Academic Press,
+     approaches for crop yield prediction and nitrogen status estimation              2019.
+     in precision agriculture: A review,” Computers and electronics in           [33] W. Chen and L. Liu, “Multi-objective and model-predictive tree search
+     agriculture, vol. 151, pp. 61–69, 2018, publisher: Elsevier.                     for spatiotemporal informative planning,” in 2019 IEEE 58th Conf. on
+[12] R. Marchant, F. Ramos, S. Sanner, and others, “Sequential Bayesian               Decision and Control (CDC). IEEE, 2019, pp. 5716–5722.
+     optimisation for spatial-temporal monitoring.” in UAI, 2014, pp. 553–       [34] G. A. Hollinger and G. S. Sukhatme, “Sampling-based robotic infor-
+     562.                                                                             mation gathering algorithms,” The Intl. Journal of Robotics Research,
+[13] R. Oliveira, L. Ott, and F. Ramos, “Bayesian optimisation under                  vol. 33, no. 9, pp. 1271–1287, 2014, publisher: SAGE Publications
+     uncertain inputs,” in The 22nd Intl. conf. on artificial intelligence and        Sage UK: London, England.
+     statistics. PMLR, 2019, pp. 1177–1184.                                      [35] E. Hüllermeier and W. Waegeman, “Aleatoric and epistemic uncertainty
+[14] Y. T. Tan, A. Kunapareddy, and M. Kobilarov, “Gaussian process                   in machine learning: An introduction to concepts and methods,”
+     adaptive sampling using the cross-entropy method for environmental               Machine Learning, vol. 110, no. 3, pp. 457–506, 2021, publisher:
+     sensing and monitoring,” in 2018 IEEE Intl. Conf. on Robotics and                Springer.
+     Automation (ICRA). IEEE, 2018, pp. 6220–6227.                               [36] A. Krause, A. Singh, and C. Guestrin, “Near-optimal sensor placements
+[15] B. Yamauchi, “Frontier-based exploration using multiple robots,” in              in Gaussian processes: Theory, efficient algorithms and empirical
+     Proceedings of the second intl. Conf. on Autonomous agents, 1998,                studies.” Journal of Machine Learning Research, vol. 9, no. 2, 2008.
+     pp. 47–53.
+[16] I. Lluvia, E. Lazkano, and A. Ansuategi, “Active mapping and robot
+     exploration: A survey,” Sensors, vol. 21, no. 7, p. 2445, 2021, pub-
+     lisher: Multidisciplinary Digital Publishing Institute.

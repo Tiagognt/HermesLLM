@@ -1,0 +1,292 @@
+Multi-robot Task Allocation and Path Planning with Maximum Range Constraints
+
+Gang Xu 1 , Yuchen Wu 1,2 , Sheng Tao 1 , Yifan Yang 1,2 , Tao Liu 3 , Tao Huang 1 , Huifeng Wu 4 ,
+and Yong Liu 1,∗
+1 Gang Xu, Yuchen Wu, Sheng Tao, Yifan Yang, Tao Huang, and Yong Liu are with the Institute of Cyber-Systems and Control, Zhejiang University, Hangzhou 310027, China (e-mail: wuuya@zju.edu.cn). 2 Yuchen Wu and Yifan Yang are also with the Polytechnic Institute of Zhejiang University, Hangzhou 310015, China. 3 Tao Liu is with the Ocean College, Zhejiang University, Zhoushan 316021, China 4 Huifeng Wu is with the Institute of Intelligent and Software Technology, Hangzhou Dianzi University, Hangzhou 310018, China ∗ Yong Liu is the corresponding author (e-mail: yongliu@iipc.zju.edu.cn).
+
+Abstract
+
+This letter presents a novel multi-robot task allocation and path planning method that considers robots’ maximum range constraints in large-sized workspaces, enabling robots to complete the assigned tasks within their range limits. Firstly, we developed a fast path planner to solve global paths efficiently. Subsequently, we propose an innovative auction-based approach that integrates our path planner into the auction phase for reward computation while considering the robots’ range limits. This method accounts for extra obstacle-avoiding travel distances rather than ideal straight-line distances, resolving the coupling between task allocation and path planning. Additionally, to avoid redundant computations during iterations, we implemented a lazy auction strategy to speed up the convergence of the task allocation. Finally, we validated the proposed method’s effectiveness and application potential through extensive simulation and real-world experiments. The implementation code for our method will be available at https://github.com/wuuya1/RangeTAP.
+
+Index Terms:
+
+Multi-Robot Task Allocation, Path Planning, Maximum Range Constraints
+
+I Introduction
+
+Multi-robot task allocation and path planning are crucial technologies across various applications, such as logistics delivery [ 1 ] , power grid inspection [ 2 ] , autonomous exploration [ 3 ] , and search and rescue operations [ 4 ] . In these scenarios, a fleet of robots must autonomously allocate tasks and navigate to designated positions to perform the assigned tasks. A key challenge is ensuring that the robots complete all tasks using the shortest possible time or distance cost while adhering to their maximum range constraints. In real-world applications, where robots often have limited endurance, it is essential to account for these constraints in large workspaces. Specifically, the distance a robot moves to perform tasks must not exceed the distance it can travel under its maximum endurance constraint. However, multi-robot task allocation and path planning are known to be NP-hard problems, typically solvable with optimal solutions only in small-scale scenarios. Moreover, robots typically need to avoid environmental obstacles while executing tasks. Therefore, task allocation must consider the additional travel distance from obstacle avoidance behavior, further increasing the difficulty of solving task allocation and path planning.
+
+Several studies have considered and addressed the task allocation and path planning for multiple robots. For instance, Liu et al. [ 5 ] integrated task allocation and path planning problems, receiving the real-time in multi-robot systems with a solution approach close to optimal. However, their approach primarily aims at indoor environments, making it unsuitable for large-sized scenarios like urban delivery due to its overload computation. Camisa et al. [ 6 ] proposed a collaborative task allocation and path planning method for unmanned aerial vehicles (UAVs) and unmanned ground vehicles (UGVs). However, their work did not consider the environmental obstacles. Our previous work [ 7 ] addressed task allocation and motion planning for a fleet of robots in large-sized workspaces with dense obstacles. Nevertheless, this work overlooked the robots’ range limits, potentially leading to situations where robots fail to complete their tasks within their endurance limits. Overall, current research rarely tackles the challenge of task allocation and path planning in large-sized scenarios due to overload computation, which often requires considering robots’ maximum range limits, as seen in applications such as urban logistics, autonomous exploration, and power grid inspection.
+
+Integrating path planning with task allocation methods is an intuitive solution, where obstacle-avoidance paths from a path planner are employed instead of ideal straight-line paths during task allocation. However, this integration significantly increases the computational complexity of task allocation algorithms, compromising the real-time performance of the multi-robot systems. This challenge arises primarily from the substantial computation time required to solve obstacle avoidance paths using existing global path planners, including search-based methods [ 8 , 9 ] , sample-based methods [ 10 , 11 ] , and learning-based methods [ 12 , 13 ] . Despite widespread use or focus, these methods are computationally expensive, especially in large-sized maps.
+
+To address these issues, we developed a fast path planner based on our previous work [ 7 ] , which ensures that paths are close to the shortest possible. In addition, it is noteworthy that auction-based methods, like [ 14 , 15 , 16 ] , are commonly employed for task allocation problems due to their efficiency. Therefore, we incorporate the proposed path planner into the auction-based approach [ 7 ] . To speed up the process of task allocation solutions, we further introduced a lazy auction strategy to accelerate the convergence of task allocation algorithms while accounting for the robots’ endurance limitations. Finally, we introduce RangeTAP, a novel multi-robot task allocation and path planning method under robots’ maximum range constraints. Extensive simulation and real-world experiments validated the proposed pipeline’s effectiveness and practicality.
+
+The main contributions are summarized as follows:
+
+•
+
+We developed a fast global path planner for large-sized maps. Comparisons demonstrated that our planner achieves paths comparable in length to those obtained by the state-of-the-art method while offering approximately an order of magnitude improvement.
+
+•
+
+We introduced a lazy auction strategy to speed up the task allocation without compromising the quality of the solutions. Meanwhile, we consider the robots’ maximum endurance constraints in task assignment, ensuring robots can complete the assigned tasks within their limited endurance.
+
+•
+
+By integrating the proposed path planner into the task allocation, we proposed a novel method, RangeTAP, to address task allocation and path planning under robots’ maximum range constraints. This approach effectively resolves the coupling issue between task allocation and path planning. Finally, we validated the proposed pipeline by extensive simulations and real-world experiments.
+
+II RELATED WORK
+
+Multi-robot task allocation methods can be categorized into centralized and decentralized sets, with heuristic-based and auction-based methods being the most prominent in these two categories. In centralized methods, the heuristic methods [ 17 , 18 ] can simplify complex problems and have higher search efficiency. In contrast, the auction-based methods [ 19 , 20 ] enhance the flexibility and efficiency of task assignment through their dynamic decision-making capability and optimized resource allocation mechanism. However, centralized methods are often impractical for scenarios involving enormous robots due to their high computational complexity. On the other hand, although decentralized methods may not guarantee optimal solutions, their ability to substantially reduce computational complexity highlights their practicality. Among them, the most representative is the auction-based method, like [ 14 , 15 , 16 ] , which dynamically iterates the allocation results based on the rewards, significantly reducing the computation time. Recently, the decentralized algorithm proposed in [ 21 ] has significantly improved the solution quality and computation time by introducing ADMM (Alternating Direction Method of Multipliers) [ 22 ] . However, the works above primarily focus on task allocation. In practice, robots must navigate around obstacles to perform their tasks, which introduces additional travel distances from collision avoidance and affects the quality of task allocation solutions. Therefore, the path planning problem in multi-robot task allocation, a crucial and urgent issue, still needs to be addressed.
+
+Fortunately, many studies have focused on solving task allocation and path planning problems for multiple robots. For instance, Turpin et al. [ 23 ] introduced a concurrent task allocation and trajectory planning method that enables robots to combine time-optimized trajectories and speed adjustments. Nawaz et al. [ 24 ] explored the application of Markov Decision Processes (MDP) for addressing the unified problem of task allocation and path planning in underwater environments. The work [ 25 ] segmented tasks into groups and utilized conflict-based minimum cost flow algorithms and answer set programming for unified path planning and target allocation. The approach proposed in [ 26 ] tackled task allocation and path planning issues by combining the advanced SMT solver [ 27 ] and the improved Conflict-Based Search (CBS) algorithm [ 28 ] . Furthermore, Okumura et al. [ 29 ] utilized suboptimal algorithms by initializing with an arbitrary target assignment and iteratively applying one-step path planning with target swapping to improve solution efficiency. Despite these advances, ensuring real-time performance for multi-robot systems in large-scale workspaces with rich obstacles remains challenging. The methods proposed in [ 30 , 31 ] are suitable for solving multi-robot task allocation and path planning in large-scale maps. However, they do not consider environmental obstacles and assume that robots have unlimited endurance, which is unrealistic in practical applications. In our previous work [ 7 ] , although we addressed the issue of obstacles in large-scale environments, we overlooked the coupling of multi-robot task allocation and path planning and also assumed that robots have unlimited endurance.
+
+Unlike the methods above, the proposed method in this letter addressed the multi-robot task allocation and path planning in large-sized workspaces while considering the robots’ maximum range constraints. It ensures that robots can complete their assigned tasks within maximum persistence limits, making the approach more practical than existing methods.
+
+III Problem Formulation
+
+Let denote the set of robot indices, where is the number of robots. Each robot must travel to assigned task positions for task performing, with the constraint that each robot can execute at most tasks and cannot exceed its maximum allowable endurance distance ( ). Simultaneously, let represent the set of task indices, with being the total number of tasks. Let indicate the travel distance discount factor, primarily to ensure the monotonic decrease of the objective function. In this paper, is set empirically as .
+The objective function indicates the total reward value for robot visiting the tasks in set , which can be expressed as
+
+(1)
+
+where denotes the number of elements in a set, is the ordered set of tasks allocated to robot , is the path required for robot to visit all tasks in , is the sub-path in from the position of robot to the position of task , and is the length of the sub-path . Note that the ordered set indicates that robot performs the task in in ascending order of the task indices.
+
+In the task allocation process for robot , the marginal reward assigning an unallocated task to the robot can be defined as
+
+(2)
+
+By combining Eq. ( 1 ) with Eq. ( 2 ), the marginal return can be derived as
+
+(3)
+
+Note that ensures that the objective function is submodular, possessing the critical property of diminishing marginal gains. Specifically, the marginal reward for adding a task will not increase as the number of allocated tasks grows. This property of diminishing marginal returns is crucial as it guarantees the algorithm’s convergence, as noted in [ 14 ] .
+
+Finally, the overall objective function for maximizing the marginal reward across all robots in task allocation can be formulated as
+
+(4)
+
+where is a binary variable equal to if task is assigned to the robot , and otherwise. The constraints are as follows: 1) the number of tasks allocated to robot must not exceed its maximum task capacity ; 2) each task can be assigned to only one robot, though a robot may be assigned multiple tasks; and 3) the total distance traveled by each robot during task execution must not exceed its maximum range distance . Note that we assume ideal communication among all robots and that they are aware of each other’s positions as well as the positions of all tasks.
+
+IV METHODOLOGY
+
+IV-A Fast Path Planning
+
+This part presents our proposed fast path planner, which, unlike traditional search-based methods [ 8 , 9 ] , does not require a grid map. It enables direct executing path planning in continuous workspaces and is suitable for deployment across maps of various sizes. Our previous work [ 7 ] introduced a lightweight path generation approach using a Guidance Point Strategy (GOS). However, this method is prone to myopic decision-making, potentially leading to local optima. The proposed path planner builds upon the guidance point concept and addresses its limitations.
+
+Figure 1:
+The geometric illustration of the proposed path planner, where represents the optimal global guidance point obtained in the *th iteration.
+
+We first introduce the notations used subsequently. Let the robot’s starting and ending points be and , respectively. Let represent a directed segment in Euclidean space, where and are the segment’s starting and ending points, respectively, directed from to . Let the current searched path node be , with its corresponding guidance point being . Note that at the first iteration, , and . To simplify, we regard the robot as a disc with radius. Let set indicate all environmental obstacles inflated according to the robot’s radius . Note that each inflated obstacle can be approximated by a polygon, allowing us to use polygons to represent various shaped obstacles in the environment, including both convex and concave ones. Additionally, if two inflated obstacles overlap, a polygon can enclose them, treating them as a whole obstacle. It ensures that there is always a traversable path between each inflated obstacle for the robot, guaranteeing the completeness of the algorithm’s solution.
+In each iteration, let be the optimal global guidance point, and define ( ) as the set of all obstacles in the environment that intersect with the segment .
+
+Next, we explain how to obtain the optimal global guidance point in each iteration. According to computational geometry, the optimal global guidance point must be among the vertices of the inflated obstacles as long as an obstacle-avoiding global path exists. Assuming obstacles in intersect with segment in a given iteration, we have . Let be the convex vertices set of intersecting obstacle , where and is the number of convex vertices of . Meanwhile, we define another set of convex vertices as
+
+(5)
+
+where the segment formed by any vertex in and the current searched path node does not intersect with obstacle . Further, let and to represent the leftmost and rightmost vertices in along the direction of segment , respectively. We then define the optimal convex vertices set as
+
+(6)
+
+where , and both the segment and do not intersect with obstacle . As illustrated in Fig. 1 , two obstacles intersect with segment in the first iteration. Here, , , , and . Taking the intersecting obstacle as an example, its corresponding , , and the leftmost and rightmost vertices along being and , respectively. Meanwhile, according to Eq. ( 6 ), for the intersecting obstacle .
+
+Thus, we can derive the formulation for the candidate guidance point corresponding to the intersecting obstacle as follows:
+
+(7)
+
+where represents the distance from vertex to segment . Then, let be the set of potential optimal global guidance points for all intersecting obstacles, i.e., . Subsequently, we can deduce the formulation for the optimal global guidance point as
+
+(8)
+
+where denotes the distance from vertex to segment . As shown in Fig. 1 , during the first iteration, the candidate guidance points corresponding to the intersecting obstacles and are and , respectively, as determined by Eq. ( 7 ). At the same time, based on Eq. ( 8 ), the optimal global guidance point is .
+
+Finally, we summarize the proposed global path planning algorithm into Algorithm 1 . In the first iteration, the robot’s current path node and the guidance point are its starting point and ending point , respectively. Simultaneously, the is added to its global path , and the segment is defined as .
+Then, all inflated obstacles intersecting with segment are identified from the set (see lines 1-3 in Algorithm 1 ). After each iteration yields the optimal global guidance point , we add to the if segment does not intersect with any obstacles from the set . At the same time, we also update the current path node , the guidance point , and segment (see lines 9-14 in Algorithm 1 ). If segment intersects with any obstacles in set , the guidance point and segment will be updated by (see line 16 in Algorithm 1 ). This process is repeated until is the robot’s endpoint or does not exist.
+
+Algorithm 1 Global Guidance Point Strategy (Global-GOS)
+
+0:    , , ,
+
+0:   The global path of robot
+
+1:    ,
+
+2:    ,
+
+3:
+
+4:    while    do
+
+5:       Compute the with Eq. ( 8 )
+
+6:       if   does not exist  then
+
+7:          return
+
+8:       end   if
+
+9:       if   is   then
+
+10:
+
+11:          if     then
+
+12:             return
+
+13:          end   if
+
+14:          , ,
+
+15:       else
+
+16:          ,
+
+17:       end   if
+
+18:
+
+19:    end   while
+
+Complexity Analysis: As summarized in Algorithm 1 , the Global-GOS planner’s computational time complexity primarily arises from searching the guidance point and performing intersection checks. According to the implementation details, the computational complexity of the guidance point search is approximate as in the worst case, where is the total number of vertices of all polygonal obstacles in the environment. Intersection checks are implemented by determining whether line segments intersect, so the computational complexity is also in the worst case. Consequently, in the worst case, the computational complexity for each iteration of the proposed path planner remains approximate as . Assuming iterations, the computational complexity for the planner to find a global path is . For traditional search-based methods like A* [ 8 ] and JPS [ 9 ] , their computational complexity in the worst case is , where is the number of edges connecting adjacent grid cells, and is the number of grid cells. In large-sized workspaces, the number of grid cells far exceeds the number of obstacle vertices, resulting in . Based on the above analysis, the path planner proposed in this letter is significantly more efficient than traditional search-based methods in large workspaces.
+
+IV-B Task Allocation Incorporated Path Planning
+
+This part presents the proposed auction-based method, RangeTAP, for task assignment that incorporates path planning and accounts for the robots’ maximum range limits. Traditional auction-based methods typically involve two key phases: the auction phase and the consensus phase. However, these methods generally exploit the ideal straight-line path length for the bids during the auction phase, neglecting the extra travel distance required for obstacle avoidance. It could lead to situations where robots cannot reach their assigned task positions due to limited endurance capabilities. Building on our previous work [ 7 ] , we integrate the proposed Global-GOS planner into the auction phase to obtain the obstacle-avoidance path lengths and ensure assigned tasks are within the robots’ endurance limits. Furthermore, we propose a novel lazy auction strategy to speed up the convergence of task allocation by recalculating bids only if they differ from the previous iteration. Therefore, the contribution of task assignment primarily focuses on the auction phase, while the implementation of the consensus phase remains consistent with our previous work [ 7 ] . We describe the implementation details of the auction phase in the Algorithm 2 . Readers can refer to [ 7 ] for details on the consensus phase.
+
+The notations used subsequently are consistent with those in Section III . In addition, let represent the initial position of robot , and denotes the current reward value for robot in task allocation, calculated through Eq. ( 1 ). Let be the travel distance required for robot to visit all task positions in . Furthermore, in each iteration, the marginal reward for assigning task to robot is denoted as . Notably, the marginal reward is the bid that robot places for each unallocated task . In Algorithm 2 , the function is used to monitor whether a new task has been added to . The function is responsible for obtaining the obstacle-avoidance path for robot to visit the tasks in in sequence. The as well as are used to get the corresponding path length. The function Global-GOS is our proposed path planner, with implementation details shown in Algorithm 1 . The notation represents the position of task .
+
+We first describe the proposed lazy auction strategy. In each iteration, we determine whether robot needs to recalculate the marginal reward through the following two rules: 1) If robot has not allocated a new task, its marginal reward for all unallocated tasks remains unchanged, and there is no need to recalculate. 2) If robot is assigned a new task, the marginal reward for all unallocated tasks should be recalculated. When robot is assigned a new task, the corresponding increase in path length is added to , and the corresponding increase in reward is added to the current reward . These steps are illustrated in lines 1-3 of Algorithm 2 . Then, we substitute into Eq. ( 3 ) to recalculat . Since the latter part of Eq. ( 3 ) always equals in each calculation, it only needs to be updated once whenever robot is assigned a new task. It reduces the computational load during the auction phase, thereby accelerating the convergence of the task allocation process.
+
+On the other hand, unlike traditional auction phases, our method does not use the ideal straight-line distance to calculate the marginal reward . Instead, we use the proposed Global-GOS planner to compute the obstacle-avoidance path length required to assign task to robot . This length is then substituted into Eq. ( 3 ) to calculate the marginal reward . By considering the extra travel distance required for obstacle avoidance, we can more accurately predict whether the travel distance needed for the robot to complete its tasks will exceed its maximum endurance distance. If assigning task to robot would cause the robot’s travel distance to exceed its maximum endurance distance, the corresponding marginal reward is set to sufficiently small but greater than zero. It ensures that the robot can complete its assigned tasks within its maximum range limit. The above process is presented in lines 6-14 of Algorithm 2 .
+
+Analysis: According to the implementation details, the proposed improvement does not increase computational complexity, and the algorithm’s optimal approximation guarantee remains consistent with our previous method [ 7 ] . In the worst case, the approximation guarantee is 50% for monotone submodular objective functions, and the computational complexity is , where is the number of tasks and is the number of task-robot pairs. Readers can refer to [ 7 ] for related details.
+
+Algorithm 2 Lazy-Based Auctions in RangeTAP
+
+0:
+
+0:   The marginal reward of robot for task
+
+1:    if     then
+
+2:       Compute the with Eq. ( 1 )
+
+3:       ,
+
+4:    end   if
+
+5:
+
+6:    if   is   then
+
+7:
+
+8:    else
+
+9:
+
+10:    end   if
+
+11:
+
+12:
+
+13:    if     then
+
+14:
+
+15:    end   if
+
+16:    return
+
+V Experiments
+
+In this section, we show the effectiveness of the proposed algorithm through extensive simulations and a real-world experiment. All code is implemented with Python and executed on a 3.2GHz AMD Ryzen 7 7735H Lenovo laptop with 16GB of RAM and RTX 4060 GPU.
+
+V-A Ablation Studies
+
+(a)
+
+(b)
+
+(c)
+
+Figure 2: The results of comparisons in path planning. (a) The small-siezd map. (b) The medium-siezd map. (c) The large-siezd map.
+
+TABLE I: Compared for Path Planner: Avg.Time (s) , Length (m)
+
+Map Sizes
+Metrics
+A*
+Neural A*
+JPS
+Ours
+
+Small
+Avg.Time
+0.112
+0.025
+0.005
+0.005
+
+(32 32)
+Length
+40.7
+41.8
+40.4
+37.3
+
+Medium
+Avg.Time
+5.197
+0.222
+0.162
+0.029
+
+(256 256)
+Length
+284.1
+343.4
+284.1
+278.2
+
+Large
+Avg.Time
+11.051
+-
+4.147
+0.041
+
+(6000 4000)
+Length
+7413.9
+-
+7413.9
+7207.6
+
+We first compare the proposed Global-GOS planner with three other planners—A* [ 8 ] , Neural A* [ 13 ] , and JPS [ 9 ] —on maps of three sizes, specifically , , and , to demonstrate our planner’s efficiency. It is important to note that our planner does not require a grid map for path planning; instead, it treats obstacle regions as polygon-enclosed obstacles. In contrast, the other three algorithms require a grid map in path planning. Each experiment is repeated five times on each map, and the average computation time is recorded to evaluate the performance of the four planners. The results are shown in Fig. 2 and Table I , in which the Avg. Time and Length represent the average computation time for path planning and the path length, respectively. Fig. 2 shows that the paths generated by our planner have fewer path nodes than those of the other three planners and are relatively smoother. From Table I , it is evident that our planner outperforms the other planners in terms of average computation time and path length, especially in the large-sized map, where the average computation time is more than 100 times faster than that of the JPS, which is the best-performing among the rest of planners. Note that Neural A* cannot successfully be trained on the large-sized map ( ) due to the excessive number of grids, leading to path planning failure. The experiments demonstrate that our planner is highly effective for quickly predicting the obstacle-avoidance path length in task allocation, ensuring that tasks assigned to robots fall within their maximum range. In addition, the results also show that our planner is promising in ensuring the real-time of robotic systems in large-sized maps.
+
+V-B Simulation and Real-world Experiments
+
+In real-world applications, such as autonomous exploration and logistics delivery, task allocation must consider the robots’ maximum range constraints to ensure they complete their assigned tasks within their range limits. Additionally, robots must return to a designated area after completing their tasks. To simulate such scenarios, we randomly deployed 18 task areas and 7 robots in a small, crowded workspace with , as shown in Fig. 3 . We then conducted both simulation and real-world experiments to validate the superiority of the proposed RangeTAP for task allocation and path planning with the robots’ maximum range limits. Meanwhile, a task area is believed to be successfully visited when the distance between a robot’s position and its task position is less than its radius. The dynamic collision avoidance module uses the improved ORCA algorithm in our previous work [ 7 ] .
+
+Figure 3:
+Experimental results for task allocation and path planning considering robots’ maximum range limits: (a) Trajectories of all robots with the proposed RangeTAP. (b) The maximum remaining range for each robot under the proposed RangeTAP. (c) Trajectories of all robots with the LRGO. (d) The maximum remaining range for each robot under the LRGO.
+
+We first conduct simulations to compare the proposed RangeTAP with our previous pipeline LRGO [ 7 ] . Here, we selected the Ackermann model unmanned ground vehicles for the experiments. The parameters of the vehicles are set as follows: the radius is , maximum speed is , minimum speed is , minimum turning radius is , and maximum task capacity is . Considering the workspace size, the maximum endurance distance of three vehicles is set as , while the rest of the four is set as . Finally, the results of the comparisons are shown in Fig. 3 . By observing Fig. 3 3 and 3 , it can be found that all robots successfully visit their task area and return to their starting positions by using our RangeTAP. However, when using the LRGO, as shown in Fig. 3 3 and 3 , robot 4’s remaining range drops to , causing it to stop midway and block robot 0 from proceeding. This occurs because the LRGO does not account for the robots’ maximum range constraints during task allocation, leading to task 16 being assigned to robot 4, which exceeded its maximum range.
+
+Figure 4: The results of real-world experiment with our proposed RangeTAP: (a) The trajectories of 7 robots visiting 18 task areas. (b) Each robot’s maximum remaining range after completing tasks and returning to their respective starting positions. More details can be found in the attached video at https://youtu.be/RY3WLkE3kZs.
+
+To further validate the practicality of our proposed pipeline in the real world, we conducted real-world experiment based on the above simulations. All experimental settings are the same as those in the above simulations. Regarding hardware, each robot’s computing platform is the NVIDIA Jetson Nano, and we additionally equipped them with Livox Mid360 LiDAR. Meanwhile, we select the Point LIO [ 32 ] algorithm as the localization module. Notably, since the LRGO method failed to ensure that each robot successfully returned to its starting position in the above simulations, we only conducted the real-world experiment using our RangeTAP. Fig. 4 shows the experimental results. Specifically, Fig. 4 4 shows the trajectories of 7 robots visiting 18 task areas. Fig. 4 4 shows each robot’s maximum remaining range. As shown in Fig. 4 , all robots successfully visited their assigned task areas and returned to their starting positions. Additionally, as observed in Fig. 4 4 , each robot still has some remaining range after returning to its starting position. The real-world experiment shows the practicality of the RangeTAP for task allocation and path planning with robots’ maximum range constraints.
+
+V-C Evaluations in Large-scale Scenarios
+
+Figure 5:
+The evaluation results in the large-sized scenario: (a) The average computation time of task allocation for all robot. (b) The average total travel distance required for robots to complete all tasks.
+
+This part evaluates the performances of the proposed RangeTAP in the large-sized workspace, as presented in Fig. 2 2(c) . We compare the RangeTAP with the DSTA algorithm [ 15 ] , LSTA algorithm [ 16 ] , and the LRCA algorithm proposed in [ 7 ] . Evaluation metrics include the average computation time for all robots to solve task allocation and the average total travel distance required for robots to complete all tasks. For fairness, the other three methods introduced the proposed Global-GOS planner to obtain the obstacle avoidance path length. In the experiments, there were 100 robots and 200 to 500 tasks, and 20 tasks incremented each group test. Each group experiment was repeated ten times for the average computation time and the total travel distance. The positions of all robots and tasks are randomly distributed in the robots’ starting area and the workspace, respectively. Additionally, 50 robots have a maximum range of , while the rest of 50 robots have a maximum range of . The experimental results are presented in Fig. 5 , where Fig. 5 (a) represents the average computation time cost for solving task allocation, and Fig. 5 (b) represents the average total travel distance required for robots to complete tasks. From Fig. 5 (a) , it is apparent that our proposed RangeTAP achieves the shortest average total distance compared to the other three methods in most cases, while its average computation time is close to the best-performing LSTA algorithm. Significantly, when the number of tasks exceeds 420, our method also demonstrates the shortest average computation time. Moreover, when the number of tasks is 200, our method saves several kilometers of total travel distance compared to the best-performing LRCA, which is significant for saving robots’ energy consumption. Overall, our method demonstrates superior performance in computation time and solution quality for task allocation in almost all cases.
+
+VI Conclusion
+
+In this letter, we propose a novel multi-robot task allocation and path planning pipeline considering the robots’ maximum range constraints. We first introduce a fast path planner to obtain the obstacle avoidance path length in the task assignment phase, in which the experiments show that the proposed path planner is an order of magnitude faster than the current advanced planner. Then, we integrate the proposed path planner into an auction-based task allocation method to overcome the coupling problem between task allocation and path planning. Moreover, we propose a novel lazy auction strategy that saves unnecessary repetitive calculations, accelerating the convergence of the task allocation algorithm without affecting the solution quality. Finally, extensive simulation and real-world experiments show the effectiveness and practicality of our proposed pipeline. In future work, we strive to overcome the dynamic collision problem among robots in dense, dynamic environments while improving the task allocation algorithm and providing theoretical guarantees.

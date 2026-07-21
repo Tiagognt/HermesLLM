@@ -1,0 +1,527 @@
+1 1 institutetext: UC Berkeley, Berkeley CA 94704, USA 1 1 email: {victoria_tuck, pwchen, shankar_sastry, sseshia}@berkeley.edu 2 2 institutetext: Toyota Motor North America, Research Development, Ann Arbor MI 48105, USA 2 2 email: {georgios.fainekos, bardh.hoxha, hideki.okamoto}@toyota.com
+SMT-Based Dynamic Multi-Robot
+Task Allocation
+
+Victoria Marie Tuck(🖂)
+11
+
+Pei-Wei Chen(🖂)
+Denotes significant contribution11
+
+Georgios Fainekos
+22
+
+Bardh Hoxha
+22
+
+Hideki Okamoto
+22
+
+S. Shankar Sastry
+11
+
+Sanjit A. Seshia
+11
+
+Abstract
+
+Multi-Robot Task Allocation (MRTA) is a problem that arises in many application domains including package delivery, warehouse robotics, and healthcare. In this work, we consider the problem of MRTA for a dynamic stream of tasks with task deadlines and capacitated agents (capacity for more than one simultaneous task). Previous work commonly focuses on the static case, uses specialized algorithms for restrictive task specifications, or lacks guarantees. We propose an approach to Dynamic MRTA for capacitated robots that is based on Satisfiability Modulo Theories (SMT) solving and addresses these concerns. We show our approach is both sound and complete, and that the SMT encoding is general, enabling extension to a broader class of task specifications. We show how to leverage the incremental solving capabilities of SMT solvers, keeping learned information when allocating new tasks arriving online, and to solve non-incrementally, which we provide runtime comparisons of. Additionally, we provide an algorithm to start with a smaller but potentially incomplete encoding that can iteratively be adjusted to the complete encoding. We evaluate our method on a parameterized set of benchmarks encoding multi-robot delivery created from a graph abstraction of a hospital-like environment. The effectiveness of our approach is demonstrated using a range of encodings, including quantifier-free theories of uninterpreted functions and linear or bitvector arithmetic across multiple solvers.
+
+Keywords:
+Multi-Robot Task Allocation Satisfiability Modulo Theories Capacitated Robots Incremental Solving Cyber-Physical Systems Robotics
+
+1 Introduction
+
+Multi-robot systems have the potential to increase productivity by providing point-to-point pickup and delivery services, referring to the assignment to a team of robots of pickup and drop-off locations for transporting items under some optimization criteria and constraints.
+Such services have already revolutionised warehouse management [ 23 ] by eliminating long travel times between locations for workers. New mobile robot systems are being developed for point-to-point pickup and delivery in environments where human-robot interaction is more likely – such as in healthcare facilities [ 11 , 5 , 20 ] .
+Even though multi-robot systems in warehouses and healthcare settings share many similarities, the latter require a higher level of assurance. Formal methods provides this level of assurance by finding an assignment to robots if and only if one exists.
+
+In this paper, we study the application of Satisfiability Modulo Theories (SMT)  [ 2 ] to the Multi-Robot Task Assignment (MRTA) [ 3 , 15 ] problem for point-to-point pickup and delivery. We assume that the robots can execute only a limited number of concurrent tasks and assume that tasks are generated online, have a strict deadline, and each require only one robot. Although, as often used in warehouse settings, a gridworld abstraction may be applicable in a healthcare environment, the dynamic nature of the environment is better addressed through coarser abstractions (regions) within which local motion planning can be employed [ 21 , 22 ] . We therefore represent the environment by a weighted graph with nodes representing regions in the environment and weights the worst case cost (time) to move from region to region without any dynamic obstacles. Dynamic obstacles operating at shorter time scales, e.g., humans walking, could be avoided using local motion planning with safety guarantees [ 13 , 17 ] . Note that this work focuses on solving the high-level planning part and leaves local motion planning and collision avoidance to downstream planners.
+
+Satisfiability Modulo Theories (SMT)  [ 2 ] is a generalization of the Boolean satisfiability problem that answers the question whether a formula in first-order logic with background theories is satisfiable. Problems can be encoded as SMT formulas and passed to SMT solvers to determine satisfiability. Such solvers are widely used in industrial-scale applications (e.g.,  [ 18 ] ).
+Given the progress in SMT solving,
+our aim is to study the feasibility and scalability of solving the aforementioned instance of the MRTA problem with an SMT formulation.
+There are several reasons for investigating an SMT approach to MRTA: 1) at its core, MRTA is a combinatorial problem with arithmetic constraints, 2) an SMT formulation can be easily adapted to handle different variants of the MRTA problem [ 3 , 15 ] , e.g., with complex task dependencies [ 9 ] , and
+3) even satisfying solutions without guaranteed optimality are relevant for this application since hierarchical planning methods [ 21 , 22 ] can refine a non-optimal high level plan to an optimal (with respect to distance traveled) local motion plan.
+
+Our contributions are:
+
+•
+
+a general, SMT-based framework leveraging quantifier-free theories of uninterpreted functions and bitvector or linear arithmetic for dynamic, capacitated MRTA via incremental solving;
+
+•
+
+an approach to manage complexity by dynamically changing the number of free variables to fit the needs of the problem;
+
+•
+
+theoretical results of completeness and soundness;
+
+•
+
+and an experimental analysis of the runtime of our approach across different solvers (cvc5, Z3, and Bitwuzla) for a series of static (one set of tasks) and dynamic (tasks arriving online) benchmarks and showing that solver and setting used affects whether or not incremental solving is beneficial.
+
+2 Related Work
+
+Multi-Robot Task Allocation (MRTA) refers to the class of problems that encompasses many variants of the point-to-point pickup and delivery scheduling and path planning for multi-robot systems.
+For example, pickup and delivery tasks may have deadlines, robots may have to form a team to complete the task, or each robot may have different capacity constraints. For a detailed taxonomy for task allocation problems with temporal constraints, please refer to [ 15 ] .
+
+Most heuristic-based MRTA algorithms search for a plan for each robot such that all tasks are completed while minimizing some objective. [ 12 ] employs a hybrid genetic algorithm where local search procedures are used as mutation operators to solve for tasks with an unlimited fleet of capacity-constrained robots. [ 19 ] uses a nearest-neighbor based approach to cluster nearby nodes and constructs routes for each of the clusters by mapping it to a traveling salesman problem (TSP) while minimizing overall package delivery time. [ 4 ] adopts a marginal-cost heuristic and a meta-heuristic improvement strategy based on large neighborhood search to simultaneously perform task assignment and path planning while minimizing the sum of differences between the actual complete time and the earliest complete time over all tasks.
+The above heuristic-based approaches are often scalable on problems with up to 2000 tasks, but are not able to provide completeness guarantees, i.e., with hard deadlines.
+Moreover, heuristics are often tightly tied to a specific problem setting which makes it non-trivial to extend to other settings.
+For a recent review on state-of-the-art optimization-based approaches to the MRTA problem, we direct readers to Chakraa et al. [ 3 ] .
+
+In contrast, many approaches that provide strong guarantees do not scale well. [ 16 ] formulates the MRTA problem as a Mixed-Integer Linear Programming (MILP) problem to simultaneously optimize task allocation and planning in a setting where capacity-constrained robots are assigned to complete tasks with deadlines in a grid world. However, the proposed method suffers in computational performance when problem size grows large – the approach is able to handle 20 tasks with 5 agents but the execution time is unavailable in the paper.
+[ 10 ] promises globally optimal solution in a hospital setting by exhaustively searching through possible combinations of locations of interest and choosing capacity-constrained robots with minimum travel distances to complete tasks. The approach is able to solve 197 periodic tasks over a duration of 8 hours, but the runtime information for each solve is unknown. [ 7 ] is an linear-time temporal logic-based approach that provides strong guarantees and appears to scale well. However, its reliance on temporal logic may impact its ability to scale when length of the plans is large in time, whereas we represent time abstractly. Additionally, their approach does not allow for assigning robots new tasks before they have finished previous tasks, which our structure supports.
+
+In this work, we are interested in the specification satisfaction problem, which is similar to the problem of minimizing cost where the cost goes to infinity if any of the constraints are not satisfiable. In contrast to the heuristic-based approach, our proposed approach is able to give completeness guarantees if solutions do not exist, while still achieving superior performance compared to those that give strong guarantees.
+
+Symbol
+
+Description
+
+The th set of tasks in a task stream
+
+Arrival time for the th set of tasks
+
+Cumulative set of tasks until current time
+
+Task id for a task
+
+Arrival time for task
+
+Deadline for task
+
+Action sequence of an agent
+
+Prefix of length k of agent ’s action sequence
+
+The th element of agent ’s action sequence
+
+A plan for a set of agents and set of tasks
+
+Action tuple for agent at action point
+
+Converts an action id to a location id
+
+List of assumption vars limiting number of available action points
+
+Time taken to pick up/drop off items
+
+Min/max number of action points needed by task set
+
+Start/end time for task
+
+Agent that completes task
+
+Each agent’s capacity for tasks at once
+
+Encoding at the th iteration of the algorithm
+
+Move, wait, pick, drop actions
+
+Location in a set of system locations
+
+Location id in set of location ids corresponding to the location set
+
+Duration of a prefix of length of agent ’s action sequence
+
+Load of an agent at the th element in their action sequence
+
+3 Problem Formulation
+
+We use to denote the set of strictly positive integers.
+
+3.1 Workspace Model
+
+We assume we are given a finite set of designated system locations each with a unique id where . For example, each system location is a spot in a building where a robot can start, pick up an object, or drop off an object. We are given a complete, weighted, undirected graph
+where and where is 0 if and only if . The weight of the edge between vertices and is . This weight denotes the travel time between the two points, which satisfies the triangle inequality with respect to all other sites , i.e., .
+
+3.2 System Model
+
+A task is a tuple where is the task’s unique id, are the starting and ending location ids, respectively, and are the arrival time and deadline, respectively. and stand for initial and final, respectively. Each task is to move a corresponding object, which takes up one unit of capacity.
+
+Sets of tasks arrive as a sequence of incoming tasks called the task stream. Each entry of the task stream is a tuple . The first entry of the tuple is an ordered set of tasks, and the second entry is the arrival time of the set. The arrival time for any task in the set is the same as the set’s arrival time .
+We use the same time in both contexts to more easily reference the arrival time depending on if we are reference a task in the set or the entire set. Assume . We assume the stream is finite with a known total number of tasks . We require that this sequence is monotonically increasing with respect to the second element of . Let be the total set of tasks that have arrived. We constrain the task id of the first task to be zero and all following tasks to have ids that increment by one. More formally, , with . We use for the current total number of tasks where will change with the context. We will sometimes notate a set of tasks as . We require that the unique task ids start at 0 and increase by 1 for every new task that arrives.
+
+There exists a finite, zero-indexed, ordered set of agents. Each agent has a unique id and a starting position that may not be unique. Each agent has a capacity for tasks at one time.
+
+We define a set of actions that a robot can take as
+.
+The action designates that the robot is moving to location with id , designates that the robot is picking up ( ) or dropping off ( ) the task with id , and has the agent wait in the same position for a time . We use the short-hand that and similar for drop. Each of represent all actions of that type, e.g. }. We assume the pick and drop actions each take a pre-specified time of .
+
+The following definitions are used to define types of plans and the goals of our algorithm. Figure 1 shows the input, example output plans, and an example workspace. We use to denote the prefix of length of agent ’s action sequence. is an indicator function that is when is true and otherwise.
+
+Figure 1 : A task stream of sets of tasks arrives with monotonically increasing arrival times. Five system sites are shown. Example tasks and robot paths are shown on the right with , , and used to represent the actions succinctly. The result action sequence for the right robot is (M,P,M,D) and (M,P,M,P,M,P,M,D,M,D,M,D). The moves between picks or drops at the same location are used to keep a consistent structure in the plan but take no time.
+
+Definition 1
+
+Action sequence. An action sequence is a finite sequence beginning with element where each element is an action ( ).
+
+Definition 2
+
+Plan. A plan for the set of agents and set of tasks is an action sequence with length for each agent .
+
+Definition 3
+
+Duration of an action sequence. We compute the duration of a prefix of as
+
+where and and are the location ids and times, respectively, of action . for a pick action and for a drop action. for a wait is the most recent location.
+
+Definition 4
+
+Load of an action sequence. We compute the load of a prefix of as .
+
+Definition 5
+
+Consistent action sequence. A plan is made of consistent action sequences if for each agent’s sequence it starts with a move or wait; no capacity constraints are violated; any pick ( ) and drop ( ) actions for a task are immediately preceded by the move to that point (A move that will require no time is still added if the agent ”moves” to its current location.); pick precedes drop; drop follows pick; no two moves occur in a row; and any object in a sequence is only picked and dropped once ( ). An empty sequence is consistent.
+
+(1)
+
+(2)
+
+Definition 6
+
+Completed task. Tasks with id in taskset are completed by a plan if for each task there exists a single agent with a consistent action sequence that picks and drops the action. Additionally, the drop action must be before the deadline, and the time before moving to the pick action must be greater than or equal to the start time ( ).
+We define the predicates and as
+
+(3)
+
+(4)
+
+(5)
+
+(6)
+
+Definition 7
+
+We define to hold when is true.
+
+Definition 8
+
+Valid Plan. We define a valid plan for the set of agents and set of tasks as one where each agent’s is consistent and all tasks are completed. An empty plan is considered valid when . This can be written as .
+
+Definition 9
+
+Updated plan. A valid plan with agent sequence lengths is updated at a time from a previous valid plan with agent sequence lengths if the following conditions hold. In each agent’s action sequence there is an equivalent prefix to that in where the prefix is all of in followed by a wait action or . This means that past actions and the current action are unchanged. A plan can only be updated at a system location . A valid initial plan is always considered updated from an empty previous plan : . This empty plan will sometimes be notated as . We also require that each agent’s action sequence is efficient and does not contain extra waits.
+
+(7)
+
+Definition 10
+
+Soundness. Let . An algorithm is sound for a given finite task stream of length if .
+
+Definition 11
+
+Completeness. An algorithm is complete for a given finite task stream of length , if .
+
+3.3 Problem Statement
+
+Given a set of agents , task stream including a known number of total tasks, and travel time graph , after each element in the task stream arrives at , find a valid plan updated from a previous plan if one exists.
+
+4 Summary of Approach
+
+4.1 Preliminaries
+
+We assume a basic understanding of propositional and first-order logic. Satisfiability Modulo Theories (SMT), a generalization of the Boolean satisfiability problem, is the satisfiability problem for formulas with respect to a first-order theory, or combinations of first-order theories. SMT solvers, such as Z3  [ 6 ] and cvc5  [ 1 ] , are used to solve SMT formulas, where a model is returned if the SMT formula is satisfiable or otherwise reports unsatisfiability.
+Below we briefly introduce three theories of interest in the paper.
+
+The theory of Equality Logic and Uninterpreted Functions ( EUF ) introduces the binary equality (=) predicate and uninterpreted functions, which maintains the property of functional congruence stating that function outputs should be the same when function inputs are the same.
+The theory of BitVectors ( BV ) incorporates fixed-precision numbers and operators, e.g. the bitwise AND operator. Note that the modulus operator with a constant 2 can be replaced by a bitwise AND operation using a constant 1.
+The theory of Linear Integer Arithmetic ( LIA ) introduces arithmetic functions and predicates and constrains variables to only take integer values. Note that , where is a variable and and are constants, can be translated into with a fresh integer variable . In this paper, we only consider quantifier-free (QF) SMT formulas, and abbreviate Quantifier-Free Bit Vector Theory (Linear Integer Arithmetic) with Uninterpreted Functions as QF_UFBV (QF_UFLIA).
+
+4.2 Encoding Literals
+
+We introduce the notion of an action id to describe what action an agent is taking. The first action ids represent going to the corresponding agent number’s starting position. For each following pair of values , the values correspond to picking up and dropping off the th object, respectively.
+
+Each agent in is allowed action tuples where a tuple for an action point = . is the id of the action being taken, is the time by which the action corresponding to the action id has been completed, and is the agent’s load at the time after completing the action with id .
+
+For each task , we define the task start and end times with agent completing the task . This creates a tuple .
+
+4.3 Incremental Solving
+
+For tasks arriving online, we must re-solve our SMT problem given the new tasks. We implement this using push and pop functionalities provided by SMT solvers to retain information about previous solves. We push constraints onto the stack and pop them before adding new tasks as explained in AddTasks(). Past action points are constrained to be constant in SavePastState().
+
+We use assumptions-based incremental solving to adjust the number of action points used. This allows us to force the solver to start with the minimum number necessary and search for the sufficient number needed for a sat result if one exists. We assume we are either given a list of action point counts or will construct a reasonable list by starting with the and incrementing by two to inclusive. The last value of the user provided list must be . More about is explained in section 5 . From this, we define an assumption list of booleans the same length as . An element is used as an input to the solver to designate how many action points to use. in the encoding to allow for using the max number of action points if necessary to find a satisfying assignment.
+
+4.4 SMT Encoding
+
+Fig. 2 includes the types of constraints that are used in our encoding. We include all for the initial solve and then some are iteratively removed and added for additional solves as explained in Algorithm 1 . Assume is set large enough to be greater than the maximum deadline of any task to appear plus maximum travel time between any two points. For our completeness argument, we will assume that .
+
+For readability, we define the following symbols:
+
+(8)
+
+(9)
+
+(10)
+
+(11)
+
+(12)
+
+E.1 initializes the action tuples; E.2 , E.3 , and E.6 relate action tuple pairs; E.4 restricts the uninterpreted functions, E.5 and E.7 bound action point values, E.8 restricts the task uninterpreted functions, E.9 - E.11 relate action and task tuples; and E.12 restricts task tuples.
+Note that and are pre-computed and are within {0, 1}.
+
+(E.1)
+
+(E.2)
+
+(E.3)
+
+(E.4)
+
+(E.5)
+
+(E.6)
+
+(E.7)
+
+(E.8)
+
+(E.9)
+
+(E.10)
+
+(E.11)
+
+(E.12)
+
+Figure 2 : Constraints used in the encoding developed in Algorithm 1
+
+4.5 Overall Algorithm
+
+Figure 3 : Flow chart of Algorithm 1 starting at the black circle. denotes a conditional and a changed variable . On the right is the assumption block to manage problem size. The third row from the top (in yellow) shows pushes and pops of the solver state.
+
+Algorithm 1 defines the overall algorithm. Figure 3 shows a flowchart of Algorithm 1 . We define the following functions for use in the algorithm:
+
+•
+
+Push( ), Pop( ) : Refers to pushes and pops for incremental solving.
+
+•
+
+Solve( ) : Solves the encoding assuming returning the Result sat, unsat, unknown and satisfying assignment if available.
+
+•
+
+: Taking each agent’s action points in order, for each action point after the 1st where , let . If , add . Add , if and if .
+
+•
+
+SavePastState( ) : For each agent, loop from to , calling Add( ) until at which point is saved into . Return the updated encoding and .
+
+Algorithm 1 Overall Algorithm
+
+1:
+
+2:
+
+3:    WaitForTaskSet
+
+4:    if
+
+5:       SavePastState(
+
+6:    // Add constraints for new tasks
+
+7:
+
+8:    // Update constraints due to new tasks
+
+9:    while
+
+10:       if      // Increment if num of action points
+
+11:          // is smaller than minimum needed
+
+12:          continue
+
+13:       , = Solve( ) // Invoke SMT solver
+
+14:       if
+
+15:          = GetPlan( )
+
+16:          break
+
+17:       // Unsat case – more action points may be needed
+
+18:    if
+
+19:       return unsat
+
+20:
+
+21:    Pop( )
+
+22:    GoTo 3
+
+In Algorithm 1 , lines 1 and 2 add constraints that do not use task or arrival time information. Lines in between 3 and 22 contain code run after waiting for each task set to arrive. For each task set other than the 0th, line 5 saves the state of action points that have occurred in the past or that an agent is currently completing. In lines 6 - 8 , we add constraints relating to the incoming set of tasks, pushing as necessary so that constraints can be popped later. The constraints that are pushed and popped are those that are based on new information ( and ). In lines 9 to 17 , we iteratively increase the number of action points used until the problem returns sat or the sufficient number of action points is reached in which case if the problem still returns unsat it will continue to return unsat as is discussed in section 5 . Lines 10 to 12 increase the number of action points until the necessary number for the total number of tasks is reached. Lines 13 through 17 check the encoding with the given assumption, returning a plan if sat and incrementing the index into the action point count list if not sat. Line 21 pops the most recent model.
+
+5 Theoretical Results
+
+In this section, we prove soundness and completeness for Algorithm  1 as described in Def.  10 and 11 .
+We assume the solver used is sound and complete for the theories of bitvectors, uninterpreted functions, and linear integer arithmetic.
+Due to space constraint, additional proofs have been moved to the appendix. Proofs for Lemmas and Lemmas can be found in Appendix  0.A and 0.B , respectively.
+
+5.1 Soundness
+
+We first state two lemmas about our algorithm providing consistent action sequences and completing tasks given an initial task set of . To help in proving soundness, we also define strictly monotonically increasing action point times as .
+
+Lemma 1
+
+Consistency of action sequences. If is sat, .
+
+Proof
+
+(Sketch) We show only move/pick or move/drop pairs will be added to each action sequence if it is not empty. Therefore, the first action will be a move, there will be no consecutive moves, and corresponding moves will proceed picks/drops. Then, each second action can be mapped to the id for an action point, which constrains picks to be before drops and vice versa. We next show action point times are unique per agent by arguing that the alternative would require assigning two different times to the same task start or end time. This allows us to show picks and drops only occur once. Finally, we map loads of the action sequence to loads in the encoding to show capacity is adhered to.
+
+Lemma 2
+
+Completion of tasks. If is sat, for .
+
+Proof
+
+(Sketch) We first show that if is sat, by construction each task should be started by an agent and be completed by the same agent. Moreover, no two agents can start or complete the same task because that would imply that two distinct values are assigned to in  E.10 . Finally, by construction the action point times satisfy the start time and deadline constraints, and by mapping time values to durations of subsequences we can prove that all timing constraints are satisfied.
+
+We next state three lemmas that combined state that a sat result for iteration means our algorithm will fulfill provided a previous result of sat also led to the plan fulfilling .
+
+Lemma 3
+
+Plans are updated. Assume . If is sat, .
+
+Proof
+
+(Sketch) We are updating from a valid plan if . Consider two cases per agent: 1) The duration of the previous action sequence is less than . SavePastState( ) will save action points that only have times in the past, so either the new action sequence will be the same or will include a wait. This is because the time between the last action point of the previous assignment and the first changed action point will be greater than just a travel time plus a pick/drop. 2) Duration is greater than or equal to . The time of the last action point copied from the previous assignment will be , so there will be an equivalent prefix, and no new waits will be added.
+
+Lemma 4
+
+Updated consistency. Assume . If is sat, .
+
+Proof
+
+(Sketch) Much of the proof can be repeated from that of Lemma 1 . The key differences are the potential for added wait actions. Therefore, simple pairs of a move and pick/drop will now occasionally be a wait, move, and pick/drop. The waits will shift the mapping between actions and action id number but the statements from before still hold i.e., that a task is picked before dropped and vice versa. Action point times are still strictly monotonically increasing. We show this by remembering that the saved action point times are strictly monotonically increasing. We know that the new ones will be strictly monotonically increasing and greater than , so the whole sequence will be, and we can claim pick and drop actions only occur once as before.
+
+Lemma 5
+
+Updated completion. Assume . If is sat, where .
+
+Proof
+
+(Sketch) Much of the proof can be repeated from that of Lemma 2 . For tasks that are completed before the arrival time of new tasks, the duration constraints are satisfied. For all action points that take place after , since the encoding still constrains that each task starts after and ends before and we are able to map action point times to durations, the timing constraints will be fulfilled.
+
+In Theorem 5.1 and the following proof, we use the above lemmas to build an inductive argument that our algorithm is sound.
+
+Theorem 5.1
+
+Soundness of Algorithm. Algorithm 1 is sound.
+
+Proof
+
+Assuming , the initial plan by definition. By Lemmas 1 and 2 , where . We have therefore shown a base case that .
+
+We will next make an inductive argument to show that at each iteration we are building a valid, updated plan with strictly monotonically increasing action point times. We need to show for that . We have two cases: 1) and 2) . By construction, the algorithm will end and return unsat if for , so if then for then each implication is true proving the statement for this case. For , if we assume = sat), then by Lemmas 3 , 4 , and 5 , implies and trivially satisfies the formula. The actual statement of soundness can be implied from this result.
+
+5.2 Completeness
+
+In the following three lemmas, we state first that is the maximum number of action points needed for an encoding provided the max number of tasks that will arrive is known. Then, we show that given we start with this maximum number of action points our algorithm is complete. Finally, we state that we will reach this number of action points in our algorithm if necessary. This allows us to then prove completeness.
+
+Lemma 6
+
+Maximum number of action points. If an assignment does not exist for an encoding when of action points then no assignment exists for .
+
+Proof
+
+As shown in Lemma 1 , pick and drop ids will only occur once per task in an agent’s assignment in a satisfying . By construction, action point ids must be either or . Therefore, for an agent , the maximum number of action points that can be assigned to a value other than is . Adding in the constrained 0th action point, the total is where for . Therefore, adding an extra action point does not add new free variables, so an unsat result cannot turn sat by adding more action points.
+
+Lemma 7
+
+Conditional Completeness. Assume . If , Algorithm  1 is complete.
+
+Proof
+
+(Sketch) We want to show that for each iteration in Algorithm 1, if given a plan for which , we can find a satisfying assignment . Take the action sequence for each agent . Set the initial action point . Find the 1-indexed subsequence of indices of pick and drop actions. For each element in the subsequence, let or where is the id of the task that is picked or dropped, respectively. Set and . For the task , if , set . If , set . Set . Set all remaining action points to . In Appendix 0.B we show that this assignment is satisfying by going through constraints in the encoding.
+
+Lemma 8
+
+Increment to . Following Algorithm 1 , k will eventually be such that the number of free action points .
+
+Proof
+
+An action point is free if it is not constrained to have . By inspection we see that the while loop in Lines 11 and 17 increases the index into the action point list which changes the assumes until the last one which then places no restriction on the encoding. By construction, the encoding can use all action points when no assumptions are present.
+
+Theorem 5.2
+
+Completeness of Solve. Algorithm 1 is complete.
+
+Proof
+
+By Lemma 8 , we will reach . By Lemma 7 , we know that given a sufficiently large , the algorithm is complete.
+
+6 Experimental Analysis
+
+In this section, we evaluate the performance of our approach for initial solves and incremental solves for tasks arriving online. Specifically, we aim to answer the following research questions:
+
+[label=]
+
+1.
+
+RQ1 : How does the initial solve scale with respect to the number of tasks, number of agents, and number of action points? How does it scale with respect to different theory encodings?
+
+2.
+
+RQ2 : How does incremental solving scale, and is it more effective than non-incremental solving at handling tasks arriving online? How does task set batch size affect the performance?
+
+For the initial solve, we generated benchmarks using the Z3Py API for initial solve in both QF_UFLIA and QF_UFBV.
+For conciseness, we abbreviate these as LIA and BV, respectively. For incremental solving, we implement the encoding in BV using both Z3Py and the Bitwuzla  [ 14 ] Python API. For BV benchmarks, variables are encoded using small-domain encoding  1 1 1 Link to implementation and benchmarks: https://github.com/victoria-tuck/SMrTa .
+
+Our workspace model represents an indoor setting with hallways and twenty rooms. It aims to reflect the complexities and challenges robots face in navigating complicated indoor settings. System locations were chosen from critical regions and travel time between pairs of locations were calculated with the approach in [ 21 ] . Agents’ start locations and tasks start and end locations are uniformly randomly sampled from the system locations.
+Our evaluation consists of two sets of benchmarks, discussed separately in Section  6.1 and 6.2 . We use Z3, Bitwuzla, and cvc5 as state-of-the-art SMT solvers.
+In the following, we abbreviate - as a solver setting where solver runs on some benchmarks in theory .
+All experiments were run on an AWS EC2 c5.4xlarge instance with 16 Intel Xeon Platinum cores running at 3.0GHz with 16GB RAM. All solvers were given a 3600 seconds timeout on each query.
+
+6.1 RQ1: Performance of Initial Solve and Comparison on Theories
+
+Figure 4 : Cactus plot for solver runtimes. Red line represents the 3600s timeout.
+
+We create a set of 200 benchmarks with number of tasks ranging from 10 to 30 and number of agents from 5 to 20 both with an interval of 5 and ten instances for each combination. Task deadlines are sampled from a uniform distribution. Minimum number of action points were used. We ran both Z3-BV and Z3-LIA, Bitwuzla-BV, and cvc5-LIA on the initial solve benchmarks with max capacity equal to 2 or 3.
+
+Figure  4 shows the cactus plot for each solver. Solvers running on BV benchmarks consistently outperformed those running on LIA. Bitwuzla-BV performed the best, solving 184 and 181 instances, followed by Z3-BV solving 177 and 175 with and respectively. Solvers in general seem to perform better with larger max capacity, and we speculatively believe the constraint of to be easier to solve.
+We also conducted an experiment using the maximum number of action points ( bwz_bv_max_ap in Fig.  4 ) to show that action point number significantly affects performance.
+
+Figure  5 shows the relation between problem size and solver performance for Bitwuzla-BV and Z3-BV with . In both plots, runtime grows as number of tasks grows, and when the number of tasks is fixed, a larger number of agents, which implies a smaller minimum number of action points, tend to lead to faster runtimes. Bitwuzla-BV generally outperforms Z3-BV on benchmarks with , while Z3-BV outperforms Bitwuzla-BV on those with .
+
+Figure 5 : Runtime analysis on Bitwuzla-BV and Z3-BV under multiple settings. Boxes represent quantiles, circles represent outliers, and lines represent means of runtimes. Observe that runtimes are faster when number of agents is larger.
+
+6.2 RQ2: Performance of Incremental Solve
+
+We create a set of 20 benchmarks with 20 agents that simulate a real world scenario where tasks arrive continuously. With a total of 200 tasks, we assume that each task arrives every 8 time units, and expires in time units after its arrival.
+We use batch (task set) sizes . For each batch size , the algorithm collects tasks and invokes the solver every tasks. Due to the superior performances in the initial solve, only Bitwuzla-BV and Z3-BV with were considered. Tasks are added incrementally via push/pop functionality, and action points are added using assumption variables according to the approach shown in Algorithm 1 . For non-incremental solving, we copy all assertions of the incremental solver without the pushes/pops to a newly instantiated solver and assert the assumption variables.
+
+We timed the execution of both solvers using incremental solving and non-incremental solving. The number of total free action points across agents was also recorded as an indicator of query difficulty.
+Fig.  6 shows the results of running Bitwuzla-BV and Z3-BV with batch size equal to 1 and 10 with 200 tasks and 20 agents.
+We observed that performances on incremental and non-incremental solving depend greatly on the solver and batch size – Z3-BV significantly outperforms Bitwuzla-BV on incremental solving especially when batch sizes are small, as shown in the blue line in Fig.  5(b) , while Bitwuzla-BV performs better on non-incremental solves with larger batch sizes, as shown in the orange line in Fig.  5(c) . Empirically, Z3-BV took around 260 seconds on average to solve for 200 tasks. Based on the observations, we suggest using Z3-BV/Bitwuzla-BV with incremental/non-incremental solving when batch sizes are small/large.
+
+Notice that there are peaks in runtime across all settings. These peaks occur when the minimum number of action points required increases. With 20 agents and batch size equal to 1 (10), a peak occurs every 20 (2) batches as an additional action point is needed every 20 tasks. We speculate this to be due to an increase of the search space when extra action points are introduced (shown via red lines in Fig.  6 ). Note that runtime does not correlate to the number of action points that have to be assigned to complete all available tasks, which is an indicator of the number of un/re-assigned tasks (shown in green in Fig.  6 ).
+
+In comparison to heuristic-based approaches  [ 19 ] , those approaches will be faster but lack the guarantees of our approach. Additionally, when comparing others with guarantees  [ 16 , 4 ] , these lack runtime information.
+
+(a) Bitwuzla-BV with batch size = 1.
+
+(b) Z3-BV with batch size = 1.
+
+(c) Bitwuzla-BV with batch size = 10.
+
+(d) Z3-BV with batch size = 10.
+
+Figure 6 : Performance comparison for incremental v.s. non-incremental solves with .
+
+7 Conclusion and Future Work
+
+In this work, we present a SMT-based approach to the problem of Dynamic Multi-Robot Task Allocation with capacitated agents. Our algorithm handles online tasks and iteratively adjusts the size of the problem in order to manage computational complexity. We show its efficacy on problems of up to 20 agents and 200 tasks, showing the potential for our approach to be used in longer settings. Future work includes extending to stochastic settings to better accommodate dynamic environments where a probabilistic guarantee of adherence is desired potentially using probabilistic logics [ 8 ] . Further extensions include allowing agents to pass objects to one another, and, specifically for hospital settings, representing complicated features like elevators. We also believe that this problem setting can act as an SMT benchmark because, for example, without managing action points as in our approach, large numbers of action points do create problems that are very difficult to solve as shown in Fig. 4 . In conclusion, we show SMT-based approaches can be useful in handling the computational complexity of this combinatorial domain in an extendable way and that our framework provides a baseline for further study of this area.
+
+Acknowledgements.
+
+This work was supported in part by LOGiCS: Learning-Driven Oracle-Guided Compositional Symbiotic Design for Cyber-Physical Systems, Defense Advanced Research Projects Agency award number FA8750-20-C-0156; by Provably Correct Design of Adaptive Hybrid Neuro-Symbolic Cyber Physical Systems, Defense Advanced Research Projects Agency award number FA8750-23-C-0080; by Toyota under the iCyPhy Center; and by Berkeley Deep Drive.

@@ -1,0 +1,426 @@
+Compositional Coordination for Multi‑Robot Teams with Large Language Models
+
+Zhehui Huang 1 , Guangyao Shi 1 , Yuwei Wu 2 , Vijay Kumar 2 , Gaurav S. Sukhatme 1
+1 Zhehui Huang, Guangyao Shi, and Gaurav S. Sukhatme are with the Department of Computer Science, University of Southern California, Los Angeles, CA 90089, USA. Email: {zhehuihu, shig, gaurav}@usc.edu .
+2 Yuwei Wu and Vijay Kumar are with the GRASP Lab, University of Pennsylvania, Philadelphia, PA 19104, USA. Email: {yuweiwu, kumar}@seas.upenn.edu .
+
+Abstract
+
+Multi-robot coordination has traditionally relied on a mission-specific and expert-driven pipeline, where natural language mission descriptions are manually translated by domain experts into mathematical formulation, algorithm design, and executable code. This conventional process is labor-intensive, inaccessible to non-experts, and inflexible to changes in mission requirements. Here, we propose LAN2CB (Language to Collective Behavior), a novel framework that leverages large language models (LLMs) to streamline and generalize the multi-robot coordination pipeline. LAN2CB transforms natural language (NL) mission descriptions into executable Python code for multi-robot systems through two core modules: (1) Mission Analysis, which parses mission descriptions into behavior trees, and (2) Code Generation, which leverages the behavior tree and a structured knowledge base to generate robot control code. We further introduce a dataset of natural language mission descriptions to support development and benchmarking. Experiments in both simulation and real-world environments demonstrate that LAN2CB enables robust and flexible multi-robot coordination from natural language, significantly reducing manual engineering effort and supporting broad generalization across diverse mission types. Website:
+https://sites.google.com/view/lan-cb
+
+I Introduction
+
+Problem: Multi-robot coordination for complex collective behaviors, including coverage, formation, foraging, and exploration, has been extensively studied for decades  [ 1 , 2 , 3 , 4 , 5 , 6 , 7 ] .
+However, most prior coordination methods target a specific and narrowly defined coordination task. This
+highlights the need for a general and unified framework that can address a wide range of coordination problems in a systematic way.
+The conventional multi-robot development pipeline starts with a natural language (NL) problem description, enabling both expert and non-expert users to specify objectives and constraints.
+An expert translates this description into a mathematical formulation, typically as an optimization problem, which inevitably requires additional assumptions.
+Following this, a domain expert designs algorithms to solve the formulated problem, which are subsequently implemented and validated on robotic hardware.
+However, this pipeline has three limitations: It is labor-intensive, inaccessible to non-experts, and inflexible. The first two limitations are apparent due to the significant use of skilled experts, despite the repetitive nature of problem formulation, algorithm design, and code implementation.
+The third becomes apparent when even minor changes to the problem statement or new requirements emerge, as the entire pipeline must be manually redesigned.
+
+Claim: We posit that recent advances in large language models (LLMs) can be leveraged to alleviate these three limitations. Specifically, the use of such models can significantly reduce human expert effort and enhance the flexibility of multi-robot coordination systems  [ 8 , 9 , 10 , 11 , 12 ] .
+
+Background: LLMs are trained on massive amounts of text data to understand and generate human-like language, allowing them to interpret natural language prompts, perform contextual reasoning, and produce coherent responses or actions in both visual and linguistic tasks [ 13 , 14 , 15 , 16 , 17 , 18 , 19 ] .
+In robotics, LLMs are increasingly being used to improve high-level decision-making, task planning, and human-robot interaction  [ 20 , 21 , 22 , 23 , 24 , 25 , 26 , 27 , 28 ] .
+Applications include interpreting natural language instructions, generating structured plans, assisting in code generation for robot control, and enabling dialogue-based coordination among multi-robot systems. The key advantages of LLMs in robotics include their flexibility, ability to adapt to new tasks without extensive retraining, and capacity to bridge the gap between human intent and machine execution, thereby significantly reducing the need for manual programming and domain-specific engineering.
+
+Figure 1:
+LAN2CB is an LLM-assisted multi-robot framework that converts mission descriptions into structured representations (e.g., behavior trees), assigns roles and priorities to each robot, and automatically generates executable code to accomplish complex missions.
+A mission change does not require human intervention since new code is generated automatically. NL means natural language.
+user- or expert-provided content.
+LLM-generated mission representations.
+LLM-generated code.
+
+Contributions: 1. We propose, implement, and thoroughly evaluate an LLM-based framework, Language to Collective Behavior ( LAN2CB ), which addresses the limitations of the traditional pipeline and turns natural language mission descriptions into executable plans and Python code for robot teams. LAN2CB consists of two main modules (Fig.  1 ). The first module is Mission Analysis , which takes the mission specified in natural language as input, identifies the necessary tasks to be completed, and analyzes the dependency between tasks. The output of the first module, all ready-to-run nodes from a behavior tree, is given to the second module Code Generation , together with a pre-constructed knowledge base, to generate executable code for robots.
+2. We design a dataset of natural language mission specifications for multi-robot coordination.
+3. Our experiments, both in simulation and hardware, demonstrate that LAN2CB produces effective multi-robot coordination from natural language. They also show that LAN2CB is flexible and extendable, obviating the need to design from scratch whenever the mission changes and providing a standard format to incorporate existing knowledge into its knowledge base.
+
+II Related Work
+
+II-A Multi-Robot Coordination
+
+Multi-robot systems can solve large tasks efficiently through cooperation, coordination, or collaboration  [ 29 ] .
+Prior work has shown that these approaches enable robots to contribute effectively to overall team performance, either through global control strategies  [ 30 ] or by relying on local observations and decentralized decision-making  [ 31 , 32 ] .
+As tasks become more complex, task-level coordination has received growing attention, where high-level goals are decomposed into interdependent sub-tasks that are allocated and executed collaboratively by the team  [ 33 , 34 , 35 ] .
+For example, Messing et al.  [ 36 ] introduced a four-layer structure covering task planning, allocation, scheduling, and motion planning to simplify decision-making.
+More recent work applied learning-based methods to multi-robot coordination by leveraging neural architectures such as graph attention networks for scheduling  [ 37 ] and heterogeneous policy networks for communication and collaboration in diverse robot teams  [ 38 ] .
+However, most existing approaches remain limited to specific tasks and lack the generalization to handle more dynamic objectives, understand natural language, or perform higher-level reasoning abilities.
+
+II-B Integrating LLMs in Robotics
+
+II-B1 Single-Robot Integration
+
+Recent work has explored integrating LLMs with single robots to enable more intuitive human-robot interaction and high-level task planning.
+These approaches leverage the language understanding and reasoning capabilities of LLMs to interpret natural language commands and translate them into executable actions.
+Because natural language is inherently tied to contexts and semantics, LLMs are particularly effective in understanding tasks such as navigation, exploration, and instruction following.
+In these scenarios, LLMs can help robots ground language inputs into spatial or semantic representations that guide behavior in complex, partially known environments  [ 23 , 24 , 22 ] .
+In addition, real-time resilience  [ 20 ] and anomaly detection  [ 25 ] have been integrated into LLM-based robotic pipelines to improve robustness in dynamic and unforeseen situations.
+
+II-B2 Team-Level Integration
+
+Extending LLMs to multi-robot systems introduces challenges in coordination, communication, and scalability, with research still in the early stages exploring their use for flexible, robust multi-robot coordination  [ 39 ] .
+Some works use LLMs to translate natural language into formal representations  [ 40 , 41 , 42 , 43 ] , but they are limited to simple missions and cannot handle multi-robot teams or decomposable long-horizon tasks.
+Others propose prompt-based frameworks for multi-robot coordination using LLMs  [ 27 , 28 ] . For instance, Zhao et al. introduced RoCO  [ 27 ] , where robots coordinate via interactive dialogues. However, such frameworks face limitations with large robot teams (e.g., ) and complex language-based missions.
+Shyam et al. proposed SMART-LLM  [ 28 ] , an LLM-based task planner for multi-robot teams with task decomposition and allocation, but it lacks domain knowledge, limits generalization beyond in-context examples, and cannot handle motion-level language commands.
+Our work is closely related to GenSwarm  [ 44 ] , which translates natural language task descriptions into executable Python code. While both aim to enable language-driven multi-robot coordination, our framework differs in two key ways. First, our modular design supports a broader range of coordination problems, including multi-team tasks with interdependencies and trigger events, unlike GenSwarm’s focus on simple, single-team scenarios. Second, we incorporate a structured knowledge base to guide the LLM, enhancing extensibility, whereas GenSwarm relies solely on in-context learning, limiting generality.
+
+Figure 2: A comprehensive demonstration of LAN2CB .
+human-provided content.
+LLM-generated mission descriptions.
+LLM-generated code.
+
+III Problem Statement
+
+Consider an environment with robots.
+Given natural language mission descriptions from users, our goal is to develop a system that can automatically control robots to accomplish these missions without further human intervention.
+We focus on two fundamental categories of missions: 1) goal-approaching missions, such as geometric formation or region visitation, and
+2) herding missions, where robots must guide dynamic objects into specific regions or achieve a specific coverage percentage of an area.
+Mission diversity is introduced by systematically varying key dimensions, resulting in a broad spectrum of possible tasks:
+
+1.
+
+Coordination Strategies: Missions may require robots to coordinate, form a range of geometric patterns (e.g., lines, circles, characters), visit assigned regions, track dynamic targets, or herd dynamic objects.
+
+2.
+
+Motion Patterns: Robots may be required to execute various motion trajectories, such as moving in straight lines, zigzagging, or spiral paths.
+
+3.
+
+Constraints: Additional requirements can be imposed, such as entering a region from a specific direction or adhering to prescribed durations for actions.
+
+4.
+
+Trigger: Tasks can include trigger conditions that allow actions to be terminated or modified in response to environmental events. For example, if a robot comes within a specified distance (e.g., 1 meter) of a forbidden region, it needs to switch to another task.
+
+5.
+
+Task Finish Condition: Each atomic task has a clearly defined completion criterion, such as reaching a designated position within a user-specified tolerance or herding objects within a given range of the target region.
+
+6.
+
+Mission Finish Condition: Mission completion is defined more broadly, either by the successful completion of all constituent atomic tasks or by satisfying higher-level objectives (e.g., achieving at least 60% coverage of a specified region).
+
+IV Method
+
+The LAN2CB workflow consists of the following stages, illustrated in Fig.  1 :
+
+1.
+
+Mission Analysis : Given natural language mission descriptions from users, the LLM autonomously decomposes missions into atomic task specifications and analyze inter-task dependencies. For each task, the LLM extracts robot assignments, relevant constraints, triggers, finish conditions, contextual hints, and other contextual requirements. Tasks that are immediately executable are then identified and forwarded to the next stage.
+
+2.
+
+Code Generation : Based on the mission description, the system first generates the mission finish condition, which is generated once for the entire mission cycle. For each selected task, considering its constraints, trigger conditions, finish conditions, and hints, the system separately generates code for: (a) robot execution, (b) trigger conditions, and (c) task finish conditions.
+
+3.
+
+Execution : The generated code is deployed to the robots for execution. During run-time, if any trigger condition or task finish condition is met, the workflow transitions to stage 4. If the overall mission finish condition is satisfied, it proceeds directly to stage 5.
+
+4.
+
+Mission Progress Update : Upon receiving execution results, the system uses the LLM to update the status of each task, then returns to stage 1 for further analysis and potential replanning if necessary.
+
+5.
+
+Mission Completion : Once the mission finish condition is met, the mission is formally marked as complete.
+
+IV-A Mission Analysis
+
+Mission analysis consists of two key phases: mission understanding and ready-to-run action node selection.
+However, user-provided natural language mission descriptions often omit explicit definitions of atomic tasks and their execution dependencies. As a result, directly prompting LLMs for general mission understanding can yield incomplete or ambiguous task specifications and may overlook critical execution dependencies.
+To address these challenges, the mission understanding phase begins by standardizing the mission description using an expert-provided template. We then perform dependency analysis to explicitly extract task relationships, which serve as the basis for a comprehensive mission analysis.
+Afterward, the LLM selects ready-to-run action nodes based on the results of the dependency and comprehensive mission analyses.
+
+Dependency Analysis :
+To initiate dependency analysis, we prompt the LLM to extract all atomic tasks from the mission description, initially disregarding trigger conditions and any tasks that may be activated post-trigger. The LLM then analyzes the dependency relationships among these atomic tasks. If triggers are activated during execution, we re-invoke the LLM to update the dependency analysis accordingly.
+
+Comprehensive Mission Analysis :
+Building on the results of dependency analysis, we combine these atomic tasks and their dependencies with the standardized mission description to prompt the LLM for comprehensive mission analysis. The mission is represented in a behavior tree structure, with the overall mission as the root and atomic tasks as action nodes. Non-leaf nodes of type Parallel or Sequence capture task execution topologies according to dependencies.
+For each node, we instruct the LLM to generate a unique index, identify the node type, task name, status, constraints, trigger conditions, finish conditions, hints, and children. For action nodes, the LLM also specifies the action type as well as the associated robots, objects, regions, and points.
+See Tab.  I for detailed field descriptions of the BehaviorTreeNode .
+
+TABLE I: Field Descriptions for BehaviorTreeNode .
+
+Field (All Nodes)
+
+Description
+
+idx
+
+Unique index of the node.
+
+node_type
+
+Parallel Sequence Action.
+
+task_name
+
+Concise task description of the node.
+
+status
+
+Idle Running Success Failure.
+
+constraints
+
+Constraints such as max speed, time limit, regions to avoid, and etc.
+
+trigger_condition
+
+Condition(s) that trigger node termination and activate new nodes.
+
+finish_condition
+
+Condition(s) for determining task completion.
+
+hints
+
+Hints or suggestions.
+
+children
+
+List of child BehaviorTreeNode objects (empty for Action nodes).
+
+Field (Action Nodes)
+
+Description
+
+action_type
+
+visit_points follow_targets herd.
+
+robot_ids
+
+List of robot IDs this action node will control.
+
+object_ids
+
+List of object IDs related to the action node.
+
+region_ids
+
+List of region IDs related to the action node.
+
+points
+
+List of points related to the action node.
+
+Ready-to-Run Action Node(s) Selection :
+After constructing the complete behavior tree and integrating the dependency analysis results, we ask the LLM to identify action nodes that are immediately executable. Specifically, these are nodes for which all preconditions are met. The ready-to-run action nodes are then selected and forwarded for downstream processing, code generation. This approach ensures that robot actions are initiated only when all prerequisite tasks and constraints have been resolved, thereby supporting safe and efficient mission execution.
+After selecting action nodes that are ready-to-run, we instruct the LLM to update the status of all nodes in the behavior tree, marking the selected nodes and their parent nodes as Running .
+
+IV-B Code Generation
+
+After mission analysis and the identification of ready-to-run action nodes, we prompt the LLM to generate Python code to control all robots in the environment.
+The code generation process consists of four key components, executed synchronously with the robots’ control loop (Fig.  1 and   2 ):
+1) Robot execution code generation;
+2) Trigger condition code generation;
+3) Action node finish condition code generation;
+4) Mission finish condition code generation.
+
+Robot Execution Code Generation :
+Recent works have shown that LLMs can effectively assist code generation  [ 45 , 46 , 47 , 48 ] . However, to improve success rates and mitigate hallucinations, it is more effective to provide core functions in advance and expose them as APIs, rather than asking the LLM to generate all code from scratch  [ 49 ] .
+To this end, we construct a meta behavior library for robot execution.
+To ensure flexibility and the capability to process multiple action nodes simultaneously, the meta-behavior library comprises three sub-libraries:
+
+•
+
+Goal Generation : Provides primitives for three fundamental behaviors: (a) visiting points, (b) following targets, and (c) herding.
+
+•
+
+Goal Allocation : Offers two strategies for mapping generated goals to robots: (a) a default mapping that assigns goal positions based on robot IDs, and (b) a minimal conflict strategy that assigns goals to minimize trajectory intersections, assuming straight-line movement from start to goal.
+
+•
+
+Motion Generation : Generates feasible paths from start to goal, considering environmental constraints. For each waypoint, the function not only outputs the position but also constraints such as maximum speed for approach.
+
+This modular design allows the LLM to compose robust execution code for all selected action nodes, promoting reusability, flexibility, and scalability in multi-robot systems.
+
+Trigger Condition Code Generation :
+For each action node, LLMs are prompted to implement the corresponding trigger condition.
+If no trigger is specified, the function always returns False .
+Otherwise, the LLM encodes the trigger logic using available environmental information, including robot and object states and region properties.
+
+Action Node Finish Condition Code Generation :
+For each selected action node, the LLM generates code to evaluate whether the node’s specified finish condition has been met. For example, if the task is to visit three points, the action node is considered complete when all three points have been visited.
+
+Mission Finish Condition Code Generation:
+Mission finish condition generation is similar in nature to composite task finish condition generation. However, the LLM only needs to generate the mission finish condition code once for the entire mission.
+
+IV-C Execution
+
+Once all code scripts are generated, the system initiates or resumes execution.
+During execution, if a trigger condition is satisfied, we prompt the LLM to update the dependency analysis by removing the current task that caused the trigger and adding any new tasks associated with the trigger. The updated dependency analysis, together with the mission description, is then used to prompt the LLM to generate a new behavior tree. The LLM subsequently selects new ready-to-run action nodes and generates code for them.
+If the finish condition of any action node is satisfied, the LLM updates the behavior tree. This may also include updating parent nodes if their completion depends solely on the completion of their children. The LLM then selects new ready-to-run action nodes and generates the corresponding code.
+If the finish condition of any composite node is satisfied, the LLM updates the behavior tree by marking all of its child nodes that have not started or are still running as Failure , and marking the composite node as Success .
+Execution proceeds iteratively until the mission finish condition is satisfied.
+
+Figure 3: Quantitative results for nine multi-robot missions.
+Please check the website for more details.
+
+V Experiments
+
+The experimental study is designed to rigorously evaluate LAN2CB under a variety of multi-step, long-horizon missions. We focus on three questions:
+1) How effectively does LAN2CB perform across diverse missions?
+2) How does the use of a standardized template for mission descriptions impact the performance of LAN2CB compared to raw natural language input?
+3) Can LAN2CB be reliably deployed on real-world robotic platforms?
+
+V-A Performance Across Diverse Missions
+
+To the best of our knowledge, no standard dataset exists for evaluating multi-step, long-horizon multi-robot mission execution under natural language mission descriptions. Therefore, we curate a comprehensive mission suite comprising three groups (nine missions total), each designed to test the distinct capabilities of our system.
+
+Mission Dataset :
+We organize the missions by the complexity of mission analysis and required code generation:
+
+•
+
+Category A: Basic Missions .
+These missions comprise multiple atomic tasks executed in a straightforward order, with no trigger conditions. Mission analysis and code generation are direct: all necessary information can be extracted from the natural language descriptions, enabling the LLM to generate input parameters for behavior library functions without additional reasoning. Examples: Assigning robots to visit predefined points. (See Missions #1, #2, and #3 in Fig.  3 .)
+
+•
+
+Category B: Basic Missions w/ Advanced Code Generation .
+While maintaining a simple overall structure, these missions require advanced code generation. Certain behaviors are not directly supported by the behavior libraries, necessitating that the LLM synthesizes additional logic or routines. Example: Generating a spiral trajectory for robots when only straight-line motion is natively supported. (See Missions #4, #5, and #6 in Fig.  3 .)
+
+•
+
+Category C: Advanced Missions .
+These missions demand advanced analysis and complex code generation. They may involve intricate dependencies, trigger conditions, or non-trivial mission finish conditions, such as region coverage requirements, dynamic triggers, or adaptive behaviors. (See Missions #7, #8, and #9 in Fig.  3 .)
+
+Evaluation Metrics :
+We quantitatively evaluate missions using the metrics:
+(1) Avg. Success Rate : The proportion of missions completed successfully as intended, without human intervention.
+(2) Avg. Token Number and Cost : The total number of LLM tokens used per mission and related cost.
+(3) Avg. Tokens per Error : The average number of tokens consumed per error given the output tokens of the LLM.
+
+TABLE II: Quantitative results.
+
+Mission
+
+Category
+
+W/
+
+Template
+
+Avg.
+
+Success
+
+Rate
+
+Avg. Tokens
+
+( )
+
+Avg.
+
+Cost ($)
+
+Avg. Tokens
+
+/ Err ( )
+
+Input
+Output
+
+Category A
+✗
+0.87
+48.70
+12.33
+0.20
+92.48
+
+✓
+1.00
+52.83
+14.53
+0.22
+-
+
+Category B
+✗
+0.73
+40.53
+9.97
+0.16
+37.39
+
+✓
+0.93
+35.25
+8.54
+0.14
+128.10
+
+Category C
+✗
+0.73
+44.24
+10.06
+0.17
+37.73
+
+✓
+0.87
+58.12
+14.86
+0.24
+111.45
+
+Overall
+✗
+0.78
+44.49
+10.79
+0.18
+55.87
+
+✓
+0.93
+48.73
+12.64
+0.20
+119.78
+
+*Avg. Tokens / Error is based on output tokens.
+
+Results :
+We evaluate all missions using GPT-4.1, conducting each mission five times. Detailed results are provided in Tab.  II .
+By standardizing raw mission descriptions from users with an expert-provided template, LAN2CB achieves a 100% success rate on Category A (basic missions), a 93% success rate on Category B (basic missions with advanced code generation) and 87% success rate on Category C (advanced missions). In addition, the system demonstrates strong robustness, achieving million tokens per error across all missions.
+These results demonstrate that LAN2CB reliably analyzes mission descriptions, including identifying task dependencies, extracting essential information, selecting ready-to-run nodes, and dynamically updating behavior trees. Notably, the high success rates in Category B and Category C highlight its ability to perform advanced code generation tasks. These tasks include synthesizing robot trajectories not natively supported by the behavior library, generating custom formations, creating complex execution conditions such as specifying approach directions or target-following duration, and generating both triggers and mission finish conditions. Overall, our results indicate that LAN2CB is both robust and adaptable for diverse multi-robot mission execution scenarios.
+
+Figure 4:
+Realistic-setting experiments.
+idle,
+running,
+finished.
+
+V-B Impact of standardized template
+
+To quantify the impact of using a template to standardize the mission descriptions on LAN2CB , we ablated the template-reformatting stage that aligns user-provided natural language mission descriptions to our predefined mission schema. As reported in Tab.  II , this omission results in an average drop of in success rates and causes the error rate to become more frequent across all mission categories.
+These results highlight the critical role of structured prompting in maintaining robust multi-robot performance.
+
+Figure 5:
+Real-world experiments.
+idle,
+running,
+finished.
+
+V-C Realistic Simulated Scenarios
+
+We validated our framework in three simulation scenarios designed to approximate real-world conditions (see Fig.  4 ).
+
+V-D Real World Demonstrations
+
+We validated our framework through four real-world demonstrations 1 1 1 We thank Jiazhen Liu for assistance with the physical deployment. across two robot platforms (see Fig.  5 ).
+
+VI Conclusions
+
+We presented an LLM-based framework, Language to Collective Behavior ( LAN2CB ), a pipeline that converts natural language into executable Python code for robot teams. Our experiments suggest that LAN2CB enables effective multi-robot coordination and remains flexible and extensible, even for multi-step and long-horizon missions. Additionally, we designed a dataset of natural language mission descriptions for multi-robot coordination.
+For future work, we aim to improve mission analysis through retrieval-augmented generation (RAG)  [ 50 ] , enabling LLMs to leverage past mission data more effectively. Furthermore, we plan to expand the meta-behavior library to support a broader and more diverse range of capabilities.

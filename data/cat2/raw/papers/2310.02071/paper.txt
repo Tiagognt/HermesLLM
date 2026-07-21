@@ -1,0 +1,319 @@
+Towards End-to-End Embodied Decision Making via Multi-modal Large Language Model: Explorations with GPT4-Vision and Beyond
+
+Liang Chen , Yichi Zhang , Shuhuai Ren , Haozhe Zhao , Zefan Cai , Yuchi Wang
+Peiyi Wang , Tianyu Liu , Baobao Chang
+Peking University, Tencent Cloud AI
+{leo.liang.chen, yczhang, shuhuai_ren}@stu.pku.edu.cn
+{hanszhao, zefan, wangyuchi, wangpeiyi}@stu.pku.edu.cn
+{tianyu0421, chbb}@pku.edu.cn
+https://github.com/pkunlp-icler/PCA-EVAL
+Corresponding author.
+
+Abstract
+
+In this study, we explore the potential of Multimodal Large Language Models (MLLMs) in improving embodied decision-making processes for agents. While Large Language Models (LLMs) have been widely used due to their advanced reasoning skills and vast world knowledge, MLLMs like GPT4-Vision offer enhanced visual understanding and reasoning capabilities. We investigate whether state-of-the-art MLLMs can handle embodied decision-making in an end-to-end manner and whether collaborations between LLMs and MLLMs can enhance decision-making. To address these questions, we introduce a new benchmark called PCA-EVAL , which evaluates embodied decision-making from the perspectives of P erception, C ognition, and A ction. Additionally, we propose HOLMES , a multi-agent cooperation framework that allows LLMs to leverage MLLMs and APIs to gather multimodal information for informed decision-making. We compare end-to-end embodied decision-making and HOLMES on our benchmark and find that the GPT4-Vision model demonstrates strong end-to-end embodied decision-making abilities, outperforming GPT4-HOLMES in terms of average decision accuracy (+3%). However, this performance is exclusive to the latest GPT4-Vision model, surpassing the open-source state-of-the-art MLLM by 26%. Our results indicate that powerful MLLMs like GPT4-Vision hold promise for decision-making in embodied agents, offering new avenues for MLLM research.
+
+1 Introduction
+
+The capacity to make well-informed decisions is essential for the survival and success of living organisms in their respective environments. Similarly, a major goal in embodied artificial intelligence is to develop agents, like robots, with sophisticated decision-making abilities. This could enable artificial agents to intelligently interact with their surroundings and efficiently accomplish a variety of real-world tasks such as autonomous driving  (Hu et al., 2023 ; Wayve, 2023 ) , domestic assistance  (Kolve et al., 2017 ; Shridhar et al., 2020 ; Huang et al., 2022b ) , and game playing  (Fan et al., 2022 ; Wang et al., 2023a ; Zhu et al., 2023b ) . Recently, there has been a notable increase in leveraging exceptional reasoning capabilities and world knowledge of Large Language Models (LLMs) to enhance decision making in agents. However, LLMs are primarily designed to process textual context, creating a modality gap  (Liang et al., 2022 ; Ren et al., 2023a ) for the LLM-powered agent when dealing with multimodal observations in real-world scenarios.
+
+To bridge this modality gap, a common approach is converting multimodal observations into text using various APIs  (Wu et al., 2023 ; Yang et al., 2023 ) . However, this conversion can result in information loss during the transition from multimodal to unimodal text.
+At the same time, recent advances in Multimodal Large Language Models (MLLMs), particularly Visual Large Language Models (VLLMs) like GPT4-Vision  (OpenAI, 2023a ) , have showcased impressive general-purpose visual understanding and reasoning abilities  (Zhu et al., 2023a ; Dai et al., 2023 ; Liu et al., 2023a ; Li et al., 2023b ; Zhao et al., 2023 ) . These VLLMs can directly perceive the visual information rather than relying on textual intermediaries, potentially enabling more sophisticated reasoning and decision making for embodied agents operating in complex real-world environments.
+Considering these developments, two research questions naturally arise:
+(1) Can current state-of-the-art VLLMs perform various embodied decision making tasks in an end-to-end manner? What are the current strengths and limitations when compared to LLM-powered agents? (2) Can LLMs and VLLMs collaborate to enhance embodied decision-making capabilities?
+
+Figure 1: Domain and required ability distribution of PCA-EVAL.
+
+However, addressing these questions is challenging due to the absence of an existing evaluation benchmark that satisfies the following criteria: (1) supporting end-to-end embodied decision making by providing agents with direct multimodal observations; (2) enabling multi-dimensional evaluation of the decision-making process, encompassing perception, reasoning, and action perspectives, rather than relying solely on final rewards or success rate; and (3) covering diverse domains, drawing from different areas of embodied AI.
+The development of more comprehensive benchmarks that meet these desiderata could substantially advance research on decision making in embodied systems.
+
+In this paper, we propose a new benchmark, PCA-EVAL , for evaluating the embodied decision-making ability of agents from three perspectives, i.e., P erception, C ognition, and A ction. Our benchmark covers three domains as illustrated in Figure  1 : autonomous driving, domestic assistance, and game-playing. The corresponding data are collected from real-world transportation scenes  (Zhu et al., 2016 ) , domestic housekeeper environment based on ALFRED  (Shridhar et al., 2020 ) , and Open-world environment Minedojo  (Fan et al., 2022 ) based on the famous game Minecraft. This diverse set of domains allows for a comprehensive assessment of embodied decision-making capabilities across various contexts. Distinct from the MDP-based evaluation that solely focuses on maximizing cumulative rewards, we divide the sequential decision making process into multiple one-step decision problems based on a task-specific topology graph. Each instance in the benchmark consists of a 6-element tuple: . Adopting this approach offers two major advantages: (1) It enables a more comprehensive evaluation of the decision-making process, with each decision step being assessed in terms of perception, cognition, and action. (2) The evaluation can be conducted outside complex simulation environments, simplifying the process of evaluating different agents and their performance.
+
+With the proposed benchmark, we conduct two series of evaluation: (1) We examine multiple state-of-the-art VLLMs, like InstructBLIP  (Dai et al., 2023 ) , MMICL  (Zhao et al., 2023 ) , QwenVL-Chat  (Bai et al., 2023 ) and the latest GPT4-Vision  (OpenAI, 2023a ) , in an end-to-end decision making context. (2) We introduce HOLMES , 1 1 1 The system is aptly named after the renowned detective, Sherlock Holmes. a multi-agent cooperation framework. In this framework, we provide large language models, such as ChatGPT  (OpenAI, 2022 ) , GPT4  (OpenAI, 2023b ) , and Vicuna  (Chiang et al., 2023 ) , with descriptions of vision models like image captioning, object detection, Optical Character Recognition (OCR), and traffic sign detection models. Additionally, we supply descriptions of valid APIs within the simulated environment. The large language model subsequently initiates a search for clues pertaining to the question by engaging in a multi-turn conversation. This process involves alternating between invoking models or APIs to find clues and analyzing the discovered clues to facilitate informed decision making.
+
+From our experimental results, we discerned that within the end-to-end framework, GPT4-Vision significantly outshines the contemporary state-of-the-art vision-language model, MMICL, boasting an average action accuracy improvement of 26%. Notably, GPT4-Vision can furnish a detailed rationale behind its embodied decision-making process, a feature absent in present open-source VLLMs. When assessing HOLMES models, GPT4 consistently emerges superior across all three domains. Drawing a comparison between GPT4-Vision and HOLMES, we observed that GPT4-Vision surpasses GPT4-HOLMES with multiple expert visual APIs in terms of cognition and action scores. This underscores its broad adaptability across a spectrum of visual tasks and its good fusion of visual understanding, world knowledge, and embodied decision making.
+
+In summary, we introduce three key contributions in this study:
+
+1.
+
+We propose PCA-EVAL, a novel evaluation benchmark for multi-domain embodied decision making that evaluates performance in perception, cognition, and action.
+
+2.
+
+We present HOLMES, a multi-agent cooperation framework designed to tackle various embodied decision-making tasks that include multimodal observations. It mimics the process of playing a detective game in which the LLM uncovers clues by utilizing various multimodal models or APIs supplied by the environment.
+
+3.
+
+We conducted a systematic comparison of two embodied decision-making methods: end2end and HOLMES, across various models. Our findings suggest that when utilizing MLLM with the end2end method, it not only achieves decision accuracy better than the top-performing model (GPT-4) in HOLMES but also secures a superior cognition score. However, this level of performance is exclusive to the latest GPT4-Vision model, which significantly outpaces the open-source state-of-the-art VLLMs.
+
+We believe that powerful MLLMs like GPT4-Vision pave a new and promising way toward decision making in embodied agents using LLMs. It enables decisions across diverse domains to be made and justified seamlessly in an end-to-end manner. PCA-EVAL serves as an effective metric for evaluating the embodied decision-making capabilities of both end-to-end and HOLMES-based models.
+
+2 Related Work
+
+Embodied Decision Making.
+
+Research on embodied decision-making is an emerging trend for artificial intelligent agents to interact with their surroundings and accomplish numerous tasks. This necessitates proficiency in vision perception, world knowledge, and commonsense reasoning, areas where a large language model can provide some level of expertise.
+We group prior work on embodied decision-making with LLM into two main trends.
+The first trend is to transform multimodal information, including object and scenery identification, the current states of AI agents, and the feedback from the environments, to texts. Text-based LLMs can then reason over the textual clues to determine the next action towards completing a designated task  (Huang et al., 2022a ; Li et al., 2022 ; Huang et al., 2022b ; Chen et al., 2023 ) . This line of research divides the entire decision-making process into two phases: (1) information seeking, usually involving VLLMs to verbalize the current status of AI agents in the vision-based environment with natural language; (2) reasoning and planning with text-based LLMs to decide what the AI agent should do in the next step with textual clues.
+The other line of research uses multimodal LLMs directly for end-to-end decision making, such as PALM-E  (Driess et al., 2023b ) .
+The end-to-end decision making poses greater challenges to multimodal LLMs as it requires the combination of different functionalities including perception, cognition, and action, whereas decision making without explicit multiple steps mitigates the error propagation between information seeking and reasoning.
+
+LLM-Powered Agents.
+
+Large language models pre-trained on large-scale multimodal (including text, image, video, etc.) corpus demonstrate impressive emergent abilities and immense popularity  (Brown et al., 2020 ; Wei et al., 2022 ) , and have seen tremendous success across various domains covering various natural language processing and computer vision tasks  (Radford et al., 2019 ; Chowdhery et al., 2022 ; Touvron et al., 2023 ; Alayrac et al., 2022 ; Zhu et al., 2023a ; Li et al., 2023a ) .
+Consequently, using LLMs to empower the AI agents  (Xi et al., 2023 ; Liu et al., 2023b ; Park et al., 2023 ; Wang et al., 2023d ; Yuan et al., 2023 ) becomes more and more promising.
+Specifically, we can employ LLMs to enhance the decision making ability of the agents  (Nakano et al., 2022 ; Yao et al., 2022 ; Li et al., 2023c ; Song et al., 2023 ) , expanding their perception and action space through strategies like tool utilization  (Schick et al., 2023 ; Qin et al., 2023 ; Lu et al., 2023 ) .
+Although LLM-based agents demonstrate reasoning and planning abilities through techniques like Chain of Thought or problem decomposition  (Wei et al., 2023 ; Yao et al., 2023 ; Kojima et al., 2022 ) , they inherently lack visual perception, and are limited to the discrete textual content. Therefore, integrating visual information or other modalities can offer agents a broader context and a more precise understanding  (Driess et al., 2023a ) , enhancing their environmental perception. However, no evaluation protocol or benchmark is currently available to evaluate decision making within the multimodal context.
+
+3 PCA-EVAL
+
+In this section, we propose to evaluate the decision-making ability of embodied agents from three perspectives: perception, cognition, and action. Accordingly, we present a novel benchmark named PCA-EVAL.
+Our PCA-EVAL benchmark consists of 300 multimodal multiple-choice questions with diverse embodied topics and annotations of their answers with corresponding explanations.
+
+As shown in Figure  5 , each instance in the benchmark consists of a 6-element tuple: image , question , action candidates , answer , reason , key concept . The image is collected from various embodied environments, like transportation scenes, housekeeper environments, and game worlds in Minecraft. Questions, action candidates, and answers are derived from real tasks within the corresponding environment. The reasoning explains why the answer is the best choice for the current image, while the key concept highlights the most question-related aspect in the image.
+
+Figure 2: An instance of PCA-EVAL.
+
+Unlike traditional visual question-answering datasets that emphasize visual perception (e.g., VQA  (Goyal et al., 2017 ) ), visual reasoning (e.g., NLVR  (Suhr et al., 2017 ) ), or world knowledge (e.g., OKVQA  (Marino et al., 2019 ) ), the most distinctive characteristic of PCA-EVAL is its grounding in embodied actions. Compared to embodied simulation environments like ALFRED  (Shridhar et al., 2020 ) and Minedojo  (Fan et al., 2022 ) , PCA-EVAL proves to be more effective in evaluating various LLM-based agents. This is primarily due to PCA-EVAL’s provision of high-level actions that can be readily implemented or programmed using the low-level actions in the corresponding domains. The high-level actions are more comprehensible for LLMs than the direct low-level actions like robotic movements in the simulation environments because (1) the high-level actions are in the form of natural languages, making it easier for LLMs to understand the meaning and connect with world knowledge. (2) LLMs are not grounded with low-level actions during the pretraining or finetuning stage, making it hard for LLMs to understand the consequences of executing an action.
+
+To answer a question in PCA-EVAL, the agent must possess the following abilities: (1) Perception: accurately identify the concept related to the question within the image; (2) Cognition: engage in reasoning based on image perception and worldly knowledge; (3) Action: comprehend the potential actions, selecting the one that best aligns with the outcome of the reasoning process. A deficiency in any of these abilities would inevitably result in an incorrect answer, posing a significant challenge to the more complex capabilities of embodied agents. Although challenging, all the aforementioned abilities are essential for the decision-making process in embodied environments.
+
+3.1 Evaluation Metrics
+
+For each instance, we instruct the agent to deliver an answer triplet comprising an image description , a reasoning process , and a final action , represented as . By comparing the model prediction with the ground truth answer, we can obtain a fine-grained diagnosis of the decision making process.
+
+Perception Score.
+
+The Perception Score (P-Score) measures the model’s ability to accurately perceive and interpret the observation. It is computed based on whether the agent’s output image description includes the key concept of the instance. If the agent accurately describes the question-related key concept in the image, the P-score is assigned a value of 1; otherwise, it is assigned a value of 0. For the instance in Figure  5 , the agent should output “clear road” or “no car visible” or other semantically equivalent concepts in its description of the image to get the perception score.
+
+Cognition Score.
+
+The Cognition Score (C-Score) assesses the model’s ability to reason, comprehend, and make informed decisions based on the perceived input data and world knowledge. The score is 1 if the reasoning process is correct, otherwise the score is 0. For the instance in Figure  5 , the agent should link the “clear road” to the action “keep driving” based on transportation commonsense to get the score.
+
+Action Score.
+
+The Action Score (A-Score) measures the model’s ability to generate appropriate and effective responses or actions based on the perceived input data and the cognitive understanding of the context. The score is assigned a value of 1 if the agent selects the correct action; otherwise, the score is set to 0.
+
+The final Perception, Cognition, and Action scores of the agents are obtained by averaging the scores across all instances and domains in our PCA-EVAL dataset.
+
+3.2 Automatic Evaluation
+
+Recent advancements have seen researchers harnessing powerful LLMs for the evaluation of output of language models. Studies have revealed that the outcomes from LLMs could exhibit remarkable alignment with human judgments Zheng et al. ( 2023 ); Wang et al. ( 2023c ; b ) . In our investigation, we employed GPT-4 to automatically evaluate perception, cognition, and action scores based on the model’s outputs. Our findings underscore a significant agreement between GPT-4 annotations and human annotator results. This is substantiated by Pearson correlation coefficients of 0.8, 0.9, and 0.95 for perception, cognition, and action evaluations, respectively. To facilitate ongoing and future research endeavors, we share our automatic evaluation script 2 2 2 https://github.com/pkunlp-icler/PCA-EVAL/blob/main/pca-eval/evaluation/pca_auto_scoring.py for seamless adoption, which could also be improved in the future. For a detailed description of our evaluation methodology, kindly refer to Appendix C
+
+3.3 Dataset Overview
+
+The PCA-EVAL benchmark currently comprises three domains, with a total of 300 instances, including 100 instances per domain.
+In our preliminary study, we find that the annotation process requires proactive thinking of the questions, actions, and corresponding answers, which makes quality control difficult. In order to ensure the quality of PCA-Eval, every single test case has been verified by at least three authors of this paper. Although challenging, we would keep scaling this benchmark in order to advocate further attention to end-to-end decision-making. We introduce the three domains encompassed by our dataset as follows:
+
+Autonomous Driving.
+
+In the autonomous driving domain, instances are derived from real-world transportation scenes, which requires the agent to have particular abilities such as traffic sign recognition, obstacle detection, and decision-making at intersections. The dataset aims to evaluate an agent’s ability to perceive and interpret visual information while making safe and efficient driving decisions. The images are collected from TT100K  (Zhu et al., 2016 ) dataset and annotators are instructed to propose an image-conditioned question that is grounded with real actions of vehicles.
+
+Domestic Robot.
+
+The domestic assistance domain features instances from the ALFRED  (Shridhar et al., 2020 ; Kolve et al., 2017 ) environment, which simulates a housekeeper robot performing tasks within a household setting. These tasks may include object manipulation, navigation, and interaction with various appliances. The environment assesses an agent’s ability to understand and execute complex instructions while navigating and interacting with a dynamic environment. Annotators are asked to select one image from the randomly generated scenes in the environment, propose a question related to the items on the scene, and annotate the full information of the instance.
+
+Figure 3: Illustration of task topology graph. Events in green represent the leaf nodes of the graph.
+
+Open-World Game.
+
+In the open-world game domain, instances are sourced from the Minecraft environment, where agents are tasked with exploring, crafting, and surviving in a procedurally generated world. This dataset evaluates an agent’s ability to reason and plan actions within a complex, open-ended environment, which often requires long-term strategizing and adaptability. Annotators receive predefined tasks from MineDojo  (Fan et al., 2022 ) as a reference during the task generation phase. For each task, we instruct the annotator to sketch a task topology graph, exemplified in Figure  3 . The task should be completed in accordance with the topological order of the graph, where the event located in the leaf nodes should be finished first. Each node in the task topology graph can be viewed as a step in the sequential decision. We list the in-domain task distribution and examples for each domain in Appendix  A .
+
+3.4 Annotation Pipelines
+
+The annotation process consists of two stages: (1) Dataset Annotation, and (2) Dataset Refinement. During the initial stage, three annotators are assigned to each domain, adhering strictly to the respective annotation guidelines. They first pinpoint the source images from each domain that are informative and meaningful so that they can write questions for each image.
+The annotators have the responsibility to ensure every question has only one correct answer and accurate rationales. In the subsequent stage, annotators are instructed to scrutinize the output actions and rationales presented by ChatGPT and check the annotations. This process aims to address the challenge of multiple correct answers, as ChatGPT can furnish comprehensive explanations for its actions. These explanations assist annotators in assessing the acceptability of ChatGPT’s response, particularly when it deviates from the established ground truth answer. This enables annotators to refine annotations to ensure the presence of a single correct answer.
+
+4 Methods
+
+4.1 End2End Decision Making via VLLMs
+
+Figure 4: Three examples of HOLMES solving questions from different domains of PCA-EVAL.
+
+In this subsection, we detail the evaluation process for assessing state-of-the-art VLLMs, e.g., InstructBLIP, MMICL, and GPT4-Vision, on end-to-end embodied decision-making using the proposed PCA-EVAL benchmark. End2End embodied decision making is straightforward since we can directly feed the visual observation and the textual question to the multi-modal agent. As illustrated in Figure  5 , the agent is prompted to output the image description and reasoning process before giving the final action.
+
+Figure 5: An example of end-to-end decision making.
+
+4.2 HOLMES: Multi-Agent Cooperation
+
+Different from End2End embodied decision making, within HOLMES, we prompt large language models like ChatGPT-3.5  (OpenAI, 2022 ) , GPT4  (OpenAI, 2023b ) to call different visual models or APIs to gather information about the environment.
+
+We provide these models with descriptions of the input and output for different visual models such as the image caption model based on InstructBLIP, the object detection model based on POMP  (Ren et al., 2023b ) , and the traffic sign detection model based on YOLO  (Redmon & Farhadi, 2018 ) . Additionally, we supply descriptions of valid APIs within the simulated environment, such as list_nearby_mobs_in_minecraft() to tell what creatures can current player see and list_items_at_hand_in_alfred() to tell what item the robot is holding in hand. Full API description files for each domain are shown in Appendix  B .
+
+These integrations enable the large language model to initiate a search for clues pertaining to a given question through a multi-turn conversation. As shown in Figure  4 , the process involves alternating between invoking models or APIs to gather relevant information and analyzing the discovered clues to facilitate informed decision making. The HOLMES framework is designed to enhance cooperation and coordination among multiple agents in dynamic and complex environments.
+
+In HOLMES, there are four key components as depicted in Figure  4 : the image, the user, the LLM, and the Model/API Hub. Initially, the user poses a question about the optimal action to take based on the environment shown in the image, providing potential action choices. As the LLM cannot directly view the image, it’s briefed with descriptions of available visual models and APIs supplied by the simulation environment. It’s then tasked with gathering relevant data via these models and APIs to determine the appropriate action. When the LLM responds, the system checks if it has invoked a legitimate model or API, subsequently relaying the results from the invoked API. This feedback is logged into the dialogue history, allowing the LLM to analyze and form subsequent responses. Once equipped with sufficient information, the LLM proposes the final action, accompanied by its underlying rationale. HOLMES emulates the detective game process, where one alternates between searching for clues using various tools and analyzing them before arriving at a conclusion.
+
+5 Experiments
+
+5.1 Configurations
+
+End2End.
+
+Under this setting same image and prompts are provided to different VLLMs. Additionally, the non-visual information “items in hand” and “items in inventory” for domestic and game domains are directly given to the models in the prompt since these information is hard to perceive from the image and is easy to obtain from the simulation environments. We would also make the prompts we use open-source for fair and convenient evaluation.
+
+We compare four different models, InstructBLIP-Vicuna-13B 3 3 3 https://github.com/salesforce/LAVIS/tree/main/projects/instructblip , MMICL-FLANT5XXL 4 4 4 https://huggingface.co/BleachNick/MMICL-Instructblip-T5-xxl , QwenVL-Chat 5 5 5 https://huggingface.co/Qwen/Qwen-VL-Chat and GPT4-Vision 6 6 6 https://chat.openai.com . We apply default inference configurations for the corresponding models.
+
+HOLMES.
+
+In HOLMES framework, the LLM is required to continuously invoke various APIs and retrieve their return information. To streamline the evaluation process, we initially execute all APIs for every instance in PCA-EVAL, storing the result for each instance. This approach allows us to directly access the specific result of a given API without the need to run the model each time an evaluation is conducted. We would also make the API results open-source together with the benchmark. The description and implementation details of the APIs are listed in Appendix  B .
+
+We compare three LLMs: Vicuna 7 7 7 https://huggingface.co/lmsys , ChatGPT-3.5-Turbo and GPT4 8 8 8 https://platform.openai.com . However we found Vicuna models lack the capability to call various APIs for information gathering, thus we have only reported the results for ChatGPT and GPT4. We anticipate supplementing these results as soon as open-source models become available, which can understand API descriptions and correspondingly call different APIs.
+
+5.2 Evaluation
+
+PCA-Eval assesses embodied decision-making through three distinct lenses: perception, cognition, and action. The scores we reported in Table  1 rely on the consensus score from three human evaluators. We compute the average kappa correlation coefficient for these evaluators, resulting in 0.91 for the Perception Score and 0.88 for the Cognition Score. These figures
+indicate a good consistency in the evaluation process.
+
+5.3 Main Results
+
+Method
+Model
+Traffic
+Domestic
+Game
+Average
+
+P
+C
+A
+P
+C
+A
+P
+C
+A
+P
+C
+A
+
+End2End
+InstructBLIP
+
+-
+-
+0.42
+-
+-
+0.41
+-
+-
+0.24
+-
+-
+0.36
+
+MMICL
+
+-
+-
+0.63
+-
+-
+0.51
+-
+-
+0.29
+-
+-
+0.48
+
+QwenVL-Chat
+
+-
+-
+0.59
+-
+-
+0.55
+-
+-
+0.24
+-
+-
+0.46
+
+GPT-4V
+
+0.75
+0.73
+0.78
+0.81
+0.69
+0.67
+0.95
+0.79
+0.77
+0.84
+0.74
+0.74
+
+HOLMES
+ChatGPT
+
+0.75
+0.68
+0.66
+0.88
+0.52
+0.50
+0.78
+0.40
+0.36
+0.80
+0.53
+0.51
+
+GPT4
+
+0.87
+0.82
+0.82
+0.85
+0.61
+0.56
+0.91
+0.77
+0.74
+0.88
+0.73
+0.71
+
+Table 1: Main results on PCA-EVAL. Models with are fully open-source. Models with only provide API to access. P, C, and A represent Perception, Cognition, and Action Scores, respectively. For the open-source models in End2End setting, we find it hard to prompt them to output correct cross-modal reasoning information, so their Perception and Cognition scores are not reported.
+
+We evaluate various methods and models on the PCA-EVAL benchmark, as shown in Table  1 .
+
+In the upper block concerning End2End-VLLMs, the recently unveiled closed-source model, GPT-4V, outperforms existing open-source models by achieving the highest scores of 0.84, 0.74, and 0.74 in the perception, cognition, and action dimensions respectively. This performance represents a 26% action score improvement over its open-source counterpart, MMICL. The impressive performance of GPT-4V is primarily attributed to its exceptional ability to perceive visual information across different domains, particularly in the challenging game domain.
+
+We also assessed the performance of embodied decision making using our HOLMES system.
+
+As shown in the bottom block of the table, the HOLMES system, based on GPT4, achieves an Action Score of 0.71, matching the performance of GPT-4V (0.74). This suggests that the HOLMES system is proficient in understanding the task goal, breaking down the larger goal into multiple smaller steps, and accurately invoking the relevant APIs to accomplish each step.
+
+Specifically, the GPT4-HOLMES system can identify key concepts in an image through the results returned by APIs such as list_nearby_mobs_in_minecraft() . As a result, the system achieves an average Perception Score of 0.88, surpassing GPT-4V’s 0.84. However, when compared to End2End methods, HOLMES relies on multi-step reasoning for the final decision. This approach can lead to the accumulation of reasoning errors, resulting in a lower Cognition Score in both Domestic and Game domains.
+
+6 Discussion
+
+6.1 Comparison Between End2End and HOLMES
+
+We conduct an analysis and comparison of the outputs generated by the End2End method with GPT4-Vision, as well as the HOLMES method with GPT4. Our findings indicate that the End2End method effectively mitigates information loss during the modality conversion process. As illustrated in Figure  6a , an image depicts a road with several nearby cars. GPT4-Vision is capable of discerning that these cars are situated in a safe space, thereby suggesting that the driver can continue driving.
+
+Conversely, GPT4, while aware of the number of cars, lacks information about their spatial relation, leading it to recommend slowing down. This suggests that the End2End method is superior in perceiving certain visual features that are not captured by the APIs. Conversely, some specialized APIs, such as traffic sign detection, outperform GPT4-Vision in tasks like traffic sign detection, as they are specifically trained for this task. This could enable the HOLMES method to gather more accurate information than the End2End model.
+
+(a) A Comparison between GPT4-V and GPT4-HOLMES
+
+(b) An example of decision misalignment.
+
+Figure 6: Case studies.
+
+6.2 Alignment between Agent Decisions and Human Values
+
+We have observed instances where the decisions made by the agent contradict human values. For instance, consider the scenario depicted in Figure  6b . The image illustrates a crosswalk devoid of pedestrians. The appropriate response in this situation would be to slow down, as caution is paramount when approaching a crosswalk, regardless of the presence or absence of pedestrians. However, upon processing the information that the crosswalk is unoccupied, ChatGPT suggests that maintaining the current speed is the optimal action, arguing that the absence of pedestrians eliminates the need to slow down. The rationale provided by ChatGPT is logical, yet it does not align with human values. We believe it is crucial for embodied agents to make decisions that are in harmony with human values, rather than solely focusing on maximizing their advantage.
+
+6.3 Limitation and Future Work
+
+The current scope of PCA-EVAL is confined to merely three domains, with a cap of 100 instances per domain. One of our future work aims to broaden this scope to encompass more domains and embodied environments where MLLMs could keep getting feedback. Furthermore, we plan to increase the number of instances for both the existing and newly introduced domains.
+
+7 Conclusion
+
+In this study, we present PCA-EVAL, a comprehensive evaluation benchmark for embodied decision-making that gauges performance in perception, cognition, and action, thereby offering an all-encompassing measure for various embodied agents. We conduct a systematic comparison between End2End embodied decision-making and HOLMES, a multi-agent cooperation framework developed by us. Our findings reveal that MLLM, when applied with the end2end method, surpasses the top-performing model in HOLMES, GPT-4, in terms of decision accuracy and cognition score. However, it is crucial to underscore that this superior performance is specific to the GPT4-Vision model, which significantly outperforms the open-source state-of-the-art VLLMs. These results and subsequent analysis underscore the necessity for ongoing exploration in embodied decision-making and the development of open-source MLLMs to ensure wider accessibility and progress in the field.

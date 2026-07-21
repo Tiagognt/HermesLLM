@@ -1,0 +1,667 @@
+RTAW: An Attention Inspired Reinforcement Learning Method for
+                                                Multi-Robot Task Allocation in Warehouse Environments
+                                                                         Aakriti Agrawal1 , Amrit Singh Bedi1 , and Dinesh Manocha1
+
+                                            Abstract— We present a novel reinforcement learning based              into multiple categories depending on the robot types, task
+                                         algorithm for multi-robot task allocation problem in ware-                types, and task assignment to robots.
+                                         house environments. We formulate it as a Markov Decision                     In this paper, we address the problem corresponding to
+                                         Process and solve via a novel deep multi-agent reinforcement
+                                         learning method (called RTAW) with attention inspired pol-                the ST-SR-IA category, where we consider single-task robots
+                                                                                                                   (ST) which execute only a single task at any given time.
+arXiv:2209.05738v2 [cs.RO] 27 Feb 2023
+
+                                         icy architecture. Hence, our proposed policy network uses
+                                         global embeddings that are independent of the number of                   All tasks are single robot tasks (SR) and task assignment is
+                                         robots/tasks. We utilize proximal policy optimization algorithm           instantaneous (IA) where the task is instantaneously allocated
+                                         for training and use a carefully designed reward to obtain a              at each decision timestep. This class of problems can be
+                                         converged policy. The converged policy ensures cooperation
+                                         among different robots to minimize total travel delay (TTD)               solved in polynomial time at each decision timestep [2].
+                                         which ultimately improves the makespan for a sufficiently                 Prior methods focus on developing a deterministic solution
+                                         large task-list. In our extensive experiments, we compare the             for task allocation for a given set of tasks and robots [8].
+                                         performance of our RTAW algorithm to state of the art methods             We are interested in a sequential-lifelong version of the
+                                         such as myopic pickup distance minimization (greedy) and                  problem where new tasks are continuously generated and
+                                         regret based baselines on different navigation schemes. We show
+                                         an improvement of upto 14% (25-1000 seconds) in TTD on                    task is allocated to a robot as soon as it becomes available.
+                                         scenarios with hundreds or thousands of tasks for different               Our goal is to maximize the sum of utilities over time, that
+                                         challenging warehouse layouts and task generation schemes.                is, assign tasks at each instant in such a way that the total
+                                         We also demonstrate the scalability of our approach by showing            time taken to execute a specific number of tasks makespan
+                                         performance with up to 1000 robots in simulations.                        as well as extra travel time TTD is minimized.
+                                                                 I. I NTRODUCTION                                     The existing state-of-the-art task allocation methods
+                                                                                                                   are mainly designed for multi-agent pickup and delivery
+                                            Recent advancements in artificial intelligence (AI) and                (MAPD) and are primarily coupled with grid based navi-
+                                         robotics have contributed to the widespread use of automa-                gation schemes, which are mostly designed for centralized
+                                         tion in warehouse environments. A recent case study by Hon-               systems [5]. Our method when combined with decentralised
+                                         eywell1 indicated more than a 50% rise in e-commerce sales                navigation algorithms can give rise to decentralised task-
+                                         after COVID-19 amidst existence of human labor shortage,                  allocation and navigation with obstacle avoidance [9]. But
+                                         thus proving the need of automating fulfillment and distri-               the current practical warehouses uses only grid based navi-
+                                         bution centers/warehouses. Warehouse automation, widely                   gation. Thus, this work focuses on the commonly occurring
+                                         being used by online retailers like Amazon, Alibaba, etc,                 system in warehouses which is based on centralized task
+                                         can be performed by using multiple robots and a decision-                 allocation and navigation.
+                                         making system. We are considering the task of picking and                    Main Results: The novel components of our work in-
+                                         delivering a parcel from point A to point B [1]. By designing             clude:
+                                         an appropriate multi-robot decision-making system, we can                   1) We formulate (first time in literature) the MRTA prob-
+                                         improve the task efficiency and throughput. The problem of                      lem in warehouse settings as a reinforcement learning
+                                         designing such a system can be further divided into two                         problem. This require careful design of state, rewards,
+                                         parts: task allocation [2] and robot navigation [3]. Generally,                 and actions for the problem to utilize any existing
+                                         greedy approaches are used to solve task allocation and                         method to solve the problem.
+                                         multi-agent planning for navigation [4], [5].                               2) The selection of reward for MRTA problem is quite
+                                            We mainly deal with the problem of task allocation in                        challenging and we propose to use total travel delay
+                                         multi-robot settings, which is popularly known as multi-robot                   (TTD) as the reward after evaluating different rewards
+                                         task allocation (MRTA). This problem is widely studied in                       like task length, total time of robot travel, etc. Interest-
+                                         the literature using techniques from combinatorial optimiza-                    ingly, only the TTD based rewards exhibit converging
+                                         tion [2]. The problem of computing the optimal solution is                      behavior.
+                                         NP-hard in general, and most practical solutions are based                  3) We propose a novel policy architecture that can handle
+                                         on greedy techniques [5], [6]. A comprehensive survey of                        a variable number of robots and tasks easily by forming
+                                         MRTA problems is given in [7], which divides the problem                        useful global encoded representation using a mechanism
+                                           1 The Department of Computer Science, University of Maryland, College         inspired from attention. This is important because we
+                                         Park, MD, USA {agrawal5,amritbd,dmanocha}@umd.edu                               can utilize the similar model to accommodate changes
+                                           1 https://tinyurl.com/344p5e4y                                                in the robot number during the execution process. with
+    different number of robots. This also makes RTAW              from the given grid point (state).
+    scalable to thousands of robots (Sec. III-C) in our              Both taxi-matching and MRTA problems are sequential
+    simulations with constant space complexity and linear         decision-making problems in terms of allocating tasks. How-
+    time complexity with respect to number of agents and          ever, warehouses have a fixed and comparatively small layout
+    tasks (cf. Appendix VII).                                     with a smaller and fixed number of robots deployed. In
+ 4) We show extensive evaluations and compare against the         contrast, ride-sharing platforms tackle thousands of vehicles
+    state-of-the-art greedy baseline called myopic pickup         and millions of orders over a large area like a city. Therefore
+    distance minimization (MPDM) and regret-based task-           ride-sharing allocation techniques focus on the distribution of
+    selection (RBTS) for various navigation schemes, lay-         tasks and agents rather than computing their exact coordinate
+    outs and robots-number, and show an improvement of            positions.
+    upto 10% (25 - 1000 sec) for 500 tasks. Our approach is          Thus, the multi-agent formulation for task allocation using
+    trained with only single-agent A*, but works with other       reinforcement learning in [21], [22] for taxi-matching appli-
+    navigation schemes (SIPP and CBS). Hence it can be            cations cannot be directly applied to warehouse settings.
+    decoupled from the navigation system.                            Task Allocation in Warehouses: Task allocation in ware-
+                                                                  houses has also been studied [1], where it is formulated
+A. Related Works                                                  as an integer linear program and solved using a table-
+   Multi-robot task allocation (MRTA) has been widely             working method. Moreover, [23] describe an optimal task
+studied in the robotics and related areas such as taxi-           allocation for heterogeneous robots using navigation path,
+matching [10], food-delivery [11], search and rescue etc.         speed, and current location of each robot and test its validity
+MRTA problems are typically solved using (1) market-based         in simulated environments. These methods are best suited for
+approaches and (2) optimization-based approaches for differ-      static settings, where all the robots are available at the same
+ent environments [12]. Market-based approaches are based          time to solve the matching problem. In practice, different
+on auction systems where each robot bids for a task with a        robots take different times to complete a task. Therefore,
+base selling price determined by a broker. The negotiation        our goal here is to design dynamic task allocation solutions
+process is based on market theory, where the team seeks           that assign a task to a robot whenever it becomes available.
+to optimize an objective function based on robots’ abilities         The problem of task allocation in warehouses is also
+to perform particular tasks [13]. These solutions [14], [15]      briefly studied in multi-agent pickup and delivery problem.
+can be efficient, robust, and scalable but difficult in terms     The current state-of-the-art [5] uses greedy solution for
+of designing appropriate cost and revenue functions [16]. In      task allocation. It continuously allocates and de-allocates
+contrast, optimization-based approaches outperform market-        tasks based on marginal cost or regret on marginal cost.
+based approaches in handling large-scale MRTA scenarios           Such techniques cannot be decoupled from the navigation
+(such as 50 tasks and 15 robots) [12]. In [17], the idea is to    part. But authors in [24] proposed a decoupled solution
+utilize a hybrid optimization approach combining a tabular        that assigns tasks to agents first in a greedy manner and
+search with a random search method. The authors in [18]           then utilizes a Conflict-Based Search (CBS) [4] strategy
+combine a tabular search with a noising method to solve           to plan collision-free paths. We use this commonly used
+for static tasks, where tasks are not continuously entering       greedy approach (also called MPDM) as one of the baselines.
+but are predefined. Further, [19] proposes a simultaneous
+approach to solve the navigation and task allocation problems                    II. RL BASED F ORMULATION
+for a multi-robot system, where simulated annealing and              In the existing literature, multi-robot task allocation prob-
+ant colony optimization methods are applied. In contrast to       lem in warehouse environments is solved by standard op-
+the existing above mentioned approaches, our problem is           timization methods [7]. But in practice, tasks appear at
+sequential-lifelong single item task-allocation in warehouse      different time instances, and robots’ availability also varies
+settings and we aim to develop an algorithm that can be           with time, which makes the problem challenging to solve
+easily deployed with any navigation techniques. In this work,     via standard optimization methods. To address this issue,
+many auction and optimisation-based approaches boil down          for the first time in this work, we formulate the multi-
+to greedy methods or modifications of them, which form our        robot task allocation problem in warehouse environments as
+baselines.                                                        a reinforcement learning problem. The goal is to allocate
+   Taxi-Matching Problem: The problem of task allocation          tasks to multiple robots such that the tasks are performed
+in this work is closely related to the taxi-matching problem,     in an efficient manner (i.e. resources like battery are better
+where the goal is to match drivers to customers while reduc-      utilised and throughput is maximized). The formulation is
+ing the driver wait time, increasing the driver’s income, and     challenging because it requires to define a Markov Decision
+reducing the driving miles [20]. The problem of matching          Processes (MDP) for the problem. An MDP here is defined
+pick-up and delivery tasks to drivers was initially solved        by a tuple M := (S, A, R, P, γ), where S denotes the finite
+using combinatorial optimization [10]. Recently, the same         state space, A denotes the finite action space, and R(s, a)
+problem has been solved via multi-agent RL techniques [21],       denotes the reward for state s and action a in S and A,
+which divide the city map into many dispatching regions           respectively. Further, P represent the transition probability
+(grids) and then learn a policy to assign drivers for a request   matrix where Pa (s, s0 ) is the probability of transition to state
+Fig. 1: We highlight our policy network architecture that is designed to work with variable number of robots and tasks in any
+warehouse layout. Our formulation takes the feature of robots and tasks as input to generate fixed dimensional embeddings.
+Next, these embeddings are mixed to generate a global state for the system, which is used to perform the action of choosing
+tasks for the selected robot.
+
+s0 ∈ S from state s ∈ S after taking action a ∈ A. Here,                   all possible states s constitutes the state space S.
+γ ∈ (0, 1) is the discount factor used to trade the near term                 Action: An action a in the environment is to select which
+reward with the long-term rewards in the RL formulation.                   task to execute from the list of N available tasks in the
+   MDP model M for the multi-robot task allocation                         queue. We define a policy π : S → D(A) (here D denotes
+problem: Let the time instance be t ∈ N and we consider                    the set of possible distributions defined over A) which takes
+a warehouse environment with the M number of robots                        the current state as input and outputs a distribution across
+collectively denoted by R = {1, 2, · · · , M }. A warehouse                the all possible actions a ∈ A. Note that in our model, A
+environment is represented by a specific K × K grid layout                 constitutes the list of all available tasks from which we need
+(shown in Fig. 2). In this work, we do not restrict ourselves              to select a particular task for the selected robot jsel . During
+to any particular layout, and our approach is applicable to                the training time, we select the action a ∼ π(· · · | s) where
+all general layouts. In fact, models trained on dense layouts              π(· | s) is the probability distribution across the tasks. During
+have shown to give good performance on sparse layouts as                   the test time, we select the action in a deterministic manner
+well. Our test layout and task generation are described in                 by choosing a task to accomplish with maximum probability
+section 4. After the task allocation at t, the corresponding               in π(· | s). Further, we discuss the policy architecture in
+task is removed from the queue and a new task is added.                    detail in Sec. II-A.
+To make the problem tractable, we assume that at each t,                      Reward: Designing an appropriate reward for the RL
+only one robot is available to be allocated one of the tasks.              formulation is crucial because this reward eventually decides
+We accomplish this by adding a small Gaussian noise of                     the behavior of the policy. We define the reward as the
+mean 0.25 and variance 0.25 to the task completion time.                   negative of the cost, which is the time a robot takes to
+This noise value is chosen to be in (1/100)th range of                     reach the origin oi of the task from its current location.
+the task-completion-time range. This ensures that no two                   In this work, we use the navigation schemes to calculate
+robots become available at the same point in time. All the                 the approximate cost of the path by making the robot run
+other robots are currently performing the previously allocated             through that path. This makes sense because during the time
+tasks. We move from t to t + 1 as soon as a robot becomes                  of travel from the robot’s current location to the task origin,
+available after completing a task.                                         the robot is not serving any task, and hence we aim to
+   State: Each task i ∈ P is represented by a tuple                        minimize this time. Specifically, this is defined as total travel
+(oi , di , ki , li ), where oi is the origin of the task i, di is          delay (TTD), which is the extra time the robot travels when it
+the destination of task i, ki denotes the distance between                 is not executing any task. Minimizing TTD would ultimately
+the selected robot’s current position to oi , and li is the                minimize the makespan in the lifelong task allocation. We
+length (distance between oi and di ) of the task. The origin               note that other reward formulations are also possible (which
+oi and destination di for each task i are the coordinates                  we tried but didn’t work) such as the negative of total task-
+sampled from the 2D layout. Each robot j ∈ R is also                       length defined as the time taken to move from the origin to
+represented by a tuple (pj , rj ), where pj is position (X − Y             the destination of task.
+coordinates) in the 2D map and rj is the time left to                         Another possibility of reward is the negative of total travel
+complete the allocated task (i.e., the task completion time).              time which is sum of TTD and task-length. That is, the
+Let jsel denotes the available robot for task allocation.                  time to travel from robot position to task origin plus time
+Then, the state s encapsulates the robots’ positions, their                to complete the task. We call it Reward-Travel Time. We
+task completion times, and the task list P, which consists                 observe there exists unique minima for TTD. For task-length
+of tuples (oi , di , ki , li ) for all the tasks and the selected          based rewards, it becomes non-stationary and thus hard to
+robot
+         jsel . Collectively, we can write the state as s :=              learn. We compare the different reward schemes in Table I.
+  (pj , rj )∀j∈R , (oi , di , ki , li )∀i∈P , jsel and the collection of      State-Transitions: At current state st , we have a task list
+            Reward                   Equation                Converged   Minimized   Minimized
+
+        TTD (proposed)             dist(pj , oi )              Yes
+                                                                           TTD
+                                                                            Yes
+                                                                                     Makespan
+                                                                                        Yes
+                                                                                                 issues with respect to the number of agents and tasks in the
+          Task length
+       TTD + Task length
+                                   dist(oi , di )
+                           dist(pj , oi ) + dist(oi , di )
+                                                               No
+                                                               Yes
+                                                                            No
+                                                                            No
+                                                                                        No
+                                                                                        No
+                                                                                                 given warehouse environment.
+                                                                                                    To address the issue of scalability, we take motivation from
+TABLE I: The table shows a comparison of different rewards.                                      the problem of multi-driver vehicle dispatching problem as
+Our reward (distance between robot position and task origin)                                     solved in [20] and propose an attention mechanism inspired
+minimizes both TTD and makespan and shows good conver-                                           policy architecture shown in Fig. 1. The proposed architec-
+gence properties. This is not the case for the other two reward                                  ture is able to handle arbitrary number of robots and tasks in
+formulations, shown in second and third rows.                                                    any warehouse layout via utilizing global embeddings. For
+                                                                                                 each robot j ∈ R, let us denote the features FjR := {pj , rj },
+in queue P and one available robot (say i ∈ R). At this state,                                   which consists of position coordinates pj = (xj , yj ) and time
+we take action at according to a policy π(· | st ) that decides                                  to task completion rj , are passed through one layer of 16
+which task would be allocated to the free robot. The selected                                    nodes and ReLU activation. This is followed by an another
+task is removed from the list, new task gets added to the list,                                  layer with 16 nodes to generate robot embeddings denoted
+and the robot becomes unavailable. Our algorithm will wait                                       by EjR . This is important to extract the right information
+until next robot becomes available which would mark our                                          from the data input in the form of embeddings which is then
+new state st+1 . Note that the state transitions happens at                                      used for further processing instead of the direct data input.
+irregular intervals.                                                                             Selected robot’s embeddings Esel   R
+                                                                                                                                         are also generated in a
+                                                                                                 similar manner. Mathematically, we have
+A. Network Architecture using Attention Based Embeddings
+                                                                                                                EjR = WR2 · ReLu WR1 · FjR ,
+                                                                                                                                                  
+  The objective of an RL problem is to maximize the                                                                                                           (3)
+                                                                                                                 R                              R
+                                                                                                                                                  
+expected value of the cumulative reward returned under                                                         Esel = WR2 · ReLu WR1 · Fsel         .
+policy πθ which is parametrized by θ. Mathematically, the            where WR1 and WR2 are the weights of the neural network.
+objective is given as:                                               In a similar manner, for each task i ∈ P, the input features
+                                                                     FiP = (oi , di , ki , li ) are passed through one layer of 16
+                           max J(θ),                          (1)
+                              θ                                      nodes with ReLU activation. This is followed by another
+                                                                                                                        P     P
+where J(θ) := Vπθ (s0 ). Here, Vπθ (s0 ) is the value function 16 node layer to generate        P
+                                                                                                   task embeddings Ei as Ei =
+for any arbitrary initial      s0 given as                          WP 2 · ReLu WP 1 · Fi .
+                    P∞ statet
+                                                                       The robot embeddings EjR as well as task embeddings
+   Vπθ (s0 ) = Eπ      t=0 γ R(st , at ) s0 = s, at ∼ πθ (· | st ) .   P
+   The formulation in (1) gives rise to class of policy gradient Ei are passed through a 16 node layer with tanh activation
+algorithms [25]. The explicit form of the policy gradient is and 1 node         R
+                                                                                  layer with sigmoid activation to compute scalar
+                                                                                          P
+given by                                                             outputs  αj and αi , respectively, for a robot and the tasks
+                                                                     given by
+       ∇θ J(θ) = (1/1 − γ)Et [∇θ log πθ (at | st ) · At ], (2)
+                                                                                  αjR = sig WR4 · tanh WR3 · EjR
+                                                                                                                      
+                                                                                                                                (4)
+                                                                                    P                               P
+                                                                                                                      
+where Et is the empirical average over a finite batch of                          αi = sig WP 4 · tanh WP 3 · Ei                (5)
+samples, and At denotes the estimate of the advantage
+                                                                     These scalar would provide different weight-age to different
+function At = Qπθt (st , at ) − Vθt (st ). We use the popular
+                                                                     robots or tasks. Next, we compute the weighted average of
+proximal policy optimization (PPO) algorithm to solve the
+                                                                     all robot embeddings as well as task embeddings given by
+problem due to its advantages as compared to other RL                                X                          X
+methods such as data efficiency and reliable performance                      vR =         αjR EjR , and v P =      αiP EiP .   (6)
+[26]. A generalized advantage estimator [27] is used to                               j                           i
+                                                                        Further, the global task embeddings are computed using
+estimate At in this work . Here, Qπθt (st , at ) denotes the an attention-like mechanism [29] so that we generate the
+state action value function.                                         expected global information. The final vectors v R and v P
+   Attention Inspired Policy Architecture: To this end, the are concatenated together with selected robot’s embedding
+most important part is to design the policy πθ which is mostly Esel    R
+                                                                           to generate one single vector V = (v R , v P , Esel R
+                                                                                                                                  )
+defined as a deep neural network (DNN) in the literature [28] which denotes the state of the system. We remark that the
+and θ corresponds to the weights of the DNN. The design of dimension of this state of the system is independent of
+a specific neural network architecture for the policy is crucial the number of tasks or agents in the system which is an
+and challenging because it will control the class of policies important aspect of the proposed architecture. Moreover, to
+over which we will be optimizing the non-convex objective make an accurate prediction of action, the network requires
+of (1). A naive architecture would be to simply concatenate both global and local information, which motivates us to
+all robot and task information (locations, availability etc.) concatenate selected robot (local embedding) and, v R and
+and pass that as input to the network. The input layer size v P (global embeddings). Next, this one dimensional vector V
+would then depend upon the number of robots and tasks. is concatenated with two dimensional task embedding using
+Moreover, the number of trainable parameters would keep broadcasting, which implies
+increasing with the increase in number of tasks and robots.
+This kind of architecture is not practical due to the scalability                   Output = (V, EiP ), for ∀i ∈ P.             (7)
+Then the Output is passed through one layer with 8 nodes              the same starting point but with different destinations. The
+and ReLU activation, then passed through another layer with           two tasks are chosen such that one is always longer than the
+one node, and finally passed through categorical distribution         other. Since the starting coordinates are same, greedy policy
+to choose the task to be executed.                                    will randomly pick a task while RL policy learns to pick the
+                                                                      smaller task. Thus, giving 50% and 55% improvement over
+T ask chosen = Categorical(W2 · ReLu(W1 · Output)). (8)               MPDM for 10 and 100 robots, respectively.
+The output (T ask chosen ) is in form of integer denoting
+the task number the selected robot is assigned to. We use             B. Final Experimental Setting
+categorical distribution during training time to sample the              Next, we raise the difficulty level further and shift focus
+chosen task. During test time, we choose the task with the            to a more general setting where the tasks are generated
+highest probability.                                                  randomly in the environment using designated method. We
+                                                                      report the results in Table II for direct navigation and A*
+         III. I MPLEMENTATION AND E VALUATION                         navigation, respectively. We use the layouts as shown in 2
+   In this section, we describe our implementation and an-            for this evaluation.
+alyze its performance in different settings by varying the               Task Generation: To the best of our knowledge, there
+number of robots, task generation schemes, layouts and                are no publicly available datasets for the warehouse task
+navigation schemes. During training, we use two different             allocation problem. Therefore, in the literature, the task
+navigation techniques to compute the cost for the RL envi-            generation for the experiments is synthetic and has been
+ronment: direct navigation and A*. In the direct navigation           divided into three different ways random, clustered, and des-
+approach, the Euclidean distance between the robot position           ignated [3]. For the experiments in this section, we consider
+and task origin is used to evaluate the cost at each instant t. In    designated method for task generation where specific regions
+the A* navigation, the A* algorithm is used to calculate the          for pick-up and delivery are defined and tasks are randomly
+distance. We compare our method (RTAW) with minimum                   sampled from them. For our case, we define regions for pick-
+pickup distance minimization (MPDM) and regret based task             up and delivery using Gaussian distribution, and randomly
+selection as our baselines. Both these baselines are used in          sample our tasks from those distributions. This method is the
+sequential single-item auctions.                                      closest to the practical task generation method and is most
+   MPDM algorithm chooses the task that is closest to the             commonly used in literature [32], [33].
+robot. It is optimal if there is only one robot in the system and
+the task utility equals the distance of the robot to the task start    Direct
+                                                                                Robot No.
+                                                                                   10
+                                                                                               MPDM
+                                                                                             8312 ± 931
+                                                                                                             RBTS
+                                                                                                          8376 ± 653
+                                                                                                                           RTAW
+                                                                                                                         7924 ± 645
+                                                                                                                                      % Imp. MPDM
+                                                                                                                                        4.42 ± 3.27
+                                                                                                                                                      % Imp. RBTS
+                                                                                                                                                       5.36 ± 3.39
+                                                                                            13089 ± 751   13322 ± 905   12298 ± 747     6.04 ± 1.86    7.55 ± 4.96
+position (see [10] for a more in depth discussion). MPDM              Layout
+                                                                                  100
+                                                                                   10        5662 ± 372   6194 ± 235     5165 ± 132     8.77 ± 4.96    16.6 ± 5.14
+is the only baseline used for comparison in the literature              A
+                                                                      Layout
+                                                                                  100
+                                                                                   10
+                                                                                             7429 ± 213
+                                                                                             5591 ± 227
+                                                                                                          7882 ± 408
+                                                                                                          6098 ± 330
+                                                                                                                         7032 ± 393
+                                                                                                                         4989 ± 177
+                                                                                                                                        5.33 ± 3.94
+                                                                                                                                       10.74 ± 1.28
+                                                                                                                                                      10.77 ± 2.84
+                                                                                                                                                       18.1 ± 3.12
+for decoupled task allocation and navigation [24]. The other            B
+                                                                      Layout
+                                                                                  100
+                                                                                   10
+                                                                                             7885 ± 173
+                                                                                             6205 ± 247
+                                                                                                          8288 ± 488
+                                                                                                          6503 ± 435
+                                                                                                                         7387 ± 355
+                                                                                                                         5861 ± 378
+                                                                                                                                        3.34 ± 3.22
+                                                                                                                                        5.56 ± 4.2
+                                                                                                                                                        10.7 ± 5.5
+                                                                                                                                                       9.74 ± 5.24
+state-of-the-art [5] solutions for warehouse environments are           C
+                                                                      Layout
+                                                                                  100
+                                                                                   10
+                                                                                             7210 ± 201
+                                                                                             5920 ± 501
+                                                                                                          7915 ± 338
+                                                                                                          6675 ± 663
+                                                                                                                         6954 ± 164
+                                                                                                                         5719 ± 403
+                                                                                                                                        3.53 ± 1.69
+                                                                                                                                        3.27 ± 3.23
+                                                                                                                                                        12 ± 4.63
+                                                                                                                                                      14.09 ± 3.96
+based on coupled task allocation and navigation. Therefore,             D
+                                                                      Layout
+                                                                                  100
+                                                                                   10
+                                                                                             7764 ± 764
+                                                                                             5536 ± 367
+                                                                                                            8182 712
+                                                                                                          5916 ± 259
+                                                                                                                         7101 ± 357
+                                                                                                                         5281 ± 312
+                                                                                                                                        8.11 ± 6.22
+                                                                                                                                          4.6 ± 2
+                                                                                                                                                        13 ± 4.56
+                                                                                                                                                         10.7 ± 3
+they cannot be directly applied. We present a modified                  E         100        7791 ± 354   8126 ± 349     7453 ± 207     4.33 ± 3.45     8.28 ± 5.1
+
+version of RBTS used in [5] inspired from [30], [31].                 TABLE II: TTD time for 500 tasks in seconds. We assume
+   RBTS: For every task in the list, find the distance to the         the robot moves 1 unit in 1 sec. We show results for Direct
+closest robot. Subtract the distance of the selected robot to         navigation scheme with no obstacles and for A* navigation
+each of these tasks with the previous quantity. Choose the            scheme on various layouts of grid size 60 × 60. We generate
+task with the maximum value (i.e. maximum regret).                    results for 5 random seeds and report the mean and std of
+   For all experiments, we run the test on a fixed task set by        these 5 runs for each value. For eg. in the first entry of the
+fixing the seed of the random number generator and report             table, [8312 ± 931], 8312 is mean of 5 runs and 931 is the
+TTD values for them. We train our model on the Nvidia                 std.
+GeForce RTX 2080T i GPU with 11GB of memory, for 4 dif-
+ferent environments and batch size of 32. We run the training            Layout Generation: In order to evaluate approach, we
+for 4 million iterations which takes around 12 hours with A*          considered real-world warehouse environment layouts to
+navigation algorithm. The network architecture is not bulky           test the performance of our algorithms. These are based
+with GPU usage less than 5-10 %. Refer to appendix for                on [3] and warehouse layouts generated through Asprilo. We
+the training curves and hyper-parameters tuning. Next, we             evaluate the performance of the proposed algorithm on all the
+describe the different experimental settings and discuss the          layouts in Fig. 2 and compare the performance for 10 and
+experimental results in detail.                                       100 robots summarized in Table II and IV.
+                                                                         The task queue length is 10 for all cases. As shown in
+A. First Experimental Setting                                         Table IV, RTAW outperforms greedy (MPDM) as well as
+   In appendix sec. VI-A, we show a simple experiment as              regret-based (RBTS) baselines for all layouts and navigation
+proof of concept with 2 agents and 5 tasks, to compare                scenarios. For CBS [4] and SIPP [35] navigation schemes,
+the three methods. In appendix sec. VI-B, we show another             we train the algorithm on A* navigation and test on CBS
+simple experiment with two fixed tasks both of which have             and SIPP. These navigation algorithm takes a lot of time to
+                                                                                                        IV. A NALYSIS AND L IMITATIONS
+                                                                                             Our final reward function based on TTD exhibits better
+                                                                                          behavior than previous reward functions based on task-
+    (a) Layout A.                (b) Layout B.                 (c) Layout C.              length. This is because task-length is a fixed quantity and
+                                                                                          does not aid in learning. It makes it hard to compute the
+                                                                                          optimal function, whereas TTD has shown to exhibit good
+                                                                                          converging behavior. We observe that we do not get good
+                                                                                          improvement for all the seeds values. There are some cases,
+          (d) Layout D.                        (e) Layout E.
+                                                                                          when our model performs similar to greedy strategy. But
+Fig. 2: This figure presents different real-world warehouse                               such cases are not frequent, as shown in our results. When we
+layouts generated with varying level of compactness using                                 compute an average over multiple runs, we always see a clear
+the Asprilo framework for a fixed grid size of 60 × 60 [3],                               improvement. Some hyper-parameters played an important
+[34]. We use some of the most challenging layouts. Layout                                 role in formulating the problem and the performance of the
+A-very low compactness, Layout B-high compactness, Lay-                                   learning method. We choose a high γ value as close as
+out C-low compactness, Layout D-high compactness, Layout                                  possible to 1 because we want to take actions that result in
+E- low compactness.                                                                       higher future reward and not emphasise only the immediate
+                                                                                          reward (which happens in the greedy method). We used
+solve path therefore training with these navigation schemes                               entropy regularisation to aid the learning and deal with com-
+is infeasible. For the same limitation of these navigation                                plex environment (i.e., larger robots, more tasks, compact
+algorithms, we show results only for 10 agents for various                                layout). We reduce the entropy coefficient to help in the
+layouts. Our proposed architecture trained on one layout                                  learning process. More details are given in the supplementary
+can be efficiently used for a similar layout with different                               material.
+compactness. For instance, trained policy network for layouts                                Our RTAW algorithm has some limitations. One issue
+A and E can be used interchangeably. This is due to the                                   is handling the variable load capacity of the robots. Our
+similarity in task-distribution.                                                          current approach makes a assumption that a robot executes
+ Robot Number      Grid Size      MPDM       RBTS     RTAW      MPDM (%)       RBTS (%)   only one task (going from point A to point B) at a time.
+     500
+     500
+                    Direct
+                A* on Layout B
+                                  547538
+                                  311403
+                                             554681
+                                             301221
+                                                      503530
+                                                      278590
+                                                                  8.04
+                                                                  10.54
+                                                                                 9.22
+                                                                                 7.5
+                                                                                          Another assumption we make is that robots always finish
+     1000           Direct        695816     681236   674089      3.12           1.04     their task and are ready in terms of performing the next task
+     1000       A* on Layout B    413406     423368   403112      2.49           4.78
+                                                                                          right away. But this may not hold in practice due to robot’s
+TABLE III: TTD time in seconds for 5000 tasks for 500                                     state, battery charging etc. Our current approach can handle
+and 1000 robots for direct and A* navigation scheme. We                                   variable number of robots so in-order to accommodate new
+assume the robot moves 1 unit in 1 sec. Here we show output                               robots coming in and leaving the system, we just need to
+for only 1 run because with such large number of robots,                                  maintain separate system that keeps track of the total number
+baseline algorithm (RBTS) takes a very long to run.                                       of robots. Currently, we assume that the robots are similar
+                                               SIPP
+ Layout      MPDM           RBTS              RTAW        MPDM (%)         RBTS (%)       or homogeneous, that is, all robots travel with same velocity
+   A       692 ± 106      725 ± 94          645 ± 67      6.7 ± 6.4         11 ± 4        and acceleration, but this is may not be the case always in
+   B       616 ± 33.7     636 ± 102         566 ± 70      8.4 ± 7.6        10.5 ± 7.6
+   C       684 ± 110      707 ± 138         626 ± 86      8.1 ± 4.95       10.6 ± 5.5     the real world.
+   D       710 ± 131      706 ± 165        642 ± 140.5    10 ± 4.28        8.6 ± 4.7
+   E       643 ± 62.5     689 ± 110         595 ± 84      7.53 ± 5.5       13.7 ± 8.9                          V. C ONCLUSION
+                                                CBS
+ Layout       MPDM          RBTS              RTAW       MPDM (%)         RBTS (%)           We considered a problem of multi-robot task allocation
+   A         644 ± 80     696 ± 63          615 ± 74      4.5 ± 1.6      11.6 ± 7.43
+   B        680 ± 114     675 ± 105         619 ± 99      8.9 ± 1.8       8.3 ± 3.7       (MRTA) in warehouse environment and proposed a novel
+   C         655 ± 28     670 ± 45         625 ± 26.4     4.5 ± 3.8       6.6 ± 3.6       and state-of-the-art RL-based solution we called RTAW.
+   D        766 ± 121     817 ± 128         738 ± 125    3.73 ± 2.78      9.74 ± 4.3
+   E        618 ± 124     671 ± 127         591 ± 109     4.3 ± 4.2      11.98 ± 1.7      RTAW is general and can be applied to arbitrary warehouse
+                                                                                          layouts. We have evaluated the performance of RTAW on
+TABLE IV: TTD time for 50 tasks (in seconds) for 10                                       multiple layouts and under different experimental settings,
+robots for SIPP and CBS navigation scheme respectively.                                   where the number of robots is varied from 10 to 1000. We
+We assume the robot moves 1 unit in 1 sec. The model is                                   observe that our method outperforms prior techniques based
+trained on only A* navigation scheme for various layouts                                  on greedy and regret-based strategies and the computational
+(refer Fig. 2) of grid size of 60 × 60.                                                   complexity scales linearly with the number of robots. Fur-
+C. Scalability                                                                            thermore, RTAW can be combined with any centralized or
+                                                                                          decentralized navigation approach.
+   We show that RTAW is scalable by performing experi-
+ments on 500 and 1000 robots. For direct navigation, we used                                                         R EFERENCES
+a 300×300 grid layout with no obstacles. For A* navigation
+we used a 256 × 256 grid size of layout C. The results are                                [1] F. Xue, H. Tang, Q. Su, and T. Li, “Task allocation of intelligent
+                                                                                              warehouse picking system based on multi-robot coalition,” KSII Trans-
+summarized in Table III. We note that RTAW outperforms                                        actions on Internet and Information Systems, vol. 13, no. 7, 2019. 1,
+the baselines even for higher number of robots and tasks.                                     2
+ [2] B. P. Gerkey and M. J. Matarić, “A formal analysis and taxonomy                  allocation and validating the algorithm in a developed simulation
+     of task allocation in multi-robot systems,” The International Journal             tool,” Automation, vol. 2, no. 3, pp. 116–126, 2021. [Online].
+     of Robotics Research, vol. 23, no. 9, pp. 939–954, 2004. [Online].                Available: https://www.mdpi.com/2673-4052/2/3/7 2
+     Available: https://doi.org/10.1177/0278364904045564 1                        [24] H. Ma, J. Li, T. Kumar, and S. Koenig, “Lifelong multi-agent
+ [3] R. Stern, N. R. Sturtevant, A. Felner, S. Koenig, H. Ma, T. T.                    path finding for online pickup and delivery tasks,” arXiv preprint
+     Walker, J. Li, D. Atzmon, L. Cohen, T. S. Kumar, et al., “Multi-                  arXiv:1705.10868, 2017. 2, 5
+     agent pathfinding: Definitions, variants, and benchmarks,” in Twelfth        [25] K. Zhang, A. Koppel, H. Zhu, and T. Basar, “Global convergence of
+     Annual Symposium on Combinatorial Search, 2019. 1, 5, 6                           policy gradient methods to (almost) locally optimal policies,” SIAM
+ [4] W. Hönig, S. Kiesel, A. Tinka, J. Durham, and N. Ayanian, “Conflict-             Journal on Control and Optimization, vol. 58, no. 6, pp. 3586–3612,
+     based search with optimal task assignment,” in Proceedings of the                 2020. 4
+     International Joint Conference on Autonomous Agents and Multiagent           [26] J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov,
+     Systems, 2018. 1, 2, 5                                                            “Proximal policy optimization algorithms,” arXiv preprint
+ [5] Z. Chen, J. Alonso-Mora, X. Bai, D. D. Harabor, and P. J. Stuckey,                arXiv:1707.06347, 2017. 4, 10
+     “Integrated task assignment and path planning for capacitated multi-         [27] J. Schulman, P. Moritz, S. Levine, M. Jordan, and P. Abbeel, “High-
+     agent pickup and delivery,” IEEE Robotics and Automation Letters,                 dimensional continuous control using generalized advantage estima-
+     vol. 6, no. 3, pp. 5816–5823, 2021. 1, 2, 5                                       tion,” arXiv preprint arXiv:1506.02438, 2015. 4
+ [6] B. Gerkey and M. Mataric, “Sold!: auction methods for multirobot co-         [28] L. Wang, Q. Cai, Z. Yang, and Z. Wang, “Neural policy gradient
+     ordination,” IEEE Transactions on Robotics and Automation, vol. 18,               methods: Global optimality and rates of convergence,” CoRR, vol.
+     no. 5, pp. 758–768, 2002. 1                                                       abs/1909.01150, 2019. [Online]. Available: http://arxiv.org/abs/1909.
+ [7] G. A. Korsah, A. Stentz, and M. B. Dias, “A comprehensive taxonomy                01150 4
+     for multi-robot task allocation,” The International Journal of Robotics      [29] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N.
+     Research, vol. 32, no. 12, pp. 1495–1512, 2013. 1, 2                              Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” in
+ [8] A. Frank, “On kuhn’s hungarian method—a tribute from hungary,”                    NeuRIPS, 2017. 4
+     Naval Research Logistics, vol. 52, pp. 2–5, 2005. 1                          [30] F. A. Tillman and T. M. Cain, “An upperbound algorithm for the
+ [9] A. Agrawal, S. Hariharan, A. S. Bedi, and D. Manocha, “Dc-mrta:                   single and multiple terminal delivery problem,” Management Science,
+     Decentralized multi-robot task allocation and navigation in complex               vol. 18, no. 11, pp. 664–682, 1972. 5
+     environments,” in 2022 IEEE/RSJ International Conference on Intel-           [31] S. K. X. Zheng, C. Tovey, R. Borie, P. Kilby, V. Markakis, and
+     ligent Robots and Systems (IROS), 2022, pp. 11 711–11 718. 1                      P. Keskinocak, “Agent coordination with regret clearing,” in AAAI,
+[10] L. Zhang, T. Hu, Y. Min, G. Wu, J. Zhang, P. Feng, P. Gong, and J. Ye,            2008. 5
+     “A taxi order dispatch model based on combinatorial optimization,” in        [32] L. Cohen, T. Uras, and S. Koenig, “Feasibility study: Using highways
+     Proceedings of the 23rd ACM SIGKDD International Conference on                    for bounded-suboptimal multi-agent path finding,” in Eighth Annual
+     Knowledge Discovery and Data Mining, 2017, p. 2151–2159. 2, 5                     Symposium on Combinatorial Search, 2015. 5
+[11] Z. Lou, W. Jie, and S. Zhang, “Multi-objective optimization for order        [33] H. Ma, D. Harabor, P. J. Stuckey, J. Li, and S. Koenig, “Searching
+     assignment in food delivery industry with human factor considera-                 with consistent prioritization for multi-agent path finding,” in AAAI,
+     tions,” Sustainability, vol. 12, no. 19, 2020. 2                                  vol. 33, no. 01, 2019, pp. 7643–7650. 5
+[12] M. Badreldin, A. Hussein, and A. Khamis, “A comparative study                [34] L. Cohen, G. Wagner, D. Chan, H. Choset, N. Sturtevant, S. Koenig,
+     between optimization and market-based approaches to multi-robot task              and T. S. Kumar, “Rapid randomized restarts for multi-agent path
+     allocation,” Advances in Artificial Intelligence, vol. 2013, p. 11, 09            finding solvers,” in Eleventh Annual Symposium on Combinatorial
+     2013. 2                                                                           Search, 2018. 6
+[13] R. Zlot and A. Stentz, “Market-based multirobot coordination for             [35] M. Phillips and M. Likhachev, “Sipp: Safe interval path planning for
+     complex tasks,” The International Journal of Robotics Research,                   dynamic environments,” in IEEE ICRA, 2011, pp. 5628–5635. 5
+     vol. 25, no. 1, pp. 73–101, 2006. 2
+[14] A. Khamis, A. Elmogy, and F. Karray, “Complex task allocation
+     in mobile surveillance systems,” Journal of Intelligent and Robotic
+     Systems, vol. 64, pp. 33–55, 10 2011. 2
+[15] M. B. Dias and A. Stentz, “A free market architecture for distributed
+     control of a multirobot system,” 2000. 2
+[16] M. Dias, R. Zlot, N. Kalra, and A. Stentz, “Market-based multirobot
+     coordination: A survey and analysis,” Proceedings of the IEEE, vol. 94,
+     no. 7, pp. 1257–1270, 2006. 2
+[17] W. Kmiecik, M. Wojcikowski, L. Koszalka, and A. Kasprzak, “Task
+     allocation in mesh connected processors with local search meta-
+     heuristic algorithms,” in Intelligent Information and Database Systems.
+     Berlin, Heidelberg: Springer Berlin Heidelberg, 2010, pp. 215–224. 2
+[18] W.-H. Chen and C.-S. Lin, “A hybrid heuristic to solve a task
+     allocation problem,” Computers and OR, vol. 27, pp. 287–303, 03
+     2000. 2
+[19] D. K. Liu and A. K. Kulatunga, “Simultaneous planning and schedul-
+     ing for multi-autonomous vehicles,” in Evolutionary Scheduling, K. P.
+     Dahal, K. C. Tan, and P. I. Cowling, Eds. Berlin, Heidelberg: Springer
+     Berlin Heidelberg, 2007, pp. 437–464. 2
+[20] J. Holler, R. Vuorio, Z. Qin, X. Tang, Y. Jiao, T. Jin, S. Singh, C. Wang,
+     and J. Ye, “Deep reinforcement learning for multi-driver vehicle
+     dispatching and repositioning problem,” in 2019 IEEE International
+     Conference on Data Mining (ICDM). IEEE, 2019, pp. 1090–1095.
+     2, 4
+[21] O. de Lima, H. Shah, T.-S. Chu, and B. Fogelson, “Efficient rideshar-
+     ing dispatch using multi-agent reinforcement learning,” arXiv preprint
+     arXiv:2006.10897, 2020. 2
+[22] M. Li, Z. Qin, Y. Jiao, Y. Yang, J. Wang, C. Wang, G. Wu, and J. Ye,
+     “Efficient ridesharing order dispatching with mean field multi-agent
+     reinforcement learning,” in The world wide web conference, 2019, pp.
+     983–994. 2
+[23] N. Baras, A. Chatzisavvas, D. Ziouzios, and M. Dasygenis,
+     “Improving automatic warehouse throughput by optimizing task
+                                                             A PPENDIX
+
+                                                VI. E XPERIMENTAL S ETTINGS
+
+A. Proof of concept
+
+  We devise a simple experiment to validate the proof of concept which means that RL based policies are indeed useful as
+compared to the greedy and regret-based baseline. We consider 2 robots and 5 fixed tasks in a 2D map (as listed in Table
+V) to be allocated, with a task queue length of 2. Since there are only 5 tasks, we record the five step transitions in the
+environment and report the task allocation for the greedy and regret-based method in Table VI.
+
+                                              Task 1   Task 2     Task 3     Task 4     Task 5
+                                         oi   (2, 9)   (4, 4)     (5, 6)     (2, 4)     (0, 5)
+                                         di   (5, 5)   (0, 0)     (3, 2)     (1, 2)     (7, 1)
+
+     TABLE V: We enlist the task list with 5 tasks with their origin oi and destination di points in the 2D grid map.
+
+                             State     (pi , ri )   Task        TTD       (pi , ri )   Task      TTD
+                             S0        (2, 2, 0)    Task 1      2.8       (2, 2, 0)    Task 1    7
+                                       (6, 2, 2)    Task 2                (6, 2, 2)    Task 2
+                             S1        (0, 0, 6.48) Task 1      4.12      (5, 5, 10)   Task 2    2.848
+                                       (6, 2, 0)    Task 3                (6, 2, 0)    Task 3
+                             S2        (0, 0, 0)    Task 1      4.47      (5, 5, 1.51) Task 3    4.47
+                                       (3, 2, 2.12) Task 4                (0, 0, 0)    Task 4
+                             S3        (1, 2, 4.6)  Task 1      4.2       (5, 5, 0)    Task 3    1
+                                       (3, 2, 0)    Task 5                (1, 2, 5.2)  Task 5
+                             S4        (1, 2, 0)    Task 1      7.1       (1, 2, 5.2)  Task 5    3.16
+                                     Total TTD-Greedy           22.69     Total TTD-Regret TS    18.46
+
+TABLE VI: This table shows tasks allocated (in bold) and instant reward (TTD) received at each state for the greedy and
+regret based baseline.
+
+                                               State   (pi , ri )       Task     TTD
+                                               S0      (2, 2, 0)        Task 1   7
+                                                       (6, 2, 2)        Task 2
+                                               S1      (5, 5, 10)       Task 3   4.12
+                                                       (6, 2, 0)        Task 2
+                                               S2      (5, 5, 2)        Task 4   2.24
+                                                       (3, 2, 0)        Task 2
+                                               S3      (5, 5, 0)        Task 5   1.41
+                                                       (1, 2, 2.3)      Task 2
+                                               S4      (1, 2, 0)        Task 5   3.16
+                                                        Total TTD                18
+
+TABLE VII: This table shows tasks allocated (in bold) and instant reward (TTD) received at each state for our method
+(RTAW).
+
+   Note that the final cost (TTD) incurred by greedy method is 22.69 and by regret-based method is 18.46. Our task allocation
+method is presented in Table VII, which takes different actions and thereby results in lower TTD of 18. The two robots
+are initially spawned at locations (2, 2) and (6, 2) in a 2D grid map of 10 × 10 and the first robot is available. Our method
+chooses task 1 instead of task 2 in state s0 even though choosing task 2 would have resulted in lower cost. Similarly,
+our method chooses task 3 instead of task 2 in state s1 even though task 2 would have resulted in a better TTD. Overall,
+we see that the TTD is better for our proposed method because it chooses intelligent action by considering the effect of
+current action at the future state action transitions. Fig. 3 pictorially shows an example of the intuition behind the improved
+performance of our proposed RL-policy over greedy baseline.
+                                                        (a) Actions by RTAW.
+
+                                                 (b) Actions by greedy baseline.
+Fig. 3: This figure describes a situation where the proposed RL based policy will take a better decision than the greedy
+baseline. Red and green are two robots where the red robot is available for task allocation. Green robot is currently serving
+a task, and its location is the destination of the task being served. From Fig 3a, we see that the RL policy chooses Task
+A over Task B even though Task B is closer. Choosing Task B will give an instant high reward; but since the green robot
+is too far from Task A it will give a very low reward if it chooses Task A. Thus in order to get higher cumulative reward
+Task B is selected before Task A. Thus, an RL-based solution results in intelligent task selection which is not possible for
+a greedy policy as shown in Fig. 3b.
+
+B. A Simple Two Task Setting
+
+                                                 Robot No      MPDM      RTAW       % Imp.
+                                        Direct      10          4183      2097      49.86
+                                                   100          4183      1861      55.51
+
+TABLE VIII: This table reports the 500 task completion time in seconds for Direct navigation scheme for first experiment
+with two fixed tasks. The robots moves 1 unit in 1 sec in the environment. We note that the the proposed RL based technique
+works significantly better than the existing MPDM method. We show results for single seed because there is no randomness
+here.
+   In this section, we increase the difficulty level and consider continuously arriving tasks in sets of two, both of which have
+the same starting point but with different destinations in a 2D map. The two tasks are chosen such that one is always longer
+than the other. We specifically choose the tasks: Task A (0, 0, 3, 3) and Task B (0, 0, 9, 9), where (0, 0) denotes the origin
+coordinate while (3, 3) and (9, 9) are the destination coordinates. All the robots start off at random initial locations in the
+grid. Since the starting coordinates are same, greedy policy will randomly pick a task. Our intuition behind the RL policy is
+that it will learn to pick up Task A (0, 0, 3, 3) since the destination coordinate (3, 3) will be closer to origin coordinate for
+future task allocation. The Table VIII summarises the results and show that RL policy learns to take action corresponding to
+Task A and minimises the TTD. The results are shown for 10 and 100 robots on a plain 10 × 10 grid with direct navigation
+scheme.
+
+                            VII. T IME AND S PACE C OMPLEXITY OF THE P ROPOSED M ETHOD
+   We analyze the performance of our method for one task allocation. The time taken for one forward pass of the model is
+plotted as a function of number of robots (keeping number of tasks fixed) in Figure. 4(a). The time taken for one forward
+pass of the model is plotted as a function of the number of tasks (keeping number of robots fixed) in 4(b). From the plots,
+we see that our method is scalable and linear in both number of agents and number of tasks. Our baseline greedy method
+is liner but regret-based is exponential.
+
+                                (a) vs No. of Robots.                          (b) vs No. of Tasks.
+                   Fig. 4: Scaling of model execution time as a function of number of robots and tasks.
+   The number of weights parameters do not change with increase in the number of the agents or tasks. Hence, it is constant
+in space complexity.
+                                                 VIII. T RAINING G RAPHS
+  We have included the training curves for the cumulative reward return for the proposed method (RTAW) under different
+experimental settings considered in the main body of this work. The reward is received after sampling the action from a
+categorical distribution during training. After every 2k time steps we evaluate the model 20 times and plot the mean and
+median graph of reward. In the following figures, y-axis denotes the cumulative reward return and x-axis denotes the number
+of episodes. Hyper-parameters used for training are mentioned in the Table IX.
+
+                                         Optimizer                        Adam
+                                         Learning Rate                    3e-4
+                                         Update Interval while training   512
+                                         Epoch per iteration of PPO       16
+                                         Gamma (γ)                        0.99
+                                         Lambda (λ)                       0.95
+                                         Entropy coefficient              0.01 - 0.001
+                                         Value function coefficient       0.0002
+                                         Policy function coefficient      0.02
+
+TABLE IX: This table summarizes the hyper-parameters used for the training of proposed network architecture via proximal
+policy optimization (PPO) algorithm [26].
+                                                                .
+
+                     (a)                                       (b)                                   (c)
+
+                                       (d)                                               (e)
+Fig. 5: (a) Proof of concept reward for 2 agents and 5 tasks. (b) Reward for the second experimental setting with 100 agents.
+(c) Reward for final experimental setting for 10 agent on 64x64 grid of Layout A. (d) Reward for 100 agent training on
+64x64 grid of layout A. (e) Reward for 1000 agent training on 64x64 grid of Layout A.
+                     (a)                                     (b)                                   (c)
+
+                                      (d)                                        (e)
+Fig. 6: Entropy plots. (a) Proof of concept reward for 2 agents and 5 tasks. (b) Reward for the second experimental setting
+with 100 agents. (c) Reward for final experimental setting for 10 agent on 64x64 grid of layout A. (d) Reward for 100 agent
+training on 64x64 grid of layout A. (e) Reward for 1000 agent training on 64x64 grid of layout A.

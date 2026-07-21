@@ -1,0 +1,616 @@
+Scheduling of Missions with Constrained Tasks
+                   for Heterogeneous Robot Systems
+
+          Gricel Vázquez                  Radu Calinescu                          Javier Cámara
+                  Department of Computer Science                           Department of Computer Science
+                        University of York                                      University of Málaga
+                            York, UK                                               Málaga, Spain
+       gnvf500@york.ac.uk       radu.calinescu@york.ac.uk                javier.camaramoreno@york.ac.uk
+
+      We present a formal task allocation and scheduling approach for multi-robot missions (KANOA).
+      KANOA supports two important types of task constraints: task ordering, which requires the execu-
+      tion of several tasks in a specified order; and joint tasks, which indicates tasks that must be performed
+      by more than one robot. To mitigate the complexity of robotic mission planning, KANOA handles the
+      allocation of the mission tasks to robots, and the scheduling of the allocated tasks separately. To that
+      end, the task allocation problem is formalised in first-order logic and resolved using the Alloy model
+      analyzer, and the task scheduling problem is encoded as a Markov decision process and resolved
+      using the PRISM probabilistic model checker. We illustrate the application of KANOA through a
+      case study in which a heterogeneous robotic team is assigned a hospital maintenance mission.
+
+1    Introduction
+Multi-robot systems (MRS) are increasingly used in domains ranging from medical and emergency as-
+sistance [29] to inspection of critical infrastructures [12]. Nevertheless, the specification of complex
+missions with constrained tasks, the allocation of these tasks to the robots, and the scheduling of allo-
+cated tasks for each robot continues to pose significant challenges to the use of MRS in these applica-
+tions [28, 32, 40].
+     Our paper introduces KANOA, a new MRS task allocation and scheduling approach that uses a
+combination of formal methods to solve what Tran et al. [32] describe as “the joint problem of deciding
+what tasks to perform, when, and with what resources, to achieve a set of goals”. Task allocation and
+scheduling can be tackled in two ways: as a single, monolithic problem [14], or separately, as two
+interrelated sub-problems [18]. KANOA does the latter. As in [18], we posit that this enables a separation
+of concerns that not only increases scalability, but also simplifies the enforcement of a broad range of
+mission constraints and the achievement of optimization objectives.
+     Task allocation and scheduling is among the problems that can be approached using formal meth-
+ods [37], which offer underlying logics for the unambiguous specification of missions, and behavioural
+models that are able to capture important MRS mission characteristics such as task interdependence [13].
+However, the adoption of formal methods in real MRS scenarios has been limited due to the complexity
+of formalising MRS missions and their requirements into the required modelling paradigms and logic
+formulae, respectively [39, 38]. To address this limitation, KANOA (i) supports the specification of
+MRS missions with their tasks, task constraints and requirements in a domain-specific language, and
+(ii) automates both the allocation of tasks to robots (by using the model analyzer Alloy [24]) and the
+scheduling of the allocated tasks (by using the probabilistic model checker PRISM [26]). PRISM sched-
+ules the tasks allocated to each robot by solving the ordering of the tasks through synthesising a Markov
+decision process policy that minimises the time needed to complete the tasks.
+M. Luckcuck and M. Farrell; M. Autili, L. Berardinelli,
+A. Bucaioni and C. Pompilio (Eds.):                                           © G. Vázquez, R. Calinescu & J. Cámara
+Formal Methods for Autonomous Systems and                                     This work is licensed under the
+Automated and verifiable Software sYstem DEvelopment                          Creative Commons Attribution License.
+EPTCS 371, 2022, pp. 156–174, doi:10.4204/EPTCS.371.11
+G. Vázquez, R. Calinescu & J. Cámara                                                                 157
+
+    The rest of the paper is organised as follows. After providing a motivating example in Section 2, we
+present our KANOA approach in Section 3, and its implementation and evaluation in Sections 4 and 5,
+respectively. Section 6 discusses related work, and Section 7 a short summary.
+
+2   Motivating Scenario
+We will illustrate our approach in the context of
+a hospital environment, in which patient recov-
+ery rooms must be kept clean, and medical equip-
+ment has to be moved around to perform daily
+operations (Fig. 1). We introduce two types of
+tasks: atomic tasks, AT; and compound tasks, CT.
+The MRS mission consists of six tasks: mov-
+ing medical equipment in Room1 (task M1) and
+Room6 (task M2); and cleaning patient rooms 2–
+5 (tasks M3 to M6). Moving medical equipment
+is a type of task (AT1) that must be performed
+                                                     Figure 1: Floor plan of hospital area with six rooms
+by two robots. Cleaning a patient’s room (CT2)
+                                                     serviced by robots r1-r5. Crosses mark the loca-
+requires notifying the patient (AT4) and cleaning
+                                                     tions that robots must reach to start a task in each
+the room (CT1), in that specific order. Finally,
+                                                     room, and blue rectangles denote medical equipment
+cleaning a room comprises floor cleaning (AT2)
+                                                     (inspired by [30]). The red lines shows a possible
+and sanitising (AT3). Five robots are available:
+                                                     robots’ schedule to clean rooms 2 to 4, and to move
+two cleaner robots (r1 and r2) and three pick-and-
+                                                     equipment in rooms 1 and 6.
+place robots (r3-r5).
+     In addition to the constraints imposed by
+the ordering of tasks and the tasks requiring
+more than one robot, the mission must be com-
+pleted within 100 time units, and the robots
+that are used to perform the mission cannot
+spend more than 30 time units idle. Further-
+more, the tasks must be allocated and sched-
+uled such that the total robot idle time and trav-
+elling time are minimised, and the probability
+of succeeding with the mission is maximised.
+An example of a synthesized plan (discussed
+later in the paper) is shown by the red arrows
+from Fig. 1.
+
+3   KANOA Approach
+KANOA employs the four-stage process from
+Fig. 2. In stage 1, the KANOA domain-specific         Figure 2: The four-stage KANOA approach
+language (DSL) is used to specify the world
+model, robots model, task model and mission that together form the problem that KANOA needs to solve.
+In stage 2, KANOA solves the allocation of tasks to robots, producing multiple allocation models, all of
+158                    Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+       Figure 3: KANOA problem specification DSL. Based on the EBNF metasyntax notation [1].
+
+which comply with the robot capabilities. Stage 3, pre-scheduling, groups robots that share constrained
+tasks, so that their tasks are scheduled together. Finally, the task scheduling stage generates a set of
+feasible MRS plans that satisfy all task constraints and are Pareto optimal with respect to the optimisation
+objectives from the mission specification. The user can select one of the synthesized plans to be deployed
+to the physical robots, as shown in the deployment stage. KANOA focuses on the four KANOA stages
+as detailed below.
+
+3.1     Stage 1: Problem specification
+We use the user-friendly DSL with the syntax from Fig. 3 for the unambiguous specification of the
+KANOA task allocation and scheduling problem. In line with established conventions, alternative items
+are divided by | and may be enclosed in brackets (). Items that can appear one or more times are followed
+by a plus +.
+    A KANOA problem specification comprises a world model, a task model, a robot model, and a
+mission specification:
+      • The world model consists of a sequence of locations loc and path (distances) dist, where each
+        location is defined by an identifier locID and its x and y coordinates, and each path dist specifies
+        the all of the distance between two locations.
+      • The tasks model defines a set of atomic tasks and compound tasks. An atomic task (a_task) needs
+        to be performed in one go, by a predefined number of robots needed. In contrast, a compound
+        task (c_task) comprises a set of subtasks, each of which is an atomic or a compound task. The
+        subtasks of a compound task may need to be performed in the specified order.
+G. Vázquez, R. Calinescu & J. Cámara                                                                                          159
+
+Figure 4: KANOA tool screenshot showing DSL encoding of the hospital MRS mission from Section 2
+
+     • The robots model specifies, for each robot available, its initial position, its (mean) velocity and
+       its list of capabilities, i.e., the identifiers atID of the atomic tasks that the robot can do, and the
+       required time and success probability associated with the task execution by the robot1 .
+     • The mission specification (miss) comprises a sequence of mission tasks, constraints. A mission
+       task (m_task) specifies a compound task or atomic task (from the task model), which needs
+       to be performed at a location specified by locID. Constraints define boundaries within which a
+       specific robot robID or all robots must reside at all times, or the time available to complete the
+       mission.
+Example 3.1. Figure 4 shows the KANOA problem specification of the hospital scenario from our
+motivating example. As detailed in Section 2, this scenario comprises: (a) six rooms with their (entry
+    1 The success probabilities differ from robot to robot based on age, manufacturing differences, etc.; and calculated in advance
+
+after N runs of the physical or simulated robots
+160                    Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+point) coordinates, initial locations for the five robots, and all distances between these; (b) two compound
+tasks and four atomic tasks; (c) two pick-and-place robots (r1 and r2) and three cleaner robots (r3–r5);
+(d) the mission that the robots are required to carry out (within 100 time units), consisting of moving
+medical equipment in rooms 1 and 6, and cleaning the patient rooms 2–5. Pick-and-place robots r1 and
+r2 require 10 time units to reorganise the medical equipment in a surgical room. Cleaner robots r3–r5
+have a higher probability of success compared to r5, but r5 travels twice as fast as r3 and r4.
+
+3.2     Stage 2: Task allocation
+The multi-robot task allocation problem involves the optimal partitioning of the tasks of a mission among
+the available robots. This problem is very challenging due to the heterogeneity of robots, the unreliability
+of sensors and actuators, temporal and spatial task constraints, the complexity of task dependencies,
+and the search for an optimal allocation [2]. The KANOA Task Allocator (see Fig. 2) performs the
+allocation of tasks to robots by using the Alloy Analyzer constraint solver [24] to generate feasible
+allocations through reasoning about the capabilities of each robot, and the spatial constraints from the
+mission specification.
+
+3.2.1    Background
+Alloy is a formal specification language (supported by the Alloy analyzer tool) that has its roots in the
+Z specification language [24]. It supports the formal description of the structural properties of systems.
+Alloy is defined in terms of simple relational semantics, using constraint solver notation, and employing
+constructs that are common in object-oriented notations. We can indicate the existence of a set (of atoms)
+for robots, which in Alloy is specified using signatures:
+           abstract sig Robot {hascapability: some Capability}
+In this signature, Robot.hascapability denotes a relation with a non-empty set of capabilities that a robot
+possesses. The keyword ‘abstract’ indicates that new signatures can extend this signature, inheriting all
+of its characteristics. In our example, we can, for instance, create concrete robots and capabilities (e.g.,
+r1, r2 and c1, c2) that instantiate their corresponding abstract signatures:
+           sig r1, r2 extends Robot { ... }
+     Alloy models can incorporate relational logic sentences in the form of predicates and facts (i.e., ex-
+pressions that always have to be satisfied). These constructs place explicit constraints on the model.
+Hence, when the Alloy analyzer searches for instantiations that satisfy the structural properties described
+in the Alloy model, it discards any which violate any fact. In our example, we can write a fact which
+makes sure that, if a capability c belongs to a specific robot r, that robot indeed has c among its capabili-
+ties (and the other way around):
+            fact { all c:Capability, r:Robot | r in c.belongsto <=> c in r.hascapability }
+The Alloy analyzer can look for examples of structures that satisfy all of the relational constraints in the
+model within a finite scope that explicitly sets the maximum number of atoms of each signature to be
+considered by a solution.
+
+3.2.2    Task allocation problem
+We define the task allocation problem in the Alloy declarative language with abstract signatures for
+atomic tasks, robot capabilities and robots. There are four facts associated with these signatures. First, a
+G. Vázquez, R. Calinescu & J. Cámara                                                                       161
+
+                            Figure 5: Allocation generated by Alloy Analyzer.
+robot has its own set of capabilities, meaning that each capability belongs to only one robot. Second, if a
+robot appears in the allocation (see Figure 5) it must have assigned tasks, so that robots that are not used
+are ignored. Third, only capabilities that have allocated tasks are shown. Finally, each robot appears
+once or, if not selected by the allocator, does not appear at all.
+    For the declaration of atomic tasks, we model a second abstraction extending the AtomicTask abstract
+signature. These are atomic tasks specified in the problem specification. The instances of these tasks are
+atomic tasks required by the mission (recursively fetched from the tree-like structure of the tasks model).
+We explicitly define the maximum number of robots and capabilities, the number of atomic tasks and
+each atomic task, to generate N > 0 possible allocations, where N is a KANOA configuration parameter.
+                                                              Figure 5 shows part of an allocation found by
+                                                         Alloy Analyser. At the top are three of the robots,
+                                                         r5, r4 and r1. Only capabilities needed from the
+                                                         robots for the allocated tasks are shown, for in-
+                                                         stance, r1 only shows one capability r1at3_sanit.
+                                                         Notice that robots r4 and r5 have the same allo-
+                                                         cated task at1_move_0 as it is a joint task. Links
+                                                         (x,y) at the bottom of the figure point to the loca-
+                                                         tions where each atomic task must be done.
+                                                           Example 3.2 An example of a robot instance
+                                                           based on our motivating example is shown in Fig-
+                                                           ure 6, lines 1-4. In this case, robot r1 has capabil-
+                                                           ities r1at2_ f loor, r1at3_sanit and r1at4_noti f y,
+Figure 6: Path from the initial location of robot r2 to modelled as the disjoint set of these tasks robot
+room 6 found using PRM                                     capabilities and the set of all capabilities. The
+number of robots required is written as a fact (line 5). A robot capability instance has the constraint
+of only performing atomic tasks in a specific scope. For example, robot r1 with capability r1at2_ f loor
+can only perform at2_ f loor type of tasks, as specified in Figure 6 lines 6-8. We add a constraint to show
+a capability instance once, or 0 if it has no allocated tasks (lines 9-13). Due to space constraints, we refer
+the user our GitHub repository for the complete Alloy code for the motivating example [33].
+
+3.3   Stage 3: Pre-scheduling
+For each allocation found by KANOA, we reduce (where possible) the complexity of the scheduling
+models, by creating separate models for each group of robots that share task dependencies and do not
+162                     Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+Figure 7: Transitive closure of robot interdependence relation: (a) atomic tasks clustered by breath-first
+until a constrained task is found; (b) for each subtree, the robots in the current allocation are obtained;
+(c) the transitive closure returns clusters of robots—in this example, there are two robot clusters, i.e.,
+{r3, r4, r5} and {r2}.
+
+share any robot with the other groups. We call this stage pre-scheduling, as shown in Figure 2.
+    Let T be the tree of tasks from the mission specification to the atomic tasks. First, KANOA computes
+the Breadth-first search BFS algorithm pruning the tree every time that a constraint (joint or consecutive
+task) is found, or a leaf node (atomic task) is reached, returning multiple subtrees, as shown in Fig. 7a.
+
+                                       BFS(T ) = {subtree1 , subtree2 , ...}                                        (1)
+   Let Ai be the ith allocation of tasks to robots found by Alloy, and Robi the set of all robots in Ai ; for
+example, the task allocation in Figure 7.b has robots Robi = [r2, r3, r4, r5]. For each subtree j ∈ BFS(T ),
+we define the set of robots associated with its leaf nodes by,
+
+                                            Robi j (Ai , subtree j ) ⊆ Robi                                         (2)
+
+as shown in Fig. 7b. We define a reflexive binary relation R between robot ra and rb as,
+                                  (
+                                    1, if ∃subtree ∈ BFS(T ) · ra , rb ∈ subtree
+                        ra R rb =
+                                    0, otherwise
+
+    Finally, we define the transitive closure of R as a reflexive relation R0 such that ra R0 rk if there is
+a sequence (ra , rb , ..., r j , rk ) of the members of the domain of R such that ra Rrb , . . . , r j Rrk , as shown in
+Fig. 7c. The relation R may be represented as a Boolean matrix M (where M(ra , rb ) = ra Rrb ), and R0 as
+matrix M 0 computed from M using Warshall’s algorithm or variations [31].
+
+3.4     Stage 4: Task scheduling
+KANOA uses probabilistic model checking for the scheduling of individual robot plans. In short, it
+models the scheduling problem as a Markov decision process (MDP), finding a policy that optimises
+a set of objectives under a set of constraints. A policy is a solution to the non-determinism actions,
+assessing if a robot should do the next task or wait. Hence, finding a policy means finding a feasible
+schedule.
+
+3.4.1    Background
+Markov decision processes (MDPs) support the modelling of probabilistic and nondeterministic be-
+haviour [34]. An MDP is defined as a tuple M = (S, si , A, δM , L), where S is the finite set of states and
+G. Vázquez, R. Calinescu & J. Cámara                                                                     163
+
+si ∈ S an initial state; A is the set of actions and δM : S × A → Dist(s) is a partial probabilistic function
+returning a distribution over S when an action a ∈ A is taken from s ∈ S; and, L : S → 2AP is a labelling
+function assigning a set of atomic prepositions from a set AP to each state s ∈ S. Reward structures that
+associate a quantity to each action choice can be used, for example, to track the energy consumption, or
+the total travelling distance of a robot.
+An MDP policy resolves the non-deterministic choice of an action in the states of an MDP [34]. KANOA
+uses deterministic − memoryless policies, which involves the selection of a fixed action whenever the
+same state is reached [16, 34].
+Probabilistic computational tree logic (PCTL) augmented with rewards is used to define qualitative
+and quantitative formulae related to MDP rewards and probabilities that can be assessed via probabilistic
+model checking. A state PCTL formula Φ and a path PCTL formula Ψ are defined over a set of atomic
+prepositions AP by the grammar:
+                               Φ := true|α|¬Φ|Φ ∧ Φ|P./p [Ψ]|R./r [FΦ]
+                                                                                                         (3)
+                               Ψ := XΦ|ΦUΦ|ΦU ≤k Φ
+
+with atomic preposition α ∈ AP, probability bound p ∈ [0, 1], reward bound r ∈ R+        0 , time step bound
+k ∈ N>0 , and ./ ∈ {≥, >, <, ≤}. PCTL semantics is defined by the satisfaction relation |=. For a state
+s ∈ S of an MDP M , we describe a relation M , s |= Φ as “the formula Φ holds on s”. Hence, the
+following relations are valid: always s |= true; s ∈ ¬Φ iff ¬(s |= Φ); s |= α iff α ∈ L(s); and s |= Φ1 ∧ Φ2
+iff s |= Φ1 and s |= Φ2 . The until formula Φ1UΦ2 holds for a path iff Φ1 holds in the first i states and Φ2
+holds in the state i + 1. The next formula XΦ holds if Φ is satisfied in the following state. Formulae with
+the probability symbol P, have their semantics defined over all policies σ of M , such that P./p [Ψ]
+is the probability that paths starting at a defined initial state satisfy a path property Ψ with probability
+./ p for all policies. Replacing ./ p with min =? or max =? specifies the calculation of the minimum
+or maximum probability over all the MDP policies. Similarly, for reward formulae, R./r [FΦ] (where F
+represents a reachable state in the future) holds if the expected reward accumulated before reaching a state
+satisfying Φ is ./ p for all policies. Replacing ‘./ r’ with ‘min =?’ or ‘max =?’ specifies the calculation
+of the minimum or maximum reward over all the MDP policies. We refer the reader to [34, 4, 22] for
+further details.
+PRISM modelling language KANOA MDPs are defined in the high-level modelling language of the
+probabilistic model checker PRISM [26]. A model specified in this language comprises several interact-
+ing reactive modules. Each such module consists of a set of finite-valued state variables, and a number
+of transitions (i.e., commands) modifying these variables. A transition has the generic form
+             [<action>] <guard> → <prob>:<update> +...+ <prob>:<update>;
+and comprises an optional action label, a guard and state updates with transition probabilities assigned.
+An action is a label that allows synchronisation between modules. A guard is a predicate over the vari-
+ables of all modules. An update modifies the module variables if the transition is taken (→) with a
+probability of prob. In an MDP, non-deterministic actions are taken when two transitions in the same or
+different modules have overlapping guards.
+
+3.4.2   Multi-robot task scheduling problem
+We use MDPs encoded in the PRISM language to capture the KANOA multi-robot task scheduling
+problem. Informally, we define this problem as finding a sequence of possible robot actions (execute
+164                   Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+Figure 8: Model assembly for scheduling the tasks of interdependent robots under task constraints and
+multiple optimisation objectives: (a) representation of the models—(1) maximisation of probability of
+success, (2) minimisation of the travelling distance, and (3) minimisation of the idle time; (b) MDP
+assembly with the actions and state variables from (a); and (c) the three optimisation objectives. The
+bottom left shows the definitions for A and B for the MDP in (b).
+
+a task, travel, or stay idle) such that, for each robot, all of its allocated tasks from Section 3.2.2 are
+completed with an optimal level (minimising the completion time, travelling cost and probability of
+success), preserving any required task ordering and joint execution of tasks across the schedules of all
+robots.
+    To this end, we first generate feasible permutations of tasks that satisfy the tasks constraints. This
+is done by randomly selecting a task that is not part of any constrained task, or the first task to be done
+in a task tree of ordered tasks. We use MDPs to model the robots’ behaviour [26]. For an allocation a
+G. Vázquez, R. Calinescu & J. Cámara                                                                                          165
+
+with robot ri , a permutation of its tasks is given by p = a.modules[ri ]. Each permutation is modelled as
+a PRISM module with state variables sri defined by the tuple,
+
+                                      sri = (ri order, ritime, ri idle, ri f ail, ritasks)                                     (4)
+
+where ri order tracks the order in which tasks are executed and the travelling action (further explained
+later); ritime tracks the current time updating every time a robot travels to another location or a task
+is completed and ri dle the time that the robot has spent idling; ritravel contains the information of the
+robots travelling time; ri f ail is a boolean flag triggered when the robot fails performing a task; and
+ritasks is a set of variables associated to task constraints (see Section 3.4.3). An MDP state is given by
+the composition of each robot module variables s = (sr1 , sr2 , ..., srn ).
+     The MDP modules can be explained as the composition of three sub-models, as shown in Figure 8a.
+In the first model, a probabilistic choice is made between succeeding with a task or failing with a small
+probability. From the robot’s initial position, where atomic proposition init is true, a robot travels and
+completes its first task with probability p1 (state with atomic preposition t1), and with probability 1 − p1
+fails. If a robot fails, the system recovers and continues with the next task2 until all tasks are completed
+(label done).
+     Second, as shown in Section 2 from Figure 8a, the travelling cost is computed as the sum of the
+distances from the initial location of the robot to the location of its last task, passing through the locations
+of all the tasks of the current permutation3 .
+     Third, a nondeterministic action is available at any stage as the robot progresses with its tasks. This
+action allows the robot to stop for one time unit. This idle option allows robots to synchronise in the case
+they need to perform join tasks, or wait until previous tasks are completed in case of ordered tasks (see
+Figure 8a.3).
+
+MDP model. Figure 8b shows the composition of an MDP model in the PRISM language. In the first
+line, mdp declares the type of model. Second, all necessary constants const that are used within the
+robot modules are declared4 . Third, the boolean formula done is true when all robots have completed
+their tasks and the formula success is true when no robot fails with their tasks. Fourth, the robot modules
+ri contains the variables: a) ri order, from 0 to last(ri order); b) ritime, from 0 to the maximum time
+available (T T ); and C) ri f ail as a Boolean (changing to true when the robot fails a task). For each
+transition, the guard checks: the order of transitions, that the time does not exceed the available time and
+that the robot has not failed. When a transition is taken, with a probability of succeeding with the task,
+the time and order is updated, meaning that the task has been completed; and with a smaller probability,
+the robot fails and ri f ail 0 = true. Continuing, there is a transition for recovery after failure, where ri f ail
+becomes false again; and a non-deterministic action ri idle (feasible if the robot hasn’t finished, if it has
+not failed and if time allows) that adds +1 to the robot timer. Finally, a travel reward structure computes
+the cumulative travelling cost among robots; and an idle reward the cumulative time that the robots spend
+in stand-by (idling).
+    For an MDP, we use probabilistic model checking to assess if the selected permutation of tasks is
+    2 We consider the probability of recovery of 1. However, it can be modelled as multiple recovery modes, for instance, with a
+
+probability p1 the robot can retry and succeed, with probability p2 it asks for help from a human, and with probability p3, the
+robot sends an alert that the task failed and needs to be rescheduled.
+    3 The travelling cost changes among permutations, as the distance covered by robot r1 travelling between two tasks t1,t2, is
+
+different if following the order hinitialPosition(r), location(t1),location(t2)i or hinitialPosition(r), location(t2),location(t1)i
+    4 For the description of all constants const, we refer the reader directly to Figure 8b.
+166                       Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+Figure 9: (a) Joint task JT1 in robot r1 written in the PRISM language as two transitions: first travel,
+then synchronise with other robots via the action label [JT 1]. All transitions in other modules, with the
+same action label, “transition” at the same time. (b) Robot r1 is assigned with the second subtask of the
+ordered task ti. In its jth transition, r1 checks if robot r5 has already completed the first subtask in the
+past, by checking if r1 time is greater than or equal to r5 time, and ti_subtask_1 is true. Every constraint
+subtask is declared as a Boolean constant. Changes compared to unconstrained tasks are highlighted in
+blue.
+
+feasible5 , meaning that the non-determinism can be solved to create a plan for which each robot knows
+exactly what to do at every time step and that the plan fulfils all constraints. We check for feasibility by
+assessing:
+                                             Pmax=? [F done]                                             (5)
+    If there is a path that reaches label done, then this formula evaluates to 1, and 0 otherwise. For fea-
+sible solutions, we can compute the optimisation objectives depicted in Figure 8c: finding the minimal
+probability of success, minimising the idle time and the travelling cost. Note that the first formula eval-
+uates the probability of completing a mission without a failure, which is equivalent to the multiplication
+of the probabilities of each robot completing its tasks; and the last formula evaluates the travelling cost,
+which can be computed in advance as describe in Figure 8a.2.
+
+3.4.3    Modelling task constraints
+Joint tasks. Joint tasks require two or more robots to meet at the same space and time. We model joint
+tasks using two PRISM transitions. In each module, the robots travel to the location of the joint task, JTi.
+If the robot is to synchronize in time with the other robots (r1 time=r2 time=...), synchronous transitions
+among their modules are possible via a common action so that all robots perform the task. Figure 9a
+shows robot r1 with the action label JT 1.
+Ordered tasks. We model ordered tasks in PRISM as single transitions, in the same way as uncon-
+strained tasks. Then, we modify the guard of the ith subtask of the ordered task (∀i > 1), to check if its
+   5 The feasibility of a permutation of tasks does not necessarily mean that the robot schedule is feasible.       For example,
+assuming that the permutation of tasks assigned to robot r1 is correct, if the available time is set to 5 and the robot requires 6
+time units travelling, the schedule is unfeasible.
+G. Vázquez, R. Calinescu & J. Cámara                                                                      167
+
+time is greater than or equal to the robot’s time assigned with the subtask i − 1; as well as checking if the
+subtask i − 1 itself has been completed. This solution is illustrate in Figure 9b.
+
+3.5   Optimisation of feasible solutions
+In the previous section, we described the assembly of an MDP model for a group of robots, each of which
+with a pre-defined sequence of allocated tasks, we used probabilistic model checking to obtain policies
+satisfying three optimisation objectives: maximisation of the probability of success, and minimisation
+of the idle time and travelling cost, and we described the assessment of the feasibility of a schedule.
+We solve the problem of obtaining the Pareto-optimal solutions of this constrained multi-objective op-
+timization problem using a elitist genetic algorithm. Each a chromosome represents an allocation and
+task permutation as a single gene. The Pareto front of a such a problem comprises all non-dominated
+solutions, i.e., all solutions for which there is no other feasible solution that can improve one of the
+optimisation objectives without worsening one or more of the others [10].
+    Genetic algorithms (GA) provide an effective approach for solving complex optimisation problems.
+They operate by encoding a number of solutions (population) whose elements (chromosomes) consist
+of one or more values, called genes, that are genetically bred through the application of the Darwinian
+principles of survival and reproduction of the fittest solutions, and their recombination (croosover) to
+create new populations (offspring) that evolve towards an optimal solution [25]. For KANOA, we
+adopt the widely used NSGA-II (nondominated sorting genetic algorithm II) with chromosomes that
+encode both the selected allocation and the selected permutation of robot tasks. Furthermore, we use
+the EvoChecker [17, 15] framework (which integrates NSGA-II with the PRISM probabilistic model
+checker) to obtain the Pareto front of task scheduling solutions.
+
+4     Implementation
+We developed a prototype tool that implements KANOA.
+The input is a .mydsl file with the problem specification writ-
+ten in our DSL. For the paths in the world model, we use
+the established probabilistic roadmaps (PRM) path planner
+to find the distances between locations in the world model,
+rounding the distances up to the closest integer (see Fig-
+ure 10) [11].
+     We used Ecore and Xtend [27] to check the DSL syntax
+and to automatically generate the Alloy model. As described
+in Section 3.2.1, Alloy is a declarative language for the spec- Figure 10: Path from the initial location
+ification of systems under a set of constraints supported by of robot r2 to room 6 found using PRM
+the Alloy Analyzer solver tool. Hence, Alloy Analyzer gen-
+erates up to N allocation files. For each allocation, the transitive closure algorithm finds clusters of robots
+sharing task constraints.
+The JMetal 5 [23] framework was used to solve the optimisation of the permutation of tasks using the
+NSGA-II algorithm. We use the PRISM model checker [26] in the NSGA-II evaluation stage, to compute
+the values of the three objective variables: probability of success, idle time and travelling cost; as well as
+assessing if a schedule is feasible under the time and space constraints. The KANOA open-source code
+is available from our GitHub repository at https://github.com/Gricel-lee/Kanoa.
+168                   Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+Figure 12: Example of a scheduled plan synthesized by KANOA. All results were obtained on a Mac-
+Book Air computer with Apple M1 processor, macOS Monterey 12.3.1, and 8 GB of memory.
+
+5     Evaluation
+In this section, we evaluate KANOA applicability using the hospital motivating scenario, and the effi-
+ciency of the approach varying the number of tasks, robots and complexity of the tasks.
+                                                                         Application to the motivating ex-
+                                                                    ample. To evaluate KANOA, we ap-
+                                                                    plied it to the hospital maintenance mis-
+                                                                    sion from our motivating example. The
+                                                                    DSL-encoded specification of this mis-
+                                                                    sion is provided in Figure 4 earlier in
+                                                                    the paper. This specification was sup-
+                                                                    plied as input to KANOA tool. Inter-
+                                                                    nally, the Alloy analyzer is configured
+                                                                    to generate 30 allocations models. One
+                                                                    of these models is depicted in Figure 1
+                                                                    earlier in the paper.
+                                                                         Pre-scheduling was then applied to
+                                                                    each of these task allocations, yielding
+Figure 11: Solutions found by KANOA for the hospital case between two and three subsets of robots
+study. Pareto-front solutions are coloured in red. The schedule with one to three robots in each. The
+of the solution circled in red, is depicted in Figure 12, with KANOA genetic algorithm was config-
+values corresponding to the first row of Table 1.                   ured to run for 5 iterations with a popu-
+                                                                    lation of 50 chromosomes. Each of the
+30 allocation was allowed to compute 20 permutations, giving a total of 600 possible chromosomes. The
+idle time, travelling cost and probability of failing to execute the mission for the Pareto-optimal solu-
+tions evaluated across the task allocations are shown in Figure 11, and one of these solutions is detailed
+along the timeline in Figure 12. We note that: (i) the failure probability was used instead of the success
+probability because multiobjective optimisation genetic algorithms operate by minimising all objectives;
+and (ii) that the values obtained for the failure probability are unacceptably high, which is due to using
+randomly selected failure probabilities for the individual robots in our experiments. Nevertheless, nei-
+ther of these issues affects the validity of the experimental results, which were only intended to assess
+the ability of KANOA to produce Pareto-optimal plans for MRS missions.
+    From the Pareto-optimal solutions detailed in Table 1, four solutions (rows 1, 3, 6 and 10) achieve
+very low travelling cost and the idling time at the expense of high failure probabilities. The rest of the
+Pareto-optimal solutions correspond to solutions that achieve much lower probabilities of failure (with
+G. Vázquez, R. Calinescu & J. Cámara                                                                      169
+
+values below 0.55) in exchange for completing the mission with additional travelling cost and idling
+time.
+                                                       Table 1 shows the number of allocations and
+         Table 1: Pareto-optimal solutions        permutations that the Pareto solutions belong to.
+       Alloc Permu Probability
+       ation tation     of failure
+                                    Idling Travel It is interesting that there is not a single alloca-
+   1   17        9     0.63423811      6     80   tion of tasks to robots that seem to perform better
+   2   5         5     0.51937429     39    117   than the rest. For instance, allocations 9, 11 and
+   3   17        5     0.63423811      5     84   17 each occur twice. Also notice that the proba-
+   4   16        5     0.53284079     31    126   bility of success is the same among the same al-
+   5   11        1     0.41844289     28    137
+                                                  locations, however, the idling time and travelling
+   6   21        1     0.69771745      2     84
+   7   11        7     0.41844289     21    145   costs change as the permutation changes.
+  8    9          8     0.47131171      29      132        Figure 12 shows a schedule from the Pareto front;
+  9    9          1     0.47131171      22      135        in this schedule, all robots were deployed. Robots
+  10   12         8     0.70993088       1       88
+                                                           r1 and r2 first visit room1, perform task at1 (mov-
+                                                           ing medical equipment), travel to room2, and
+again perform at1. In this case, KANOA found that deploying robots r3 and r4 to clean rooms 2 and
+3, and robot r5 to clean rooms 4 and 5 is a Pareto-optimal schedule. Notice that these three cleaner
+robots travel between the rooms back and forth (see also Figure 1). This is because the distance between
+rooms 2 to 3 and 4 to 5, is relatively small that it represents a better solution that travelling between other
+rooms. Although a better solution, where robots avoid repeating rooms, was not found (given the number
+of permutations and allocations, population and evaluation size), the synthesized solution complies with
+all requirements and, besides GA, no heuristic guidance was used in the searching process.
+
+Efficiency. We also carried out preliminary experiments to assess the execution time of KANOA. We
+tested five variants of the hospital scenario in order to assess the impact that (a) adding new tasks and
+(b) adding more robots have on the time required to find and assess a solution; and (c) the impact that
+the complexity of the task constraints have on the overall performance. The results obtained for all five
+variants and for the original case study are shown in Figure 13. The experiments were run until 30
+feasible solutions were found or until the time surpassed 300 seconds, whichever occurred first.
+    Variants v1 and v2 involved using the two pick-and-place robots to move surgical equipment in
+multiple rooms. For variant v1, they must visit two rooms, and for variant v2 there were six rooms to
+service. The time to get one feasible solution was 9ms for both variants. However, the time for variant v3
+increases to a mean of 4.7s per solution, while for variant v4 KANOA finds a solution every 1.33s. This
+is an increase of approximately 3.53 times the time to assess a solution when the number of tasks tripled.
+As v1 and v2 plots show a linear increase, this means that we expect the time to increase approximately
+1.17 times for each task added to this hospital scenario.
+    The third, fourth and fifth variants (v3, v4, and v5) correspond to one, two and three robots available,
+respectively, with the mission to clean patient rooms 2 to 5. For variant v3, we only found 3 solutions
+as only one robot has all tasks assigned, making it difficult to synthesize plans that comply with the time
+limit. The time to find the solutions is 14.86 seconds, this is understandable as, for most permutations,
+PRISM is called only to check for feasibility and discarded as they do not comply with the requirements.
+Variants v4 and v5, increasing v3 by one and two robots, show a considerable increase in the time to find
+a solution. This is understandable as the complexity of the PRISM models increases, taking more time
+for the PMC to check for feasibility and to return the probability of failure, idling time and travelling
+cost.
+170                  Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems
+
+Figure 13: Scheduled plan synthesized by KANOA; all solutions were computed with 30 allocations,
+20 permutation of tasks, with population size 50 and 5 evaluations (except variants v3, which was tested
+with 500 permutations)
+
+6     Related Work
+
+Work in other domains, such as manufacturing [36] and distributed computer systems [35] has influenced
+the algorithms used to solve allocation and scheduling problems in robotics. Some of the most broadly
+researched categories are mixed-integer linear programming (MILP), and hybrid methods such as MILP
+constraint programming and MILP depth-first search heuristics [7]. These approaches exhibit desirable
+traits such as scalability, but often require crafting application-dependent heuristics by domain-experts
+to become scalable, simplify task complexity to concurrent and temporal constraints of simple tasks, and
+do not consider uncertainty [40, 18, 6].
+     On the other hand, model checking has successfully been applied in MRS to provide guarantees
+for the synthesised robot schedules. To solve the allocation and scheduling problems, these can be
+modelled together or separately. There is not a clear preference adopted by the research community. For
+instance, some research only focuses on one of these problems. Menghi et al. [8] used model checking
+for scheduling when only incomplete knowledge is available; and Yu et al. [39] consider constraints
+due to the robots sharing a room or hall, and limited local information for re-planning online. When
+allocation and scheduling are modelled together, we notice the introduction of optimisation metrics. For
+instance, Antlab [14] ranks the schedules by travelling cost, and Ulusoy et al. [3] optimise the time
+for the completion of all tasks. In terms of probabilistic model checking, Lacerda et al. [5] presents a
+single-robot planning problem to perform a series of tasks. However, they consider the tasks ordered in
+advance, and PMC only used to select a path amount pre-define paths. Others use PMC for the synthesis
+of MRS controllers without considering [9], inferring the allocation and scheduling as a prerequisite.
+     KANOA extends our preliminary work from [19] (where we advocate the use of this type of approach
+G. Vázquez, R. Calinescu & J. Cámara                                                                   171
+
+in a doctoral symposium paper) and [20] (where we assess the feasibility of applying Alloy analyzer and
+PRISM), and tackles the allocation and scheduling of tasks separately. The information about the robot
+capabilities and mission tasks is used for both the allocation and the scheduling of tasks, allowing us
+to modify how the schedules are done by grouping robots from the allocations found, thus reducing
+the complexity of the models used in the KANOA’s scheduling stage. We also assume that the path
+planning is performed in advance, as adding the planning into the model (e.g., as in [14]) requires adding
+each intermediate point, increasing the states and transitions of the model and reducing scalability. In
+further work, we will reduce the state explosion problem by adding middle points where necessary, for
+instance, in the hospital halls to avoid two robots entering the same location at the same time. Other
+interesting MRS characteristics were also found in the state-of-the-art. Antlab [14] captures dynamic
+collision avoidance, and MALTA [21] models road conditions that may slow down robots. MRS must
+deal with a large range of uncertainty sources.
+    Although the ultimate goal for multi-robot planning, scheduling and allocation may be the creation
+of a single tool that is applicable to all the variants of MRS applications, this will be very challenging
+to achieve (and may not be feasible) because there are too many applications with different critical
+characteristics to model. For example, for search-and-rescue missions, the robots must be able to work
+in unknown environments; while in a factory, robots may have a map in advance, although they must be
+able to avoid staff and cooperate with operators. In further work, we would like to incorporate further
+task constraints, such as time windows (for example, serving meals to the patients between 13:00 and
+14:00), and consecutive tasks (tasks that must be perform one after the other).
+
+7    Conclusion
+
+We introduced a new end-to-end approach for the task allocation and scheduling of multi-robot missions
+comprising joint and ordered tasks that need to be executed by teams of robots with different capabilities.
+Three different optimisation objectives and a feasibility constraint were use to find Pareto-optimal solu-
+tions. We support our end-to-end approach (from the high-level problem definition to the synthesis of
+robot plans) with an open-source tool and a preliminary evaluation of a hospital case study. We presented
+five different variants of the MRS mission from this case study, assessing the impact of adding new tasks
+and robots to the MRS mission.
+    In future work, we will explore options for improving the scalability of KANOA, and for gracefully
+degrading the constraints defined in the KANOA problem specifications when no plan can be found
+when the initial constraints are taken into account. We also aim to enhance KANOA with self-adaptation
+capabilities, enabling the dynamic evolution of the generated plans after disturbances such as the failure
+of a robot, the failure of a robot’s sensors/actuators, or a delay in the execution of a task by one of the
+robots. Moreover, longer runs will be used in the evaluation of our future work to establish whether
+a longer search produces significantly better solutions. Additionally, we will explore the inclusion of
+spatial restrictions, such as “only one robot can pass through a hall at a time” or “no more than two
+robots are allowed in a room at the same time”. Moreover, as we deal with autonomous mobile robots,
+we need to introduce an event when the battery is low so that the robot can reach a charging station.
+    Understanding the computational complexity of our approach is another area of future work for the
+project. Analysing the complexity of the approach is nontrivial, as it depends on the Alloy Analyser
+solver, PRISM engine and JMetal configuration, and, as described in Section 5, it also depends on the
+number of robots, number of tasks and task dependencies.
+172                    Scheduling of Missions with Constrained Tasks for Heterogeneous Robot Systems

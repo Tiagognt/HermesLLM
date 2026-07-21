@@ -1,0 +1,100 @@
+{
+  "_comment": "Evaluation scenarios that must NOT appear in the training corpus. Global rule of the brief: 'exclude any text overlapping our evaluation scenario'. This file is CONFIGURATION: it lives with the code (src/common/), it is read by common/contamination.py, and it applies to cat1, cat2 and cat3 without any code change. Adding an evaluation scenario = adding an entry here.",
+  "_rule_types": {
+    "phrase": "contaminating if any of the phrases appears verbatim (case-insensitive, whitespace normalised, accents stripped).",
+    "cooccurrence": "contaminating if AT LEAST one term from EACH group appears within window_chars characters of a term from every other group. This avoids false positives such as 'fire' alone in a safety manual, or 'metro' alone in a postal address."
+  },
+  "_note_on_terms": "The term lists deliberately mix English and French spellings. Matching is done on accent-stripped text, so 'metro' also catches 'metro' written with an accent, and OCR output that lost its accents is still caught.",
+  "scenarios": [
+    {
+      "id": "subway_station_fire",
+      "enabled": true,
+      "description": "Project evaluation scenario: a fire in a subway station, handled by a team of heterogeneous robots. Any text overlapping this scenario must stay out of the DAPT corpus.",
+      "rules": [
+        {
+          "type": "phrase",
+          "id": "exact_phrases",
+          "phrases": [
+            "subway station fire",
+            "subway fire",
+            "metro station fire",
+            "underground station fire",
+            "fire in a subway station",
+            "fire in the subway station",
+            "fire in a metro station",
+            "fire in the metro station",
+            "subway station evacuation",
+            "metro station evacuation",
+            "incendie dans une station de metro",
+            "incendie de station de metro",
+            "feu dans le metro"
+          ]
+        },
+        {
+          "type": "cooccurrence",
+          "id": "underground_place_x_fire",
+          "window_chars": 400,
+          "groups": [
+            [
+              "subway",
+              "subway station",
+              "metro station",
+              "underground station",
+              "tube station",
+              "train station platform",
+              "railway platform",
+              "station platform",
+              "metro",
+              "station de metro"
+            ],
+            [
+              "fire",
+              "fires",
+              "wildfire",
+              "blaze",
+              "smoke",
+              "burning",
+              "flames",
+              "flame",
+              "firefighting",
+              "firefighter",
+              "firefighters",
+              "incendie",
+              "fumee",
+              "flammes",
+              "pompier",
+              "pompiers"
+            ]
+          ]
+        },
+        {
+          "type": "cooccurrence",
+          "id": "underground_evacuation_x_rescue",
+          "window_chars": 400,
+          "groups": [
+            [
+              "subway",
+              "metro",
+              "underground station",
+              "tube station",
+              "station platform"
+            ],
+            [
+              "evacuate",
+              "evacuation",
+              "evacuating",
+              "rescue",
+              "casualty",
+              "casualties",
+              "trapped passengers",
+              "search and rescue",
+              "victime",
+              "victimes",
+              "sauvetage"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

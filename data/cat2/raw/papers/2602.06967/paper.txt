@@ -1,0 +1,1117 @@
+Leveraging Adaptive Group Negotiation for Heterogeneous
+Multi-Robot Collaboration with Large Language Models
+
+Siqi Song 1∗ Xuanbing Xie 2∗ Zonglin Li 3∗ Yuqiang Li 3 Shijie Wang 3† Biqing Qi 3†
+
+1 Tsinghua University   2 Central South University   3 Shanghai AI Laboratory
+
+∗ Equal Contribution.
+† Equal Advising.
+Correspondence: songsq21@mails.tsinghua.edu.cn
+
+Abstract
+
+Multi-robot collaboration tasks often require heterogeneous robots to work together over long horizons under spatial constraints and environmental uncertainties.
+Although Large Language Models (LLMs) excel at reasoning and planning, their potential for
+coordinated control has not been fully explored.
+Inspired by human teamwork,
+we present CLiMRS
+( C ooperative Large- L anguage-Model-Dr i ven Heterogeneous M ulti- R obot S ystem)
+, an adaptive group negotiation framework among LLMs for multi-robot collaboration.
+This framework pairs each robot with an LLM agent and dynamically forms subgroups through a general proposal planner.
+Within each subgroup, a subgroup manager leads perception-driven multi-LLM discussions to get commands for actions.
+Feedback is provided by both robot execution outcomes and environment changes.
+This grouping–planning–execution–feedback loop enables efficient planning and robust execution.
+To evaluate these capabilities, we introduce CLiMBench, a heterogeneous multi-robot benchmark of challenging assembly tasks.
+Our experiments show that CLiMRS surpasses the best baseline, achieving over 40% higher efficiency on complex tasks without sacrificing success on simpler ones.
+Our results demonstrate that leveraging human-inspired group formation and negotiation principles markedly enhances the efficiency of heterogeneous multi-robot collaboration.
+Our code is available here .
+
+Leveraging Adaptive Group Negotiation for Heterogeneous
+Multi-Robot Collaboration with Large Language Models
+
+Siqi Song 1∗ Xuanbing Xie 2∗ Zonglin Li 3∗ Yuqiang Li 3 Shijie Wang 3† Biqing Qi 3†
+
+1 Tsinghua University   2 Central South University   3 Shanghai AI Laboratory
+
+∗ Equal Contribution.
+† Equal Advising.
+Correspondence: songsq21@mails.tsinghua.edu.cn
+
+1 Introduction
+
+Addressing real-world, everyday tasks often requires collaboration to efficiently handle long-horizon planning and complex perception.
+However, developing embodied agents for multi-robot tasks remains an open challenge.
+Inspired by human teamwork, incorporating human teaming principles into multi-robot collaboration, where groups of robotic agents coordinate planning and perception through shared observations and information, offers a promising yet challenging path to improving efficiency and robustness zhang2024building .
+
+Meanwhile, large language models (LLMs) have demonstrated strong capabilities across a range of tasks, including question answering  rein2024gpqa , code generation  jain2024livecodebench , and logical reasoning  plaat2024reasoning .
+Recent work has integrated LLMs into robotic planning  song2023llm ; zhang2024badrobot ; mower2024ros ; salimpour2025towards ; liang2025large , with several studies extending these approaches to multi-robot collaboration  zhang2024building ; mandi2024roco ; liu2025coherent .
+However, previous work has mainly focused on homogeneous agents  liu2024leveraging , limiting the diversity of capabilities that can be exhibited during collaboration.
+Moreover, existing work on heterogeneous teams often assumes idealized operating conditions  liu2025coherent , overlooking cumulative errors over long horizons, underestimating communication costs, and overestimating cooperative efficiency.
+As a result, despite the promise of LLM-driven multi-robot collaboration, significant gaps remain under heterogeneous agents, long-horizon objectives, and real-world constraints.
+
+Figure 1: Overview.
+We present CLiMRS, an adaptive group negotiation framework among multiple LLMs that enables multi-robot collaboration through a grouping–planning–execution–feedback loop, and CLiMBench, a heterogeneous multi-robot collaboration benchmark in simulation with challenging long-horizon assembly tasks.
+
+To address these limitations, we propose CLiMRS
+( C ooperative Large- L anguage-Model-Dr i ven Heterogeneous M ulti- R obot S ystem),
+an adaptive group negotiation framework among multiple LLMs that enables multi-robot collaboration.
+CLiMRS orchestrates heterogeneous robots via dynamic subgroup formation and cooperative planning, enabling robust long-horizon collaboration in uncertain environments.
+Within this framework, each robot is paired with an independent LLM agent that communicates with its peers to accomplish complex, long-horizon tasks. To enhance collaborative effectiveness, the system leverages the broad world knowledge of LLMs and explicitly models inter-agent dependencies through a grouping–planning–execution–feedback loop.
+
+To systematically evaluate the applicability of CLiMRS in challenging scenarios where heterogeneous robots must cope with unpredictable execution errors, we introduce CLiMBench , a benchmark for heterogeneous multi-robot collaboration.
+CLiMBench is built around long-horizon assembly tasks that require robots to jointly perform object search, navigation, transportation, and assembly under partial observability.
+It features five robotic devices across three types of heterogeneous robots.
+Tasks of varying difficulty simulate material-handling and assembly processes with diverse skill usage, designed to test the planning and perception capabilities of LLM-based frameworks.
+
+We evaluated our framework in CLiMBench and another heterogeneous robot collaboration benchmark  liu2025coherent .
+Our experiments show that CLiMRS outperforms the best baseline, increasing success rates and improving efficiency on complex tasks while maintaining high success on simpler ones.
+These results demonstrate that incorporating human-inspired dynamic subgroup formation and negotiation principles substantially enhances the efficiency of heterogeneous multi-robot collaboration.
+To summarize, our main contributions are:
+
+•
+
+We present CLiMRS, a multi-LLM cooperation framework for heterogeneous multi-robot collaboration that can perform long-horizon planning and efficient perception in complex tasks.
+
+•
+
+We propose CLiMBench, a benchmark evaluating heterogeneous multi-robot collaboration with long-horizon assembly tasks, featuring varied skills and a realistic simulation environment.
+
+•
+
+We demonstrate through extensive experiments that CLiMRS achieves significant efficiency improvements via dynamic group formation and cooperative long-horizon planning.
+
+2 Related Works
+
+2.1 Robotic Skills Training Across Scenarios
+
+Single Agent Skill Training.
+Current approaches to train embodied skills for task execution generally follow two primary paradigms: rule-based and learning-driven methods.
+Traditional embodiment controllers optimize joint movements through the resolution of robotic kinematics, aiming to improve motion robustness and generate smoother, more precise trajectories  kashyap2021particle ; katayama2023model .
+In recent years, advances in reinforcement learning and imitation learning have significantly improved robotic motion control across domains such as dexterous manipulation, bipedal locomotion, and quadrupedal navigation  rajeswaran2017learning ; li2025reinforcement ; bellegarda2024visual .
+These advances have progressively enabled embodied systems to coordinate actions in a cerebellum-like manner, supporting increasingly complex tasks in diverse environments.
+
+Multi-agent Skill Training.
+Originally developed in game AI  kurach2020google ; perolat2022mastering , multi-agent skill training has since been extended to more physically grounded domains such as robotics  wang2024multi ; lai2025roboballet and autonomous driving  li2022v2x .
+Despite these advances, multi-agent embodied learning remains limited by exponential state-space growth, and existing approaches such as mean-field methods  yang2018mean struggle to generalize across heterogeneous robots in collaboration.
+
+To further this goal, we design a set of diverse robotic skills in CLiMBench that model robots’ low-level execution outcomes, capturing both successful executions and failure cases, thereby providing a testbed for planning methods in heterogeneous multi-agent collaboration.
+
+Figure 2: CLiMRS Framework.
+To employ our grouping–planning–execution–feedback cycle, CLiMRS comprises
+(a) a general proposal planner that forms dynamic agent subgroups,
+(b) multiple subgroup managers for local agent commands,
+(c) multiple agent executors for robot skills and agent feedback,
+(d) a simulation environment for environment interaction and feedback, and
+(e) a context memory module for all dialogue context and feedback.
+
+2.2 Task Planning with LLMs in Robotics
+
+LLM Planner for Robotics.
+The rapid progress of LLMs has motivated their use as task planners for robots, as few-shot and zero-shot learning enable the decomposition of high-level goals into executable task sequences  brown2020fewshot ; huang2022language ; llmzeroreason .
+Their code-generation abilities further allow LLMs to produce executable skill-level commands for robotic control  codeaspolicies ; progprompt ; wang2023voyager ; wu2023tidybot , while value-function-based methods guide robust skill selection  text2motion ; saycan .
+Recent advances in prompting strategies further improve long-horizon LLM-based planning  zhang2024building ; liu2025coherent .
+Some studies also explore reasoning in joint or 3D action spaces  mandi2023roco .
+
+Multi-LLM Task Planning.
+Prior work emphasizes multi-LLM cooperation through discussion, debate, and role assignment  chen2023reconcile ; liang2023encouraging ; hong2024metagpt to provide complementary perspectives and improve output reliability, often augmented with feedback and memory mechanisms to improve long-horizon planning  mandi2023roco ; liu2025coherent ; zhang2024building ; wang2023voyager .
+
+Decision-making Paradigms in Multi-Robot Collaboration.
+Two primary paradigms emerged for complex multi-robot tasks: centralized and decentralized approaches.
+In decentralized schemes, multiple models or agents communicate, exchange intermediate plans, and iteratively refine their decisions through structured dialogue  mandi2023roco ; zhang2024building ; liu2024leveraginglargelanguagemodel ,while centralized methods typically rely on a single LLM to decompose global objectives and allocate tasks when planning  kannan2023smart ; liu2025coherent .
+A recent comparative study conducted in four diverse multi-agent scenarios  chen2023scalable further reports that centralized communication consistently achieves higher success rates and markedly greater token efficiency with proper feedback mechanisms, highlighting its strong potential for scalable real-world deployment.
+
+Based on previous findings, CLiMRS structures multi-LLM cooperation through a grouping–planning–execution–feedback loop. By dynamically forming subgroups for subtasks, the framework enables parallel planning, agent execution, and robust collaboration.
+
+3 Method
+
+In this section, we present CLiMRS, an adaptive group negotiation framework among multiple LLMs that enables multi-robot collaboration.
+In human team problem-solving, a common and effective strategy for tackling complex tasks is to decompose the problem and assign subtasks to subgroups that work in parallel.
+Inspired by this, our approach forms dynamic agent subgroups that hold centralized discussions on robot perception in parallel, with each robot paired with an independent LLM agent to give feedback to discussions, thus forming a dynamic grouping–planning–execution–feedback cycle, which is shown in Fig.  1 .
+
+As illustrated in Fig.  2 ,
+CLiMRS comprises five core modules:
+(a) a general proposal planner that forms dynamic agent groups,
+(b) multiple subgroup managers that generate local agent commands,
+(c) multiple agent executors that produce robot skills and return agent-level execution feedback,
+(d) a simulation environment for real-time interaction and provides environment feedback, and
+(e) a context memory module that records all inter-agent dialogues and feedback.
+
+3.1 Grouping with General Proposal Planner
+
+The first stage of our cycle dynamically partitions agents into subgroups responsible for different aspects of the overall task, using a general proposal planner to orchestrate the grouping process.
+
+General Proposal Planner.
+As illustrated in Fig.  2 (a), the general proposal planner generates a global task proposal that clusters agents into subtask-oriented teams.
+Given the overall task instruction, the prompted LLM incorporates robot capabilities, current observations, and dialogue history through a structured prompt.
+It outputs a plan with the following components:
+(1) Situation Analysis , assessing the environment and task progress;
+(2) Spatial Analysis , accounting for agent and object locations and spatial constraints;
+(3) Task Decomposition , breaking the objective into executable subtasks;
+(4) Grouping Strategy , clustering agents for parallel execution while minimizing interference;
+(5) Subgoal Assignment , specifying each group’s objective;
+(6) Coordination Strategy , outlining inter-group synchronization and execution order; and
+(7) Risk Assessment , identifying potential conflicts and mitigation plans.
+The resulting group-to-subtask assignments are then passed to the perception and execution modules.
+
+3.2 Planning with Local Subgroup Managers
+
+Given the agent groupings and their assigned subtasks, the second stage generates precise robot-level commands based on robot capabilities and current observations.
+As the subtasks are independent, multiple subgroup managers operate in parallel, as illustrated in Fig.  2 (b).
+
+Subgroup Manager.
+Each subgroup manager conducts a centralized discussion within its subgroup to determine fine-grained commands for individual robots.
+Conditioned on subtask instructions, subgroup robot capabilities, subgroup observations, and dialogue history, the subgroup manager selects appropriate skills and parameters for each agent.
+
+3.3 Execution and Environment Interaction
+
+With commands issued to robots, the final two stages of our cycle require them to evaluate these commands, determine appropriate actions, execute safely and provide feedback to refine future planning.
+The agent executor LLM verifies the feasibility of its command and issues the corresponding action only when the command is deemed executable.
+
+Agent Execution.
+Shown in Fig.  2 (c), the agent executors verify and execute commands from the subgroup manager while providing feedback.
+Each agent executor LLM considers its robot’s capabilities, current observations, and available actions.
+The executor first checks feasibility against the robot’s physical constraints and conditions.
+If feasible, the action is executed using the robot’s skills; otherwise, the robot remains idle for this cycle.
+
+Simulation Environment.
+Shown in Fig.  2 (d), the simulation environment serves as the execution backbone of our framework.
+It receives the robot skill execution signals issued by the agent executors and immediately carries out the corresponding low-level actions in real time.
+During execution, it monitors the evolving state of the environment and produces both updated robot observations and environment-level feedback.
+These outputs are fed back to the context memory shown in Fig.  2 (e), allowing the overall method to track task progress, refine its environment understanding, and supply the information required for the next round of the grouping–planning–execution–feedback cycle.
+
+Figure 3: Our Benchmark.
+CLiMBench is a heterogeneous multi-robot collaboration benchmark, featuring multi-agent robots with diverse skills, enabling collaboration on complex assembly tasks of varying difficulty levels.
+
+3.4 Context Memory
+
+With the grouping–planning–execution–feedback cycle described above,
+our framework employs a context memory module that contains execution feedback, environment observations, and dialogue history, providing context to all LLM agents.
+
+Feedback Formation.
+Execution feedback is collected from two sources:
+(1) environment feedback , including updated environmental observations after robot actions are executed in the simulator, and
+(2) agent feedback generated by the agent executors .
+Agent executors report execution outcomes and provide diagnostic explanations for infeasible commands, enabling subsequent planners to reason about failures and task progress.
+
+Context Memory Organization.
+As illustrated in Fig.  2 (d), the context memory module stores:
+(1) agent feedback , including execution outcomes and diagnostic explanations from the agent executors ;
+(2) environment feedback , consisting of updated observations from the simulation environment after action execution; and
+(3) dialogue context , including current planning dialogue and dialogue history accumulated across previous cycles.
+
+The context memory provides tailored context inputs for different modules.
+For the general proposal planner , it retains the most recent five dialogue turns along with the latest environment observations, enabling agent feedback to inform new task proposals and subgroup formations.
+For the subgroup managers , it stores each subgroup’s latest observations and the last five dialogue turns, supplying rich, localized context to guide fine-grained planning and perception within each subgroup.
+
+4 Benchmark
+
+In this section, we introduce CLiMBench, a benchmark for heterogeneous multi-robot collaboration.
+We consider an assembly-oriented setting in which multiple components must be collected and assembled into a wheeled robot within a large workspace.
+Unlike prior multi-agent collaboration benchmarks  liu2025coherent , which decouple robot skill execution from the planning loop and assume successful execution by default, CLiMBench executes every robot skill within a realistic physics simulator, IsaacGym  makoviychuk2021isaac .
+This design explicitly allows execution failures and enables systematic evaluation of planning modules under realistic execution uncertainty.
+The goal of CLiMBench is to evaluate long-horizon heterogeneous multi-robot collaboration in settings where planning and execution are tightly coupled.
+
+4.1 Task Setting and Scene Construction
+
+Task Setting.
+The goal of the task is to assemble the components into a wheeled robot.
+Within the workspace,
+the components are distributed across different rooms, some of which are occluded or blocked by obstacles that must be cleared before access is possible.
+As a result, robots must search for components, navigate complex environments, and perform coordinated manipulation under partial observability and execution uncertainty.
+This long-horizon task is considered successfully complete once all required components are correctly assembled into the target product within a step count limit to evaluate task execution efficiency.
+
+Scene Construction.
+We instantiate this setting in the IsaacGym simulator by constructing the scene with multiple robotic agents and modular components, as is shown in Fig.  3 .
+The environment includes three types of heterogeneous robots: one robotic arm, three autonomous ground vehicles (AGV), and one humanoid robot, each providing complementary capabilities for manipulation, transportation, and interaction with the environment to complete the assembly task.
+To decouple high-level planning from low-level control while keeping heterogeneous robot capabilities, robot actions are executed through predefined skills, allowing high-level planners to reason over realistic execution outcomes while abstracting low-level control.
+
+Scene Initialization and Randomization.
+We initialize the environment and introduce controlled variations in task parameters and object configurations to enhance generalization.
+At the start of each episode, robots execute their skills under randomized task conditions, leading to diverse skill sequences and varying levels of agent-wise interaction.
+This provides a robust testbed for evaluating the effectiveness of different frameworks in multi-agent collaborative tasks.
+
+Environment feedback.
+We design the environment feedback along two dimensions:
+(1) We update the state of all agents and the coordinates of objects within their perceptible range, and
+(2) We report conflicts that arise when multiple robots execute skills simultaneously.
+
+Robot type
+
+Skill list
+
+Robotic Arm
+
+[check] < object > within reach
+
+[pick] < object > on < location >
+
+[wait] for next command
+
+AGV
+
+[move] to < location >
+
+[push] < object > to < location >
+
+[wait] for next command
+
+Humanoid
+
+[walk] to < location >
+
+[carry] < obstacle > with both hands
+
+[wait] for next command
+
+Table 1:
+Robot Skills in CLiMBench.
+We assign a distinct set of skills for each robot based on its specific capabilities in the assembly tasks in CLiMBench.
+
+4.2 Robot Skill Design in CLiMBench
+
+In CLiMBench, each robot receives both the global task objectives and its observations (e.g., a humanoid robot observes its joint states, torso status, and target positions).
+As is shown in Table  1 , we design distinct skills for different types of robots.
+Further details are provided in the Appendix.
+
+Robotic Arm Manipulation.
+We use a Franka Panda arm to instantiate robotic manipulation skills in CLiMBench.
+To balance speed and precision, we adopt a two-stage strategy consisting of a fast coarse motion followed by fine adjustment phase.
+The arm is controlled using an operational-space controller (OSC) with gravity compensation, producing compliant spring–damper behavior in task space  narang2022factoryfastcontactrobotic .
+Smooth operational-space waypoints are generated via interpolation to ensure reliable execution.
+
+AGV Transportation.
+We use a TRACER Mini robot to instantiate AGV transportation skills in CLiMBench.
+Navigation paths are planned using a Rapidly-exploring Random Tree (RRT) planner that accounts for environmental obstacles.
+The resulting paths are executed via differential-drive control, enabling smooth turns during navigation.
+For final delivery, the AGV follows straight-line motion to ensure reliable transportation and accurate placement at the assembly location.
+
+Humanoid Carrying.
+We instantiate humanoid carrying as a goal-conditioned control skill trained with Adversarial Motion Priors (AMP)  Peng_2021 following the single-object manipulation paradigm in COOHOI  gao2024coohoi .
+Given a target object and a goal location, the policy produces whole-body locomotion and manipulation to
+(1) approach and grasp the object,
+(2) carry it while maintaining balance and collision-robust gait, and
+(3) place it at the goal.
+Training combines task rewards for reaching, holding, and placing, and AMP style rewards to encourage natural, stable motions and rapid recovery, yielding reliable execution under contact and minor disturbances.
+
+5 Experiments
+
+Method
+Mono-type Task
+Dual-type Task
+Trio-type Task
+Average
+
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+
+DMRS-1D
+0.700
+10.6
+0.467
+18.0
+0.667
+20.7
+0.600
+17.2
+
+DMRS-2D
+0.500
+11.5
+0.267
+19.9
+0.400
+24.5
+0.375
+19.6
+
+CMRS
+0.900
+7.9
+0.533
+16.4
+0.533
+22.2
+0.625
+16.5
+
+Primitive MCTS
+0.000
+14.0
+0.000
+21.5
+0.000
+26.9
+0.000
+21.7
+
+LLM-MCTS
+0.700
+10.2
+0.067
+20.9
+0.000
+26.9
+0.200
+20.5
+
+COHERENT
+0.900
+7.4
+1.000
+11.9
+1.000
+16.1
+0.975
+12.4
+
+CLiMRS(Ours)
+0.900
+6.8
+1.000
+11.5
+1.000
+13.1
+0.975
+10.9
+
+Ground Truth (GT)
+–
+6.5
+–
+10.3
+–
+12.9
+–
+10.3
+
+Table 2:
+Comparison Across Task Types in the COHERENT Benchmark.
+CLiMRS outperforms all the baselines, achieving the largest gain on the most challenging trio-type tasks.
+
+Method
+S1
+S2
+S3
+S4
+S5
+Average
+
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+
+DMRS-1D
+0.500
+17.4
+0.625
+15.8
+0.625
+18.3
+0.750
+15.1
+0.500
+19.3
+0.600
+17.2
+
+DMRS-2D
+0.500
+18.9
+0.500
+18.3
+0.375
+20.6
+0.250
+18.9
+0.250
+21.1
+0.375
+19.6
+
+CMRS
+0.875
+13.1
+0.625
+16.6
+0.625
+18.5
+0.375
+18.1
+0.625
+15.9
+0.625
+16.5
+
+Primitive MCTS
+0.000
+21.5
+0.000
+21.8
+0.000
+22.5
+0.000
+20.5
+0.000
+22.0
+0.000
+21.7
+
+LLM-MCTS
+0.250
+20.0
+0.250
+20.4
+0.250
+21.3
+0.125
+19.9
+0.125
+20.9
+0.200
+20.5
+
+COHERENT
+1.000
+13.1
+1.000
+11.4
+1.000
+11.9
+1.000
+11.4
+0.875
+14.0
+0.975
+12.4
+
+CLiMRS(Ours)
+1.000
+10.8
+1.000
+10.4
+1.000
+11.8
+1.000
+10.4
+0.875
+11.4
+0.975
+10.9
+
+Ground Truth (GT)
+–
+10.3
+–
+10.4
+–
+10.8
+–
+9.8
+–
+10.5
+–
+10.3
+
+Table 3:
+Comparison Across Scenes in the COHERENT Benchmark.
+CLiMRS outperforms all the baselines in every scene, demonstrating its superior performance.
+
+Method
+Task 1 (Easy)
+Task 2 (Easy)
+Task 3 (Hard)
+Task 4 (Hard)
+Average
+
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+
+DMRS-1D
+0.000
+15.0
+0.000
+15.0
+0.000
+19.0
+0.000
+19.0
+0.000
+17.0
+
+CMRS
+0.000
+15.0
+0.000
+15.0
+0.000
+19.0
+0.000
+19.0
+0.000
+17.0
+
+COHERENT
+1.000
+13.6
+0.800
+13.6
+0.400
+18.2
+0.600
+17.8
+0.700
+15.8
+
+CLiMRS (Ours)
+1.000
+8.2
+1.000
+8.4
+1.000
+9.4
+1.000
+9.2
+1.000
+8.8
+
+Ground Truth (GT)
+–
+7.0
+–
+7.0
+–
+9.0
+–
+9.0
+–
+8.0
+
+Table 4:
+Comparison Across Tasks in CLiMBench.
+CLiMRS outperforms all our baselines and reduces the Average Step (AS) by over 40%.
+
+Method
+Task 1 (Easy)
+Task 2 (Easy)
+Task 3 (Hard)
+Task 4 (Hard)
+Average
+
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+SR
+AS
+
+CLiMRS w/o history
+0.000
+15.0
+0.000
+15.0
+0.000
+19.0
+0.000
+19.0
+0.000
+17.0
+
+CLiMRS w/o feedback
+0.200
+14.8
+0.200
+14.8
+0.200
+18.8
+0.200
+18.8
+0.200
+16.8
+
+CLiMRS w/o grouping
+0.600
+14.0
+0.800
+13.2
+0.600
+17.2
+0.600
+17.4
+0.650
+15.5
+
+CLiMRS (Ours)
+1.000
+8.2
+1.000
+8.4
+1.000
+9.4
+1.000
+9.2
+1.000
+8.8
+
+Ground Truth (GT)
+–
+7.0
+–
+7.0
+–
+9.0
+–
+9.0
+–
+8.0
+
+Table 5:
+Ablation Studies.
+Removing dialogue history, feedback information, or the grouping stage significantly reduces both Success Rate (SR) and Average Step (AS).
+
+In this section, we present a comprehensive evaluation of CLiMRS to address the following questions:
+
+(1)
+
+Is CLiMRS effective for simple daily-life multi-robot collaboration tasks?
+
+(2)
+
+Can CLiMRS perform well in challenging multi-robot assembly tasks?
+
+(3)
+
+Through ablation studies, how critical are the individual components of CLiMRS?
+
+We evaluate CLiMRS in two distinct environments: CLiMBench and a simpler heterogeneous multi-robot collaboration benchmark from COHERENT  liu2025coherent .
+For LLM use, we use gpt-4-0125-preview to align with the setting in COHERENT.
+For quantitative analysis, we use task Success Rate (SR) and Average Step (AS) as evaluation metrics in this paper.
+
+5.1 Evaluating CLiMRS on Simple Daily-Life Multi-Robot Collaboration
+
+To answer Question  (1) , we evaluate CLiMRS on the COHERENT benchmark, a simpler heterogeneous multi-robot benchmark
+that includes diverse tasks across five real-world scenes, but involves at most three heterogeneous robots and assumes perfect skill execution.
+We adopt its evaluation metrics and use the reported results as our baseline.
+
+Results shown in Table  2 and  3 suggest that CLiMRS succeeds on nearly all COHERENT tasks and achieves higher efficiency with fewer steps.
+This trend holds across every scene, demonstrating our CLiMRS’ superior performance.
+Notably, in the most challenging trio-type tasks, which require all three robots to collaborate, CLiMRS delivers the largest gain, reducing the Average Step count by 18.6%,
+indicating that our approach offers stronger improvements on more complex tasks.
+
+5.2 Evaluating CLiMRS on CLiMBench with Robot Assembly Tasks
+
+To answer Question  (2) , we evaluate CLiMRS on CLiMBench.
+Our baselines include the following:
+
+•
+
+DMRS-1D: a variant of CoELA  zhang2024building , this decentralized framework lets robots determine their next step through dialogue, with the final decision summarized by the last robot.
+
+•
+
+CMRS: a primitive centralized system  huang2022language that uses a single decision-making LLM to output executable actions, where all information is stored in the prompt.
+
+•
+
+COHERENT: an approximately centralized baseline that combines an oracle planning LLM with a feedback LLM, where dialogue history is used to adjust future perception and planning.
+
+For quantitative evaluation, we fix the scene parameters and select four representative scenarios to evaluate all methods.
+For each scenario, we manually derive minimal-step solutions as ground-truth references.
+We observe that scenarios with heavier object occlusion require more ground-truth steps, naturally forming two levels of difficulty.
+
+Due to stochastic skill execution in CLiMBench, each task is executed five times, and we report the mean Success Rate (SR) and Average Steps (AS).
+To control evaluation cost and runtime, a task is considered successful only if it is completed within twice the corresponding ground-truth step count.
+
+Results in Table  4 show that CLiMRS achieves a 100% success rate on CLiMBench, outperforming all baselines.
+In addition, CLiMRS reduces the Average Steps (AS) by 44.30% compared to the best baseline, indicating substantially higher planning efficiency in long-horizon collaboration.
+
+Notably, most baselines terminate due to timeout and fail to complete tasks within the step budget, and the performance degradation of baselines from the COHERENT benchmark (Table  2 ) to CLiMBench (Table  4 ) demonstrates that CLiMBench provides a significantly more challenging evaluation setting for robot collaboration.
+
+Recover from Execution Failures.
+From our experiments, we observe three types of execution failures:
+(1) improper grouping , where no robot in the assigned group can complete the subtask;
+(2) incorrect agent selection , where a valid subtask is assigned to a robot without the required capabilities; and
+(3) state inconsistency , where missing information or unmet preconditions prevent proper execution.
+Nevertheless, the natural-language feedback provided by the executors captures these failure signals and, through the context memory, enables downstream perception and planning to be refined, ultimately leading to successful task completion.
+
+5.3 Ablation Studies on CLiMRS
+
+To answer Question  (3) , we conduct an ablation study to assess the contribution of each component in CLiMRS by:
+(i) removing the dialogue history,
+(ii) removing the feedback information, and
+(iii) removing the grouping stage from the grouping–planning–execution–feedback cycle.
+We evaluate all variants on the same tasks and metrics as in Section  5.2 , with results summarized in Table  5 .
+
+The results show that both dialogue history and feedback information are critical to the framework: removing either component leads to failure in task completion, indicating that sustained context accumulation and execution-aware feedback are indispensable for long-horizon planning.
+The grouping stage also plays a central role in CLiMRS, significantly improving task success rates and reducing average steps by enabling effective coordination and parallelization across heterogeneous robots.
+
+6 Conclusion
+
+In this paper, we present CLiMRS, a human-team-inspired adaptive group negotiation framework among multiple LLMs for heterogeneous multi-robot collaboration, together with CLiMBench, a challenging benchmark for long-horizon assembly tasks under realistic execution uncertainty.
+Extensive experiments show that CLiMRS consistently outperforms all baselines in both success rate and efficiency, while robustly recovering from execution failures with feedback-driven negotiation.
+Ablation studies highlight the complementary roles of dialogue history, feedback, and dynamic subgroup formation.
+Overall, our results demonstrate that human-inspired group formation and negotiation principles offer an effective and scalable solution for heterogeneous multi-robot collaboration.
+
+7 Limitations
+
+In this paper, we primarily focus on improving the efficiency of multi-robot collaboration at the level of high-level behavioral planning.
+We assume that LLM inference latency is negligible compared to skill execution time, and therefore do not explicitly model network delays or computational costs in the current framework.
+Managing API costs under inference-efficiency constraints and exploring asynchronous inference–execution pipelines remain important directions for future work.
+In addition, while CLiMBench emphasizes long-horizon behavioral planning and coordination, it simplifies sensory inputs and perception modules in simulation.
+Bridging this gap toward more realistic perception and enabling sim-to-real transfer constitute promising avenues for future research.
+
+8 Ethical Considerations
+
+Our study investigates multi-robot collaboration using large language models (LLMs) for planning and negotiation in simulated environments.
+We discuss the primary ethical considerations relevant to this work below.
+
+•
+
+No Human or Sensitive Data.
+Our research is conducted entirely in simulation and does not involve human subjects, personally identifiable information, or sensitive real-world data.
+We do not collect or process user data, nor do we rely on proprietary datasets.
+
+•
+
+Safety and Responsible Deployment.
+While our methods and benchmark are evaluated exclusively in simulation, real-world deployment of autonomous multi-robot systems may pose physical safety risks.
+In particular, LLM-based planning may be susceptible to erroneous or inconsistent decisions under distribution shift.
+Any future deployment should therefore incorporate rigorous safety validation, fail-safe mechanisms, and human oversight, and comply with applicable safety standards and regulations.
+
+•
+
+Bias and Model Limitations.
+The LLMs used in our study are pretrained by third parties and may reflect societal biases present in their training data.
+Although our work does not directly deploy LLMs in human-facing decision-making, such biases could indirectly influence planning behavior.
+We acknowledge this limitation and recommend bias auditing and robustness testing before any real-world application.
+
+Appendix
+
+Appendix A Additional Details on CLiMBench
+
+A.1 Simulation Setup and Agent Parameters
+
+Physics Simulation.
+All tasks in CLiMBench are developed in the IsaacGym physics simulator  makoviychuk2021isaac .
+The simulator executes robot actions in a step-by-step manner, advancing the physical state of the environment after each issued skill.
+Gravity, collision detection, and joint limit constraints are enabled for all agents to ensure physically consistent execution.
+
+Agent Roster and Physical Specifications.
+The assembly scene in CLiMBench includes three types of heterogeneous robotic agents:
+a single robotic manipulator, three autonomous ground vehicles (AGVs), and one humanoid.
+Table  6 summarizes the key specifications of each agent type, including degrees of freedom, payload capacity, maximum reach, and the number of instantiated agents.
+
+DoF
+Payload
+Max Reach
+Quantity
+
+Franka
+7
+3kg
+855mm
+1
+
+TRACER Mini
+3
+80kg
+All
+3
+
+Humanoid
+28
+–
+All
+1
+
+Table 6: Agent Parameters in CLiMBench.
+
+The robotic arm is instantiated as a Franka Panda manipulator with seven degrees of freedom and a maximum reach of 855 mm, suitable for precise manipulation and assembly.
+The AGVs are instantiated as TRACER Mini mobile robots with differential-drive kinematics and high payload capacity, enabling reliable transportation of components within the workspace.
+The humanoid features a high-dimensional articulated body with 28 degrees of freedom, supporting whole-body locomotion and object carrying skills.
+
+A.2 Environment Setup and Randomization
+
+Environment Workspace Initialization.
+All tasks in CLiMBench are executed within a shared global coordinate frame.
+The workspace domain, component placement candidates, and agent initialization ranges are summarized in Table  7 .
+All object poses and agent base positions are specified in this global frame, while the vertical axis is used only to model object height and collision geometry.
+
+Entity
+Initialization Range
+
+Environment Domain
+
+Components (Wheels & Trunk)
+
+AGVs
+
+Humanoid
+Central region of the environment
+
+Table 7: Random Initialization of the Environment Components and Agents in CLiMBench.
+
+Obstacle Configuration.
+In addition to randomly initialized agents and components, the environment includes static obstacles that block navigation and cause occlusions.
+Four rectangular obstacles of size are placed near the corners of the workspace.
+Three smaller obstacles of size are positioned along primary traversal paths of the mobile agents, introducing potential collisions and blocked access regions.
+
+Randomization Policy.
+For each episode, component locations and agent initial positions are independently sampled from the ranges specified in Table  7 .
+All methods are evaluated under identical environment configurations and random seeds to ensure fair comparison.
+No curriculum learning or adaptive environment scheduling is employed.
+
+A.3 Low-level Skill Implementation Details
+
+Franka Manipulation Implementation.
+Franka manipulation skills are executed using a numerical inverse kinematics (IK) solver combined with an operational-space controller (OSC).
+The IK solver computes target joint configurations for the first seven joints, with a maximum of 200 iterations and a residual tolerance of .
+The Franka base is initialized at a fixed pose with orientation quaternion .
+Task-space motion is controlled using an impedance-based OSC with:
+
+(1)
+
+where the proportional gain is set to and the derivative gain is chosen as to achieve critical damping.
+The gripper closing threshold is set to , accounting for the object grasping radius of used in CLiMBench.
+
+During assembly, components are aligned and attached using a magnetic attraction model with an effective range of .
+For each manipulation trajectory, operational-space waypoints are generated via interpolation to ensure smooth and continuous execution.
+
+AGV Navigation and Motion Control.
+AGV transportation skills are implemented using a Rapidly-exploring Random Tree (RRT) planner operating in the planar workspace.
+The planner considers all static and dynamic obstacles and robots in the environment as the collision space.
+The RRT planner uses a collision-checking resolution of along each edge and a rewire count of 32.
+Once a feasible path is found, it is executed using differential-drive control to enable smooth turning and stable navigation.
+For final positioning during delivery, the AGV follows a straight-line motion segment to improve placement reliability.
+
+Humanoid Observation and Skill Interface.
+Humanoid skills are executed by a pretrained policy that operates on a structured observation interface.
+Let denote the number of articulated bodies of the humanoid.
+For each body , the observation is defined as
+
+(2)
+
+where represents the body relative rotational and translational configuration,
+the Cartesian position,
+the linear velocity, and
+the linear acceleration.
+The full humanoid observation vector is constructed by concatenating all body-level observations and a task observation:
+
+(3)
+
+Observations of the root body and global reference frame are excluded, as they encode absolute pose information rather than local kinematic and dynamic states.
+This formulation provides a consistent interface for skill execution while remaining independent of the humanoid’s global position and orientation in the environment.
+
+A.4 Humanoid Carry Skill Training Details
+
+AMP Objective and Reward Design.
+Humanoid carrying skills are trained using the Adversarial Motion Priors (AMP) framework  Peng_2021 , following the single-object manipulation paradigm introduced in COOHOI  gao2024coohoi .
+AMP augments the task objective with a discriminator-based style reward that encourages motions consistent with human motion data.
+At each time step , the total reward is defined as
+
+(4)
+
+where denotes the task-specific reward and is the AMP style reward.
+The task reward consists of components for walking, holding, and placement:
+
+(5)
+
+while the style reward is computed as
+
+(6)
+
+with denoting the discriminator trained on reference human motion data.
+
+Parameters
+Value
+
+num envs
+16384
+
+episode length
+600
+
+discount factor
+0.99
+
+e_clip
+0.2
+
+horizon_length
+32
+
+minibatch_size
+16384
+
+amp_minibatch_size
+4096
+
+task_reward_weight
+0.5
+
+disc_reward_weight
+0.5
+
+Table 8: Humanoid Carrying Skill Training.
+
+Discriminator Training.
+The AMP discriminator is trained to distinguish between policy-generated motion transitions and reference human motion data.
+We adopt the same discriminator architecture and training procedure as in  Peng_2021 , where the discriminator operates on pairs of consecutive states and outputs the probability that the transition originates from real motion data.
+Reference motions are drawn from the ACCAD subset of the AMASS dataset  mahmood2019amass , which contains a diverse set of human motions including locomotion, lifting, carrying, and object placement.
+During training, the discriminator and the policy are updated alternately.
+The discriminator is trained using binary cross-entropy loss to separate reference transitions from policy-generated transitions, while the policy receives the discriminator-based style reward defined in Eq.  6 .
+This adversarial training scheme encourages the humanoid policy to produce stable and human-like motions while optimizing task-specific objectives.
+
+Figure 4: Ablation Study on AMP Domain Randomization. Results show that Domain Randomization helps the humanoid agent to obtain a stable and reusable carrying skill in CLiMBench.
+
+Figure 5: Single Agent Prompt Templates. This template encodes the agent’s name, unique identifier, and action specification to ensure structured and unambiguous command interpretation for an agent executor .
+
+Domain Randomization.
+To improve robustness and generalization in assembly environments, we apply domain randomization during training.
+Randomized factors include object orientation, relative alignment between the humanoid and the object, and object proximity.
+These variations encourage the learned policy to tolerate spatial uncertainty and contact perturbations commonly encountered during execution in CLiMBench.
+
+Training Hyperparameters.
+The humanoid policy is trained using Proximal Policy Optimization (PPO)  schulman2017proximal .
+Key training hyperparameters, including the number of parallel environments, episode length, reward weights, and optimization settings, are summarized in Table  8 .
+
+Training Infrastructure.
+Training is conducted in IsaacGym headless mode on a single NVIDIA A100 GPU to enable large-scale parallel simulation.
+After training, the learned policy is deployed with rendering enabled on a workstation equipped with an NVIDIA RTX 4060 Ti for evaluation.
+
+Ablation on Domain Randomization.
+Fig.  4 presents an ablation on domain randomization in AMP training.
+Without randomization, it converges to a local optimum early and exhibits poor generalization, while domain-randomized training achieves consistently higher task rewards and more reliable execution.
+This result supports the use of domain randomization to obtain a stable and reusable carrying skill for the benchmark.
+
+A.5 LLM-to-Skill Execution Interface
+
+Command Schema and Prompt Templates.
+All robot actions in CLiMBench are issued through structured natural-language commands generated by LLM-based planners.
+Each command explicitly specifies the action type, the acting agent(s), the target object, and the target location.
+Figure  5 illustrates the single-agent prompt templates used to ensure parsable command generation.
+These templates encode the agent name, unique identifier, and action specification, providing a unified interface across heterogeneous robots.
+
+Figure 6: Tasks of Different Difficulties. To evaluate the effectiveness of our method in facilitating multi-robot collaboration, we design four heterogeneous agent scenarios under two difficulty tiers, namely easy and hard .
+
+Command Parsing via Regular Expressions.
+Given an LLM-generated command , the execution interface parses it into a structured representation using a set of predefined regular expressions.
+Formally, each command is mapped as
+
+(7)
+
+where denotes the group identifier, is the set of assigned agents with their identifiers, specifies the target object and its identifier, and denotes the target location.
+Only commands that can be successfully parsed into this structure are considered for further verification.
+
+Command Verification.
+To ensure reliable and safe execution, each parsed command is validated through a four-stage verification pipeline.
+Let denote an LLM function call corresponding to a structured command.
+The verification operator maps to a validation vector
+
+(8)
+
+where each component corresponds to a specific verification stage.
+The pipeline consists of the following four stages:
+
+Figure 7: Simulation. It shows an example of the assembly process in the dynamic simulation.
+
+Figure 8: Parallel Execution. To enhance task execution efficiency, agents within each group are executed in parallel, as reflected in the execution log.
+
+•
+
+Capability assessment.
+The system first evaluates whether the assigned agent(s) are capable of executing the requested action based on their available skills.
+The assessment yields a binary decision or confidence score, and commands below a preset threshold are rejected or deferred.
+
+•
+
+Action selection.
+For commands that pass the capability assessment, the planner selects a concrete action from the available action set , optionally providing a ranked subset or per-action confidence.
+
+•
+
+Action parsing.
+The selected action is processed by a parsing operator to produce a structured command
+,
+which includes fields such as action type, agent assignment, target object, and target location.
+
+•
+
+Execution verification (judge).
+A dedicated judge module evaluates for format correctness, semantic consistency, physical feasibility, and execution safety.
+
+Only commands that satisfy all verification criteria are forwarded to the execution module.
+Overall, the verification operator can be expressed as
+
+(9)
+
+where and denote the capability assessment and action selection stages, respectively.
+
+Failure Handling and Feedback Logging.
+Commands that fail at any stage of the verification pipeline are not executed.
+Instead, the interface records structured failure feedback indicating the reason for rejection, such as insufficient agent capability, semantic mismatch, or physical infeasibility.
+This feedback is propagated to the future planning process and stored in the context memory module, enabling planners to adjust subsequent decisions.
+Deferred commands may be reconsidered in later planning iterations once agent states change or environment conditions are ready.
+
+A.6 Benchmark Evaluation Details
+
+Task Difficulty Settings.
+We define two levels of task difficulty, referred to as easy and hard , which differ in obstacle configuration and agent initialization.
+In the easy setting, AGV transportation paths are free of blocking obstacles, and initial agent placements are arranged to avoid potential collisions with the humanoid.
+In contrast, the hard setting introduces obstacles along AGV trajectories and initializes agents in closer proximity, increasing the likelihood of collisions and requiring more coordination during execution.
+Examples of the two settings are illustrated in Fig.  6 .
+
+Trials and Stochasticity.
+Due to stochasticity in low-level skill execution and environment interactions, each task configuration is evaluated over multiple independent trials.
+Unless otherwise specified, we run each task five times and report averaged metrics across trials.
+All methods are evaluated under identical environment configurations and random seeds to ensure fair comparison.
+An example of the assembly process can be seen in Fig.  7 .
+
+Step Budget and Timeout Criteria.
+To control evaluation cost and ensure comparability, each task is assigned a maximum step budget.
+The step budget is defined as twice the number of steps in a manually derived minimal-step solution for the corresponding task.
+A task is considered unsuccessful if the target assembly is not completed within this budget, even if individual skills execute successfully.
+This criterion penalizes inefficient long-horizon planning and excessive replanning.
+
+Execution Logging.
+During evaluation, the benchmark records detailed execution logs, including agent group assignments, issued skill commands, verification outcomes, and environment feedback at each step.
+These logs enable post-hoc analysis of planning behavior, grouping dynamics, and failure recovery, and are used for qualitative visualization and debugging. An example of the parallel execution logs can be seen in Fig.  8 .
+
+Appendix B Example Logs and Prompts
+
+We show some examples of logs and prompts in all the figures below.
+
+Figure 9: Scene Dynamics Log. It illustrates the formation of sub-groups and their corresponding sub-tasks.
+
+Figure 10: Single Agent Prompts. It illustrates the single-agent prompt design for Franka, Humanoid, and AGV, specifying their roles and available skills.
+
+Figure 11: Vanilla Agent Grouping Prompt. It illustrates the prompt to extract agent sub-groups and their corresponding sub-tasks with the general proposal planner.
+
+Figure 12: Agent Grouping Prompt. It illustrates the prompt to form agent sub-groups with a general proposal with the general proposal planner.

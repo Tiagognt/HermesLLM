@@ -1,0 +1,8 @@
+robot_descriptions>=2.0.0
+xacro>=2.1.1
+pdfplumber>=0.11
+transformers>=4.51
+
+# Optional -- only needed for `build_corpus.py --ocr` (scanned PDF manuals).
+# Pure pip install: no root privileges and no system package required.
+rapidocr-onnxruntime>=1.4

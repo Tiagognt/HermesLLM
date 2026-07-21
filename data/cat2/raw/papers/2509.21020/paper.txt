@@ -1,0 +1,499 @@
+Hybrid Task and Motion Planning with Reactive Collision Handling for Multi-Robot Disassembly of Complex Products: Application to EV Batteries
+
+Abdelaziz Shaarawy, Cansu Erdogan, Rustam Stolkin, Alireza Rastegarpanah
+
+A. Shaarawy, C. Erdogan and R. Stolkin are with Extreme Robotics Laboratory, School of Metallurgy and Materials, University of Birmingham, Birmingham, B15 2TT U.K.A. Rastegarpanah is with Extreme Robotics Laboratory, School of Metallurgy and Materials, University of Birmingham, Birmingham, B15 2TT U.K., and also with Department of Applied Artificial Intelligence and Robotics, Aston University, Birmingham, B4 7ET, U.K.
+
+Abstract
+
+This paper addresses the problem of multi-robot coordination for complex manipulation task sequences. We present a vision-driven task-and-motion planning (TAMP) framework for a real dual-agent platform that integrates task decomposition and allocation with a learning-based RRT planner. A GMM-informed motion planner is coupled with a hybrid safety layer that combines predictive collision checking in a MoveIt/FCL digital twin with reactive vision-based avoidance and replanning. This integration is challenging as the system jointly satisfies task precedence, geometric feasibility, dynamic obstacle avoidance, and dual-arm coordination constraints. The framework operates in closed loop by updating the remaining task sequence from repeated scene scans and completion-state tracking rather than executing a fixed open-loop plan. In EV battery disassembly experiments, compared with Default-RRTConnect under identical perception and task assignments, the proposed system reduces cumulative end-effector path length from 48.8 to 17.9 m ( ), improves makespan from 467.9 to 429.8 s ( ), and reduces swept volumes (R1: , R2: ) and overlap ( ). These results show that combining predictive planning and reactive collision avoidance in a real dual-arm disassembly scenario improves motion compactness, safety, and scalability to broader multi-robot sequential manipulation tasks.
+
+I Introduction
+
+Task planning enables autonomous robots to execute complex, multi-step operations under resource constraints by selecting and sequencing actions. When coupled with motion planning, it determines how and when to act amid environmental dynamics and hardware limits. In single-robot settings, learning- and optimisation-based approaches (e.g., ANFIS, GA, RL) improve allocation and ordering under uncertainty [ 28 ] . In multi-robot systems, continuous coordination, collision constraints, and shared resources make scheduling substantially more challenging. Electric-vehicle (EV) battery disassembly is an especially demanding, safety-critical domain where tasks are sequential and tightly coupled, fixtures and tolerances are strict, and the workspace is cluttered and dynamic [ 35 , 34 ] . In practice, the main difficulty is not merely combining task planning and motion planning, but making them operate reliably under perception noise, dual-arm coordination complexity, dynamic obstacles, and simultaneous task-level and geometric constraints.
+
+This work presents a perception-driven TAMP architecture for coordinated multi-robot operation in dynamic environments (Fig.  2 ). Perception serves as the entry point to the pipeline and feeds four planning and execution layers: task decomposition, task allocation, offline predictive motion planning, and online reactive execution. Stereo RGB-D sensing with YOLOv8 provides object identities and poses; the task layer enforces precedence, accessibility, and tool-compatibility constraints. The motion layer combines a MoveIt  [ 5 ] /FCL  [ 20 ] digital twin for predictive collision checking with a reactive avoidance module during execution. In EV battery disassembly, this closed-loop architecture continuously updates both sequences and trajectories from scene feedback, enabling robust dual-robot cooperation rather than a fixed open-loop pipeline.
+
+This paper demonstrates a closed-loop dual-arm system in which planning, perception, and execution remain tightly coupled on real hardware. Building on the GMM-informed RRT planner introduced in [ 26 ] , this work embeds that planner within a vision-driven dual-arm TAMP framework [ 6 ] that continuously handles object-state updates, task allocation changes, inter-robot interference, and dynamic collision risks while preserving the regulatory disassembly sequence. Hence, the main contributions of this article are as follows:
+
+•
+
+Hybrid predictive/reactive collision handling: we combine predictive digital-twin collision checking with reactive avoidance and vision-driven replanning. This coupling supports dual manipulation in dynamic and scalable multi-robot settings.
+
+•
+
+Closed-loop coupling between task and motion layers: the system re-scans the scene, tracks object-completion status, and updates the remaining lookup-table sequence during execution, rather than treating task planning and motion planning as fully decoupled stages.
+
+•
+
+Real-world validation in EV battery disassembly: across the presented three case studies, the integrated framework yields more compact trajectories, lower swept-volume overlap, and improved execution efficiency under real-world uncertainty.
+
+II Related Work
+
+Task-and-motion planning (TAMP) is central to multi–robot operation in shared workspaces: it must choose feasible action sequences, allocate limited resources, and coordinate agents while guaranteeing geometric and kinematic safety. The integration of symbolic task planning with continuous motion planning is widely recognised as a key enabler for autonomous execution in complex environments through logic–based representations and discrete decision mechanisms.
+
+II-A Motion Planning
+
+Motion planning computes safe, efficient trajectories under kinematic limits and obstacles; in multi-robot settings, it must also coordinate agents for collision-free, synchronised execution. Sampling-based motion planning (SBMP) provides probabilistic completeness and efficient exploration in high-dimensional spaces [ 13 , 15 ] . Integrating SBMP with TAMP links discrete task decomposition to continuous geometric trajectories and supports dynamic replanning when tasks or preconditions change [ 29 ] . Empirical studies (e.g., bin-picking) report substantial variation across SBMP variants in time, success, and path quality, motivating task-aware selection and tuning [ 24 ] . Guided SBMP adapts sampling to real-time perception for on-the-fly obstacle handling [ 14 ] , while kinodynamic extensions such as iDb-RRT combine motion primitives with optimisation to satisfy dynamics and yield smoother, executable paths [ 19 ] .
+
+Learning-based planners target adaptation under uncertainty: deep models show strong performance in dense obstacles with curated datasets [ 25 ] , and surveys compare deterministic, heuristic, and learning-based methods across optimality, computation, and robustness [ 18 ] . Recent DRL advances coordinate global target sequencing with local obstacle-aware navigation via hierarchy and curriculum/experience reuse, outperforming RRT*/PRM in success rate [ 7 ] . Reliable perception underpins both sampling- and learning-based planners. Probabilistic 3D maps such as OctoMap enable dynamic updates for moving obstacles [ 11 ] . Recent task-conditioned planners also motivate our use of a learned sampling prior: the recently introduced GMM-informed RRT planner in [ 26 ] demonstrated planner-level benefits in constrained manipulation; the present paper studies the distinct problem of integrating that planner into a closed-loop dual-arm TAMP system.
+
+II-B Task Planning
+
+Task planning determines action sequences and allocates resources (time, energy, computation) for complex, time-sensitive tasks. In single-robot settings, learning- and optimisation-based approaches (e.g., ANFIS, GA, RL) improve ordering and adaptation under uncertainty [ 36 , 28 ] . Hybrid models link symbolic reasoning with continuous control (e.g., affordance-guided wayfields) to connect abstract plans to real-time motion in cluttered, human-shared spaces [ 16 ] . Data-driven methods, notably DRL, enable adaptation but incur heavy training cost and may struggle in highly dynamic scenes [ 28 ] .
+
+Structured knowledge offers robustness via ontology-based planning that fuses symbolic and geometric reasoning; these methods formalise manipulation tasks and respect spatial constraints but depend on predefined ontologies and can be brittle in unfamiliar environments [ 37 ] . Moving beyond dyads, scaling to multi-robot teams introduces distribution and synchronisation issues. General-purpose planners cover logical constraints yet leave real-time responsiveness under uncertainty less explored [ 1 ] . Heuristic and metaheuristic schedulers (e.g., simulated annealing, dynamic scheduling) trade solution quality for speed [ 32 , 33 ] . Optimisation-based formulations (MILP/CP) improve allocation and conflict avoidance, while geometry-aware variants incorporate proximity and subtask dependencies; nevertheless, many approaches face limits in online adaptability and scalability in cluttered workcells [ 8 , 22 , 17 , 2 ] .
+
+II-C Integrated TAMP and Multi-Robot Coordination
+
+Integrated TAMP couples symbolic reasoning with geometry-aware motion to satisfy semantic preconditions, spatial constraints, and resource limits in shared workcells [ 31 , 3 ] . Recent efforts move toward distributed, feedback-coupled planning with feasibility-aware distribution, but often assume fixed uncertainty models or analyse failure recovery only partially [ 21 , 4 ] . In multi-robot settings, the main challenge is preserving global task feasibility while accommodating robot-specific reachability, interference, and asynchronous execution. Our work targets this gap by coupling perception updates, task allocation, predictive motion planning, and reactive replanning within one execution loop on real hardware.
+
+II-D Hybrid Predictive/Reactive Collision Avoidance
+
+Shared workspaces require both predictive and reactive safety mechanisms. Predictive collision checking through motion-planning frameworks such as MoveIt and proximity libraries such as FCL enables geometric validation before execution [ 5 , 20 ] , while probabilistic 3D maps such as OctoMap support online updates for moving obstacles [ 11 ] . However, predictive checking alone is insufficient when obstacles or neighbouring robots move during execution. This motivates hybrid schemes in which a validated plan is continuously monitored and locally corrected or replanned when the scene changes. The present paper contributes such a hybrid predictive/reactive formulation in a real dual-arm disassembly cell, where perception updates, inter-robot distance monitoring, and replanning must operate jointly rather than as isolated modules.
+
+III System Configuration
+
+We implement a ROS-based multi-robot stack for safe, coordinated operation in shared workspaces. A MoveIt-based control node orchestrates motion planning, manipulation, trajectory execution, and collision avoidance. The Planning Scene aggregates robot kinematics, sensor input, and environment representations into a continuously updated state used by the planner (OMPL) and collision checker (FCL). Fig.  1 outlines the architecture and data flow.
+
+MoveIt and the planning problem
+
+Planning and replanning are posed as a constrained optimisation over robot configurations :
+
+where encodes path/time/energy costs, and is the signed distance margin to the nearest obstacle at time (positive: safe, zero: contact, negative: penetration). Safety is enforced along the trajectory , i.e., for all path parameters .
+
+Environment collision
+
+An OctoMap-based 3D occupancy model provides geometry for environment queries. Let be the minimum signed distance from any robot link to mapped obstacles. The constraint
+
+ensures sufficient separation; whenever violated, the system triggers replanning or imposes local motion constraints to restore feasibility.
+
+Self-collision
+
+Self-collision is monitored via FCL using a precomputed collision matrix and continuous distance checks between link pairs. With the minimum inter-link signed distance,
+
+guarantees collision-free internal configurations during execution.
+
+Planning Scene (constraint aggregation)
+
+The Planning Scene maintains both constraints concurrently; equivalently,
+
+This aggregation prevents false safety due to additive cancellation and supports consistent, real-time updates as perception refreshes the map and as robots move.
+
+Robot Controller
+
+The robot controller executes time-parameterised joint trajectories and streams setpoints to the drives with safety limits, interpolation, and controlled stopping on faults. Joint states and tracking errors are fed back to the planning stack, closing the loop between planning and physical actuation for synchronised dual-robot execution.
+
+Figure 1: System architecture for predictive planning and reactive execution in MoveIt.
+
+IV Task-and-motion planning (TAMP)
+
+This section presents our task-and-motion planning (TAMP) framework for autonomous multi-robot disassembly of EV battery packs. Implemented in ROS/MoveIt, the system comprises (i) a logic-based task planner that schedules symbolic actions under temporal, spatial, and resource constraints and (ii) a learning-guided motion planner that produces adaptive, collision-free trajectories satisfying geometric and kinematic feasibility. Real-time perception, online replanning, and reactive control enable robust, coordinated, and safe behaviour in dynamic, unstructured environments.
+
+Figure 2: Overview of the proposed TAMP framework in a dual-arm setup. Perception feeds task decomposition, task allocation, offline/predictive planning, and online/reactive execution in a closed loop.
+
+IV-A Task Planner
+
+Fig.  2 summarises the perception-driven task-planning stack that coordinates the disassembly with two manipulators. Perception is treated as an explicit front-end rather than as part of the task planner itself: Intel RealSense RGB-D sensing first provides component IDs and 3D pose estimates, which are then consumed by a task-decomposition module to enforce precedence and by a task-allocation module to assign robots and tools. Execution is monitored in closed loop; after each completed, aborted, or re-planned action, the robots reset to observation poses, the scene is re-scanned, and the remaining task sequence is updated while preserving safety constraints. Hence the task layer is coupled to motion and execution through repeated scene updates rather than operating as a one-shot symbolic plan.
+
+IV-A 1 Perception and Task Representation
+
+The perception pipeline begins with a task representation stage, where an Intel RealSense RGB-D camera is integrated with YOLOv8-Seg  [ 12 ] to detect and segment battery-pack components at the part level. Following the methodology in  [ 6 ] , but using real rather than simulated data, we report detection, segmentation, and 3D localisation metrics under real-world conditions. At the beginning of each execution cycle, and again after each completed or aborted manipulation, the active robot returns to its observation pose so that the current scene state can be verified before the next action is committed.
+A dataset of 226 real images of NISSAN e-NV200 battery components was collected, covering four object classes: cable, busbar, leaf cell, and service plug. Of these, 204 images were allocated for training and 22 for validation. Manual labelling and dataset augmentation expanded the dataset to 542 images (474 training, 45 validation, and 23 test). Model training was performed using YOLOv8 on Google Colab (Ubuntu 20.04, Intel Core i7-13700H CPU, NVIDIA GeForce RTX 3050 GPU). Input images were resized to pixels, balancing accuracy and computational efficiency. Training was run for 50 epochs and completed in approximately 0.317 hours. The final trained model was exported and integrated into the perception stage.
+The segmentation masks are fused with depth information to recover each component’s 3D centroid and, when required, its 6-DoF pose. These estimates are then provided to the grasping and motion planning modules for execution. After 6-DoF pose acquisition, the information is passed to the logical-task stage, where objects are sorted into a predetermined disassembly sequence  [ 9 ] . This ensures that task reasoning, safety checks, and robot/tool selection are performed in the correct order before execution proceeds.
+
+IV-A 2 Multi-Robot Task Scheduling
+
+The Task Planner module generates ordered task sequences for each robot, subject to logical and physical constraints. Let
+
+(1)
+
+denote the set of detected disassembly components, where each component is represented as
+
+(2)
+
+with class label , number of detected instances , the list of estimated object poses , required tool , and completion state .
+
+Stage 1: Object Detection
+
+At the initial state, and again after each execution update, each robot’s eye-in-hand RGB-D camera acquires a frame from a predefined observation pose and queries a YOLOv8-based detection server. The output is the current unordered set of detected objects, their 3D poses, and their latest completion states.
+
+Stage 2: Priority-based Sorting
+
+Each object is assigned a priority score by consulting an expert-encoded lookup table that reflects safety, disassembly dependencies, accessibility, and tool constraints, following  [ 9 ] . This lookup-table design is intentional: for EV battery disassembly, regulatory procedure and safety compliance are better expressed as hard expert rules than as soft costs inside a generic symbolic search. The table therefore encodes the abstract task structure of the process, while remaining extensible–new object classes or task types can be incorporated by adding new rows with precedence, tool, and safety annotations. Objects are then ordered according to the predefined disassembly sequence ,
+
+(3)
+
+ensuring logical ordering (e.g., screws battery module). Table  I illustrates the mapping between priority scores, battery components, and required tools.
+
+Priority Score
+Component
+Required Tool
+
+1
+Screws
+3F Gripper
+
+2
+Battery Module
+Vacuum Gripper
+
+3
+Service Plug
+3F Gripper
+
+4
+Busbar
+3F Gripper
+
+5
+Cable
+3F Gripper
+
+TABLE I: Expert-encoded lookup table for EV battery disassembly, mapping component classes to precedence priority and required tool.
+
+Stage 3: Tool-based Assignment
+
+Let denote the set of robots, each equipped with a distinct tool set . The prioritized task list is partitioned into subsets
+
+(4)
+
+such that each task is assigned to the robot capable of executing it.
+
+Stage 4: Cost-based Sorting
+
+After logical ordering and tool assignment, objects in each subset are further sorted according to an execution cost function . Generally, can encode various optimisation criteria (e.g., manipulability, collision risk, energy). In this work, we define it as a distance-based cost. For each robot , let denote its current end-effector pose. The execution cost is defined as:
+
+(5)
+
+The final ordered task sequence for is obtained by solving
+
+(6)
+
+where is number of components detected ( ) in the prioritized task list for . Finally, the Task Planner outputs
+
+where each is an optimized task sequence for robot . These sequences respect (i) disassembly precedence, (ii) tool compatibility, and (iii) distance-based efficiency, and are passed to the Motion Planner for trajectory generation.
+
+Closed-Loop Task-State Update
+
+After each pick, place, or interruption event, the robots reset to their observation poses and re-scan the workspace to verify the current object states. If an item has been successfully removed from its source and confirmed at its destination, its completion state is set to completed ; otherwise it remains pending or is returned to the queue for replanning. The lookup-table ordering is then updated by removing completed objects and re-sorting the remaining items according to the refreshed scene, accessibility, and tool constraints. Consequently, task decomposition and task allocation are updated online as the motion layer changes the scene, showing that the two layers are coupled in closed loop rather than fully decoupled.
+
+IV-B Predictive Motion Planning and Reactive Execution
+
+In this section, we describe the motion component of the proposed TAMP framework for multi-robot setups. For each robot , the planner receives the optimized task sequence from the task layer together with the latest scene state. The corresponding object poses (from Equation  2 ) are extracted and transformed from the camera coordinate frame into the robot’s reference frame. Based on these task targets, the motion layer computes feasible trajectories by addressing two key requirements: (i) offline/predictive path generation, achieved via a Learning-from-Demonstration (LfD) approach that biases the sampling process toward expert-like trajectories, and (ii) online/reactive collision handling, ensuring safe execution in multi-robot and cluttered environments.
+
+IV-B 1 LfD-Guided Motion Planning
+
+As demonstrated in [ 26 ] , integrating Learning-from-Demonstration (LfD) techniques with sampling-based motion planning algorithms leads to highly efficient motion planners. That prior work reported the planner-level comparisons and algorithmic evaluation of the GMM-informed RRT module itself; the present paper therefore builds on that foundation and focuses on integrating the validated planner into a vision-driven dual-arm TAMP system with closed-loop task updates and reactive collision handling. The motion-planning pipeline begins with the collection of demonstrations. Following the approach in  [ 10 ] , demonstrations were recorded for a set of disassembly tasks, extended in this work to a dual-robot setup. In these sessions, one robot executed random motions within the shared workspace, while the other was teleoperated by a human expert. The demonstrations encode trajectories from start to goal poses while avoiding collisions with the other robot. These data capture expert approaches for safe and efficient manipulation in multi-robot environments and are subsequently used to train a probabilistic model that generalises the underlying motion patterns of both robots.
+
+TP-GMM Learning and Reproduction
+
+Gaussian Mixture Models (GMMs) are employed to capture the variability of demonstrated trajectories in Cartesian space, representing motion data as a weighted sum of Gaussian components. Model parameters are estimated using the Expectation-Maximisation (EM) algorithm, enabling probabilistic generalisation of expert demonstrations. However, a standard GMM is restricted to a fixed reference frame, which limits its adaptability to changing task conditions.
+Task-Parameterised GMMs (TP-GMMs) overcome this limitation by encoding demonstrations with respect to multiple task-dependent frames. Following the approach in [ 26 ] , these frames are denoted as the start pose , goal pose , and obstacle poses , corresponding to and (Equation 5 ), all expressed relative to the robot’s base frame.
+Since this work extends [ 26 ] to a dual-robot setup, for each defined task (e.g., pick or place) two TP-GMMs are learned, one per robot. Now each task demonstration is expressed in the corresponding frames, yielding three GMMs that are subsequently combined. During reproduction, new task parameters are provided, and the model adapts its Gaussian components as follows:
+
+(7)
+
+The number of Gaussian components is set to , as determined by the Bayesian Information Criterion (BIC) in [ 26 ] . This results in an adapted GMM with updated parameters
+,
+which generates trajectories consistent with the demonstrated behaviours while conditioned on the new task configuration.
+
+GMM-Informed Planner
+
+Our planning framework integrates task space and configuration space. Task space, a subset of , represents object poses, grasping poses, and manipulation goals, while configuration space handles the robot’s joint states. The TP-GMM is trained and reproduced in task space, encoding expert demonstrations relative to task parameters’ frames ( , and then produce an adapted distribution . This defines a high-likelihood region in Cartesian space, which is enforced as a constraint during planning.
+Path generation is performed using the RRTConnect (also referred to as Bi-RRT) algorithm from OMPL [ 27 ] , where (the robot’s current configuration) initializes the start tree , and is computed via inverse kinematics of . At each iteration, a candidate configuration is drawn. Through rejection sampling, only configurations whose forward kinematics satisfy are retained. This biases exploration toward task-relevant regions, guiding the planner toward expert-like motions.
+Algorithm 1 outlines the GMM-constrained RRTConnect introduced in [ 26 ] . The validated samples are used to extend the bidirectional trees, and once connected, a feasible path is returned. Trajectory is now a valid, collision-free solution that accomplishes the primary pick-object task while satisfying configuration-space (kinematic) constraints, as well as remaining consistent with expert demonstrations, thus satisfying task-space constraints.
+
+Algorithm 1 GMM-Informed Bi-RRT
+
+1: Start, , Goal , and Obstacle task pose frames
+
+2: A feasible Cartesian path from to :
+
+3: reproduceGMM( , , ) (eq. 7 )
+
+4: (robot’s current configuration)
+
+5:
+
+6: InitTree( )
+
+7: InitTree( )
+
+8: while not Terminated() do
+
+9:    SampleConfiguration( )
+
+10:    ExtendTree ( , )
+
+11:    if None then
+
+12:      if ConnectTree ( ) then
+
+13:       return ExtractPath ( , )
+
+14:      end if
+
+15:    end if
+
+16:    Swap ( , )
+
+17: end while
+
+18: return Failure
+
+IV-B 2 Reactive Collision Monitoring and Avoidance
+
+In addition to path optimisation through LfD, the second critical component of our motion planner is collision perception and avoidance , which ensures safe execution of trajectories in a shared dual-arm workspace. We investigate two UR10e manipulators operating in proximity, where inter-robot collisions and interactions with dynamic obstacles are key challenges. To address this, the proposed Active Collision Avoidance module combines real-time perception with avoidance strategies, structured into two complementary parts: Perception and Avoidance .
+
+Collision Perception
+
+Collision detection is handled through the Flexible Collision Library (FCL) within a MoveIt Planning Scene. All collision objects, including the two robots (from their URDFs) and the environment, are monitored in real time.
+
+Robot-to-Robot Collisions:
+MoveIt’s Allowed Collision Matrix (ACM) is used to encode feasible body interactions. Since dual-robot systems require bidirectional awareness, we employ a digital twin strategy: each URDF embeds a replica of the other robot (Fig.  3 ), enabling independent but coordinated collision checking. The ACM is further refined by excluding irrelevant body pairs to reduce computational load.
+
+Figure 3: Integration of real and virtual (imaginary) robots in a shared simulation, where each URDF embeds the counterpart’s model to enable inter-robot collision checking through FCL.
+
+Environment Collisions:
+An Intel RealSense depth camera provides dynamic 3D workspace perception via MoveIt’s Occupancy Map Updater, which converts depth data into a voxel-based OctoMap with 0.03 m resolution. This OctoMap is broadcast to both robots’ planning scenes, allowing each to reason about environmental constraints in real time. Due to the computational demands of maintaining two planning scenes, the maximum achievable update rate is 10 Hz.
+
+A safety threshold  m is defined to detect near-collisions, with violations triggering reactive adjustments to increase separation. This corresponds to five OctoMap voxels and was chosen as a conservative early-warning margin that provides reaction distance at the available update rate while avoiding excessive false triggers. Limiting collision checks to distances reduces planning complexity. When a proximity violation is detected, FCL returns 3D contact points between objects, which are visualised in RViz ( visualization_msgs/MarkerArray ) as shown in Fig. 4 .
+
+Algorithm 2 Reactive Collision Monitoring and Replanning
+
+1: Initialise planning-scene monitor and collision/distance services
+
+2: while system active do
+
+3:   Update planning scene from sensor and robot-state feedback
+
+4:   Query collision state and minimum distance
+
+5:    if collision detected then
+
+6:     Stop current trajectory execution
+
+7:    else if minimum distance then
+
+8:     Invoke avoid_collision() and request replan()
+
+9:    end if
+
+10:   Publish collision and near-collision markers
+
+11: end while
+
+Collision Avoidance
+
+Collision avoidance is implemented through a dedicated avoid_collision() routine, enabling both robots to adapt dynamically to near-collisions in real time. The approach employs a velocity vector steering strategy in , where the robot’s tool velocity vector is reoriented when a collision vector (aggregated from detected near-collisions) indicates a potential obstacle (Fig.  4 ). The steering axis is computed as , and Rodrigues’ rotation formula is applied to yield a rotated velocity vector .
+
+(8)
+
+A steering angle regulates the correction magnitude. Rather than fixing , we define it to be relative to the angle between and :
+
+(9)
+
+so that imminent collisions (small ) yield larger steering corrections, while tangential encounters (large ) produce minimal deviations.
+
+Figure 4: Reactive avoid_collision() routine triggered when two robots approach the early-warning threshold . The red spheres denote the contact pair reported by FCL, after which the controller locally steers away and requests replanning.
+
+This adaptive behaviour avoids unnecessary trajectory deviations, helping to maintain path optimality while ensuring safety through timely avoidance manoeuvres. Algorithm 2 presents the overall Active Collision Avoidance component in the motion planner, with avoid_collision routine being invoked when near-collision state is flagged to interrupt the robot controller’s execution of the current planned trajectory. The routine keeps in operation until the near-collision state is changed. Each robot now requests a replan (Algorithm 1 ) a collision-free trajectory to the first given target pose from the current pose/configuration. The Active Collision Avoidance algorithm continues to run iteratively until convergence to the target pose is achieved.
+
+IV-C Framework Overview and Information Flow (Dual-Arm Setup)
+
+Fig. 2 illustrates the proposed TAMP framework implemented on a dual-arm robotic setup, asynchronously controlling two robots to complete a full disassembly task. The framework is organised as a perception front-end plus four planning/execution layers, ensuring both long-horizon task feasibility and safe, coordinated dual-arm manipulation. The information flow proceeds as follows:
+
+Perception Front-End
+
+Two eye-in-hand cameras mounted on the robots acquire RGB-D images of the shared workspace. Each camera detects relevant objects, yielding their names, six-dimensional poses, and current completion states, which are passed into the planning stack.
+
+Task Decomposition
+
+The current scene state is mapped to an abstract disassembly state that respects precedence constraints and the expert lookup table.
+
+Task Allocation
+
+Feasible operations are assigned to each robot according to tool compatibility, reachability, and execution cost.
+
+Offline / Predictive Motion Planning
+
+Task allocations are translated into motion-planning goals for each robot, and the GMM-informed RRT planner generates predictive motion plans validated against the digital twin before execution.
+
+Online / Reactive Execution
+
+The execution layer ensures safe motion through collision monitoring, active avoidance, and replanning. When a near-collision is detected, the avoid_collision() routine is invoked (Equations  8 – 9 ), followed by replanning from the current robot configuration to the target pose. After each action, the robots re-scan the scene before the next task is confirmed.
+
+Therefore, the complete TAMP pipeline operates as a hierarchical loop:
+
+1.
+
+Perception update task decomposition computes the current feasible disassembly order.
+
+2.
+
+Task allocation predictive motion planning generates task-constrained trajectories.
+
+3.
+
+Reactive execution if a proximity violation occurs, invoke active avoidance and replan.
+
+4.
+
+Re-scan the scene, update completion states, and repeat until all disassembly goals are achieved.
+
+V Experimental Study
+
+Three case studies were conducted to evaluate the proposed multi-robot Task and Motion Planning (TAMP) framework. These are referred to as Case Study I , Case Study II , and Case Study III . Case Study I investigates robot-to-robot interactions, focusing on potential collisions and the robots’ ability to replan trajectories while executing tasks in a shared workspace. Case Study II evaluates robot performance in the presence of both static and dynamic obstacles. Finally, Case Study III integrates both aspects into a real-world application: EV battery disassembly, analysing coordination, and executing paths. Collectively, these case studies validate the robustness of the proposed approach under diverse operational conditions.
+
+System Calibration: All experiments were carried out using two UR10e cobots calibrated to a fixed world frame. Each robot was equipped with an eye-in-hand Intel RealSense camera, and an additional eye-to-hand camera was fixed in the workspace. The robots used distinct end-effector tools (Robot 1: 3-fingered gripper; Robot 2: vacuum gripper) as shown in Fig.  7 . The framework relies on a digital twin with continuous sim-to-real and real-to-sim synchronisation so that planned trajectories can be executed on hardware while sensor feedback updates the scene model.
+
+V-A Case Study I
+
+Case Study I evaluates the reliability of the motion layer within the TAMP framework in a dual-arm setup. Each robot is assigned a set of target poses corresponding to task allocations defined by the task layer. The focus is on comparing the LfD-guided GMM-informed RRTConnect (Section  IV-B 1 ) against the baseline Uniform sampler RRTConnect. The objective is to assess the efficiency of both planners in generating feasible and optimal trajectories while avoiding robot-to-robot collisions in a shared workspace.
+Fig.  5 illustrates the evaluation scenario, where both planners handle situations with potential inter-robot collisions. The study highlights each planner’s capacity to adapt to unpredictable workspace interactions and maintain safe navigation.
+
+(a)
+
+(b)
+
+Figure 5: Case study I: Robot-to-robot interaction. Comparison between (a) Default RRTConnect and (b) GMM-Informed RRTConnect in terms of planned-path quality. The figure displays the sequence in which an initial plan encounters a near-collision, triggering replanning that enables both robots to successfully reach their goal poses.
+
+V-B Case Study II
+
+Case Study II evaluates the robots’ collision avoidance capabilities in environments with dynamic obstacles. The experimental setup comprises two UR10e robots performing collaborative tasks. To emulate dynamic disturbances, an object was attached to Robot 1’s end-effector and moved randomly within the workspace, while Robot 2 executed a transport task: picking up an object, carrying it, and placing it in a designated target area.
+
+(a)
+
+(b)
+
+Figure 6: Case Study II: Robot-to-dynamic environment interaction. Comparison between (a) Default RRTConnect and (b) GMM-Informed RRTConnect in terms of path quality. The figure illustrates the planning sequence where an initial plan encounters a near-collision with a dynamic object (in this case, attached to the other robot), triggering replanning that enables the robot arm to successfully reach its goal pose.
+
+Fig.  6 shows the test scenario comparing Default RRTConnect and GMM-Informed RRTConnect. The sequence proceeds as follows: (Step 1) Robot 2 follows its initial plan toward the goal, (Step 2) a near-collision occurs due to Robot 1’s random motion, and (Step 3) Robot 2 invokes dynamic replanning to generate an alternative, collision-free path. This process ensures safe task completion while adapting to the dynamic environment. The study demonstrates how the proposed planner effectively handles robot-to-dynamic-environment interactions by eliminating collision risks while preserving task execution.
+
+V-C Case Study III
+
+This case study presents a realistic disassembly scenario in which two UR10e robots collaboratively dismantle components of a NISSAN e-NV200 electric vehicle battery pack. The robots are equipped with distinct end-effectors ( : vacuum gripper, : 3-finger gripper) and are assigned complementary tasks accordingly. The disassembly process involves removing key components such as battery modules, cables, busbars, and a service plug (Fig.  7 ). Robots operate without prior knowledge of object locations and rely exclusively on vision-based perception, as in our prior work on robotic cutting [ 23 ] .
+
+Figure 7: The workspace with a battery pack disassembly setup, equipped with two collaborative robot arms with different end-effectors (a vacuum gripper and a 3F gripper) for manipulation tasks and three depth cameras (two cameras for perception and one camera for collision avoidance).
+
+The proposed TAMP framework (Fig.  2 ) is executed here as a closed loop. Perception first localises battery components and confirms their current completion states. Task decomposition and task allocation then generate the current robot-specific action lists according to disassembly order , tool requirements, and distance-based cost (Equation  5 ). Specifically, robot , equipped with the 3-finger gripper, manipulates components such as screws, cables, busbars, and service plugs, while robot , fitted with the vacuum gripper, handles battery modules and cells. This complementary tool setup enables flexible handling of heterogeneous component geometries while maintaining the expert-defined disassembly order.
+
+The motion layer integrates four TP-GMM models: two for the pick phase (one per robot) and two for the place phase. Each model is trained, as described in Section  IV-B 1 , using demonstrations tailored to the respective robot and manipulation stage. During task execution, the robots query the TP-GMM server, which returns the appropriate model for the corresponding robot and stage (pick or place). Collision avoidance is embedded within the control strategy. Both robots continuously monitor their shared workspace to detect potential collisions with each other, as well as with static or dynamic objects. In the event of a collision risk, dynamic replanning is triggered (Algorithm  2 ), after which the robots re-scan the workspace and update the remaining task list before committing the next action. The framework executes iteratively until the disassembly sequence is fully completed.
+
+V-D Comparison Metrics
+
+Each case study was evaluated under both planners, Default and TP-GMM, using Path Length and Path Duration . Study-specific metrics included the Manipulability Index (Case Study II) and Swept volume (Case Study III).
+Path length is computed as the cumulative Euclidean distance of end-effector positions along the trajectory between the specified start and end. Reported time metrics denote end-to-end elapsed time from task confirmation in the current scan to successful completion of the corresponding motion. For the proposed planner, this therefore includes TP-GMM reproduction, constrained motion planning, physical execution, and any delays introduced by reactive avoidance/replanning. We report this integrated timing because the contribution of the paper is the coupled real-world system rather than an isolated planner micro-benchmark. Trajectories and cumulative-distance plots are reported for qualitative inspection.
+
+In Case Study II, we additionally evaluate the manipulability index , a configuration-dependent measure of dexterity. It quantifies the arm’s ability to generate end-effector motion across directions, enabling comparison of motion planners and highlighting proximity to singular configurations, particularly informative in cluttered or dynamic scenes. We compute the index following Yoshikawa’s formulation [ 30 ] . In Case Study II, manipulability is evaluated using Yoshikawa’s index, denoted [ 30 ] . Joint and end-effector velocities satisfy where , , and denote the end-effector velocity, the Jacobian at configuration , and joint velocities, respectively. To characterise directional dexterity, we analyse the eigenvalues of and report the condition number
+
+(10)
+
+with larger values indicating proximity to singular configurations, thus loss of dexterity.
+
+In Case Study III, we evaluate the swept volume to quantify the manipulator’s spatial footprint, the 3D region traversed by the links and end-effector over the trajectory. This metric is pertinent in multi-robot or human–robot settings, where lower swept volume implies reduced collision risk and better workspace utilisation. We compute it via a voxel-occupancy model using the same 0.03 m voxel size as the OctoMap collision representation, i.e., the workspace is discretised into cubes of edge , and the total volume is
+
+(11)
+
+with the number of voxels occupied during motion. This provides a consistent basis for comparing planners in terms of spatial efficiency. Throughout all case studies, the near-collision trigger is fixed at  m, i.e., five occupancy cells, which provides a conservative but practical early-warning margin for reactive execution.
+
+VI Results and Discussion
+
+This section reports the quantitative outcomes of the three case studies introduced in Section  V , with emphasis on the contribution-specific metrics of trajectory compactness, reactive safety, and end-to-end coordination quality.
+
+VI-A Case Study I: Robot-to-Robot Collision Avoidance
+
+(a)
+
+(b)
+
+Figure 8: Comparison of Path Deviations due to collisions detected whilst motion execution of both robots.
+
+In this case study, we evaluate collision avoidance and re-planning capabilities when two robots operate within a shared workspace. Both robots start from distinct initial poses and move toward predefined targets, creating the potential for inter-robot collisions. The comparison focuses on the deviation from a reference collision-free trajectory, thereby quantifying the quality of the trajectory each planner produces (Fig.  8 ).
+
+Fig.  8a shows the deviation profiles of . With Default-RRTConnect (blue line), reaches a peak mean deviation of , indicating substantial divergence from the collision-free reference. By contrast, the GMM-Informed RRTConnect planner (orange line) maintains significantly lower deviations, peaking at approximately . This reduction of nearly highlights the stabilizing influence of the learning-informed prior. Similarly, for (Fig.  8b ), Default-RRTConnect produces deviations exceeding , while GMM-Informed RRTConnect consistently remains below . Across the trajectories, the shaded regions (variance bands) further highlight the robustness of the GMM-Informed RRTConnect. In particular, Default-RRTConnect exhibits larger variability, with standard deviations of approximately for and for , whereas the GMM-Informed RRTConnect maintains a maximum standard deviation of only . This reduction in variability indicates more consistent and reliable replanning performance. Both robots converge back to near-zero deviation when reaching their targets, confirming successful task completion. However, the difference lies in the intermediate trajectories: Default-RRTConnect tends to produce abrupt detours with higher variability, whereas GMM-Informed RRTConnect achieves smoother and more predictable paths closer to the reference trajectory (green dashed line).
+
+VI-B Case Study II: Dynamic Environment Evaluation
+
+This case study examines the comparative performance of the Default-RRTConnect and the proposed GMM-Informed RRTConnect planners in a dynamic task execution scenario. The evaluation considers three main aspects: (i) motion planning and execution time, (ii) Cartesian path length, and (iii) manipulability index along the executed trajectories. The goal is to assess the efficiency, consistency, and adaptability of the GMM-Informed planner relative to the baseline.
+
+Fig. 9 presents the experimental outcomes for two of these performance indicators across five independent experiments, each repeated 5 times. Subfigure (a) illustrates motion planning and execution times, while Subfigure (b) depicts the resulting Cartesian path lengths.
+In terms of execution time (Fig. 9 a), the GMM-Informed planner generally requires more time than the Default-RRTConnect. This additional time is due to the reproduction step of the TP-GMM, which generates an expert-informed trajectory in task space once queried with new task parameters (start, goal, and obstacle poses), as described in Equation 7 . This reproduced trajectory is then imposed as a constraint in the sampling process, biasing the planner toward expert-like solutions but at the cost of added computation. Despite this increase in planning time, the observed trade-off is justified by the improved quality of the generated trajectories.
+When comparing Cartesian path lengths (Fig. 9 b), the GMM-Informed planner consistently produces shorter and more efficient paths across all experiments. The Default-RRTConnect, on the other hand, often yields longer and more variable paths, reflecting its tendency to explore larger portions of the configuration space without the benefit of task-informed guidance. The reduced variance in path length observed for the GMM-Informed planner further highlights its robustness and consistency in dynamic settings.
+These results indicate that while the GMM-Informed planner introduces a moderate computational overhead, it offers significant improvements in trajectory optimality and reliability; two critical aspects in dynamic, multi-robot disassembly scenarios.
+
+(a)
+
+(b)
+
+Figure 9: Comparison of RRTConnect and GMM-Informed planner in terms of (a) end-to-end motion planning and execution time, and (b) Cartesian path length.
+
+Moreover, as shown in Fig. 10 (a), a Default-RRTConnect trajectory exhibits noticeable spikes in the condition-number-based manipulability metric. These spikes indicate that the robot passes close to singular configurations, where joint mobility becomes restricted and control may be less stable. Conversely, a trajectory generated by the GMM-Informed planner (Fig. 10 (b)) demonstrates a more consistent manipulability profile with lower variance, avoiding abrupt changes that could compromise motion stability.
+Overall, while the Default planner occasionally attains locally favourable postures, it does so at the risk of approaching singular configurations. In contrast, the GMM-Informed planner produces smoother, more reliable trajectories that better preserve dexterity, making it a safer choice for dynamic and sensitive multi-robot tasks.
+
+(a)
+
+(b)
+
+Figure 10: Comparison of manipulability Index for two trajectory solutions produced with (a) RRTConnect and (b) GMM-informed planner.
+
+VI-C Comparative Evaluation of GMM-Informed and Default Planner in Robotic Disassembly
+
+Two UR10e robots perform a collaborative EV-battery disassembly sequence in a shared cell (workspace and cell layout in Fig.  7 ). We compare a learning-based RRTConnect guided by TP-GMM against the Default-RRTConnect planner. Performance is assessed by (i) disassembly time per object and overall makespan (a proxy for coordination efficiency), (ii) end-effector path length (trajectory efficiency), and (iii) swept-volume overlap (spatial footprint in the shared workspace). Both planners execute under the same task allocation and perception pipeline (Section IV-A ).
+Table  II summarises the results of 5 trials recorded for each planner in one disassembly environment setup. The number of real-world experiments remains limited in this case study as each dual-arm disassembly run is costly, experimentally complex, and time-intensive to record, monitor, and reset. Moreover, given that the disassembly task sequence is fixed by the look-up table (discussed in section IV-A 2 ), five trials were considered sufficient to demonstrate the framework’s behaviour. Averaged over all six objects, the GMM-Informed planner reduces cumulative end-effector path length from  m to  m ( ), indicating substantially more compact motions in the shared workspace. It also improves the overall makespan from  s to  s, despite the added TP-GMM reproduction step. A two-sided Welch t-test on the 5 trial aggregates confirms that the path-length reduction is statistically significant ( , ), whereas the makespan improvement remains a positive trend but is not significant at this sample size ( , ). This result is consistent with the role of the proposed planner: its strongest measurable benefit is producing more compact, lower-interference motions, while end-to-end cycle time additionally depends on task interleaving and reactive pauses.
+
+Robot
+Object Name
+RRTConnect
+GMM-Informed
+
+Time (s)
+Path Length (m)
+Time (s)
+Path Length (m)
+
+Robot 1
+Cable
+
+Busbar
+
+Service Plug
+
+Robot 2
+LeafCell1
+
+LeafCell2
+
+LeafCell3
+
+Disassembly Time:
+
+Path Length:
+
+TABLE II: Performance comparison of RRTConnect and GMM-informed planner for multi-robot electric-vehicle battery disassembly. Values are reported as mean standard deviation over 5 trials.
+
+In terms of per-object trajectory quality, the GMM-informed planner consistently shortens paths across all objects (approximate reductions: Cable , Busbar , Service Plug , LeafCell1 , LeafCell2 , LeafCell3 ). Timing shows complementary strengths: the learning-based planner is faster for the Service Plug and all LeafCell removals ( - faster), whereas the Default planner is slightly faster on Cable and Busbar ( - ), where fewer collision-driven detours occur. This behaviour reinforces the main contribution of the proposed integration: predictive, demonstration-informed planning is most beneficial when dual-arm interaction and dynamic collision handling matter most.
+Furthermore, isosurfaces reconstructed from the swept volumes (Fig.  11 ) reveal that the GMM-Informed planner constrains the arms to a smaller portion of the workspace and handles collision instances more efficiently. Relative to Default, the swept volume drops from to for Robot 1 ( ) and from to for Robot 2 ( ). The mutual overlap volume decreases from to ( ), showing that the combined predictive/reactive strategy not only shortens paths but also reduces workspace sharing conflicts during concurrent manipulation.
+
+(a)
+
+(b)
+
+Figure 11: Swept-volume isosurfaces computed on the 0.03 m occupancy grid. (a) RRTConnect and (b) GMM-informed planner.
+
+Although the overall results are favourable, several typical failure cases were observed during experimentation. First, the framework remains sensitive to perception outages and occlusions. If a target component becomes temporarily occluded from one or both cameras, or if a camera stream fails during execution, the system may continue searching for the object that is next in the disassembly sequence. In the current implementation, such failures are not always recoverable online and may require restarting the full task. Second, deadlock-like behaviour can arise when one robot executes an aggressive collision-avoidance manoeuvre and approaches a near-singular configuration. In this case, the corresponding local planner may become effectively stuck, preventing progress while the other robot waits for the shared workspace to clear. Third, the learned TP-GMM guidance is less reliable when the robot starts from a configuration already close to singularity, because the demonstrated motion priors are not sufficiently representative of those low-dexterity regions. In practice, however, this issue occurs only rarely in our experiments. These observations highlight the need for stronger perception-failure recovery, explicit deadlock-resolution policies, and singularity-aware learning or initialisation strategies in future versions of the system.
+
+VII Conclusions
+
+This paper presented a perception-driven Task-and-Motion Planning (TAMP) framework for multi-robot EV battery disassembly. The key contribution is the coordination between three essential elements on a real dual-arm platform: (i) task decomposition and task allocation driven by repeated scene perception, (ii) the recently introduced GMM-informed RRT motion planner [ 26 ] , and (iii) a hybrid predictive/reactive collision-handling strategy that combines digital-twin validation with online avoidance and replanning. The challenge is not merely assembling these modules, but making them operate jointly under real-world uncertainty, dual-arm coordination complexity, dynamic obstacles, and simultaneous task-level and geometric constraints.
+
+At the task level, stereo vision with YOLOv8 and depth sensing detects, segments, and localises components so that logical disassembly constraints can be enforced. An expert-encoded lookup table then drives task decomposition and task allocation while remaining extensible to new components and related sequential tasks. Importantly, the system does not treat task planning and motion planning as fully decoupled: after each action, the robots re-scan the workspace, update completion status, and recompute the remaining task sequence when necessary.
+
+For motion planning, demonstrations are processed into Task-Parametrised Gaussian Mixture Models (TP-GMMs) that guide feasible, expert-like trajectories. Predictive collision checking through OctoMap, MoveIt, and FCL is combined with reactive steering and replanning during execution. Across the three case studies, this integrated formulation yields more compact and safer dual-arm behaviour. In the end-to-end disassembly scenario, average path length decreases from to ( ), with a statistically significant improvement over Default-RRTConnect ( ), while makespan improves from to ( ) with higher variability across the 5 trials. Swept-volume analysis further shows substantially smaller per-arm volumes ( : , : ) and reduced overlap ( ), supporting the claim that predictive planning plus reactive collision avoidance improves workspace sharing in real dual-arm disassembly.
+
+Beyond the specific EV-disassembly use case, the modular design of this framework makes it adaptable to larger robot teams and other sequential manipulation tasks. A current limitation is that dual-arm coupling is learned only indirectly through shared scene monitoring and replanning; jointly learned dual-arm motion priors remain an important direction for future work. Overall, the results show that the proposed integration is both practically useful and technically meaningful for coordinated multi-robot manipulation in unstructured and dynamically changing environments.
+
+Funding
+
+This work was funded by the project called “Research and Development of a Highly Automated and Safe Streamlined Process for Increasing Lithium-ion Battery Repurposing and Recycling” (REBELION) under Grant 10079049, and partially supported by the Ministry of National Education, Republic of Turkey.

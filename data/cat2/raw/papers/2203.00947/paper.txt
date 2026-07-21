@@ -1,0 +1,547 @@
+KC-TSS: An Algorithm for Heterogeneous Robot Teams Performing
+                                                              Resilient Target Search
+                                                                                 Minkyu Kim1,2 , Ryan Gupta1,3 , and Luis Sentis1,3
+
+                                           Abstract— This paper proposes KC-TSS: K-Clustered-
+                                        Traveling Salesman Based Search, a failure resilient path plan-
+                                                                                                                                              Agent 3
+                                        ning algorithm for heterogeneous robot teams performing target
+                                        search in human environments. We separate the sample path
+arXiv:2203.00947v1 [cs.RO] 2 Mar 2022
+
+                                        generation problem into Heterogeneous Clustering and multiple                                    A              B
+                                        Traveling Salesman Problems. This allows us to provide high                                                          B
+                                        quality candidate paths (i.e. minimal backtracking, overlap)                                              B
+                                                                                                                                    A                            Agent 2
+                                        to an Information-Theoretic utility function for each agent.
+                                        First, we generate waypoint candidates from map knowledge
+                                        and a target prediction model. All of these candidates are
+                                        clustered according to the number of agents and their ability                                   Agent 1
+                                        to cover space, or coverage competency. Each agent solves a
+                                        Traveling Salesman Problem (TSP) instance over their assigned                                                                      A
+                                        cluster and then candidates are fed to a utility function for
+                                        path selection. We perform extensive Gazebo simulations and
+                                        preliminary deployment of real robots in indoor search and                  Fig. 1. Sampling paths along the TSP trajectory to calculate the Expected
+                                        simulated rescue scenarios with static targets. We compare our              Information Gain. The three agents each have two candidate paths, A and
+                                        proposed method against a state-of-the-art algorithm and show               B. Shaded rectangles denote the FoV of each agent at points along the path.
+                                                                                                                    If Agent 1 (red) selects path B then Agent 2 (blue) will choose path A to
+                                        that ours is able to outperform it in mission time. Our method
+                                                                                                                    reduce overlap and increase IG.
+                                        provides resilience in the event of single or multi teammate
+                                        failure by recomputing global team plans online.
+
+                                                                 I. I NTRODUCTION                                   security, surveillance and information gathering [7], [8], [9],
+                                           This study attempts to solve the problem of target search                [10], reconnaissance or search and rescue [11], [12], [13].
+                                        with multiple heterogeneous robots by generating informa-                      The goal of the presented algorithm is to generate high
+                                        tive global paths and executing search plans. We interpret the              quality search plans for robot teams that attempt to utilize
+                                        target search problem as a variant of Coverage Path Planning                each team member to its full capacity. We define a metric,
+                                        (CPP) or exploration in which a team must additionally                      coverage competency, which captures each member of the
+                                        detect a missing or injured person or object in situations                  team’s ability to effectively cover ground during search.
+                                        where mission speed is critical. In traditional CPP a robot                 Our algorithm uses coverage competency to assign a search
+                                        or a team of robots must find the optimal path such that                    region to each agent through heterogeneous clustering (i.e.
+                                        the sensor footprint, or FoV, passes over the entire region,                the spread of the waypoints reflects that agent’s FoV size
+                                        referred to as the search polygon. Exploration strategy is                  and movement speed). We also provide a new metric, Way-
+                                        typically to find informative next view-point or path using                 point Allocation Factor (WAF), for measuring how evenly
+                                        sampling based approaches. We take heterogeneous to mean                    the waypoints were divided amongst agents based on their
+                                        different sizes of Field of View (FoV) and movement speeds.                 coverage competency score.
+                                        The target may be considered as static and may be given                        We demonstrate that our algorithm has proportional com-
+                                        with some prior target knowledge (e.g. a search and rescue                  plexity in n and validate with n=50 agents. Further, we
+                                        mission searching near buildings while looking for people)                  demonstrate that our algorithm is robust to failure of team
+                                        and we assume static map information is known a priori.                     members. If one or more agents fail, the remaining mem-
+                                        When the target is static the proposed search algorithm                     ber(s) will complete the search. Because the server has access
+                                        simplifies to a CPP algorithm due to the uniform target                     to robot plans over the entire search time via the TSP solution
+                                        prediction model over unseen space in the basic problem                     and current robot state, when one or more teammates fail, a
+                                        setting.                                                                    re-planning step is invoked and nearby agents are assigned
+                                           CPP, exploration and target search are receiving significant             the failed members waypoints, as demonstrated in Fig. 2.
+                                        attention from the robotics community due to the relevance in                  Overall, we present an algorithm for heterogeneous robot
+                                        many important real-world scenarios including map building                  teams capable of handling dynamic and static targets. Our
+                                        [1], [2], [3], [4], cleaning/covering indoor areas [5], [6],                contributions are summarized as follows:
+                                                                                                                       •   In the static target case, our method is equivalent to
+                                           The authors are with the 1 Human Centered Robotics Lab, the
+                                        2 Department of Mechanical Engineering, and the 3 Department of Aerospace          CPP (uniform target prediction) and we show it to out-
+                                        Engineering at the University of Texas at Austin                                   perform the state-of-the-art CPP method [7] in mission
+     completion time                                              conflict resolution steps to determine the region of space
+  •  We introduce a new parameter and metric for charac-          they will cover. We benchmark our method against this
+     terizing the success of heterogeneous teaming. Namely,       path planner, which is state-of-the-art in terms of coverage
+     coverage competency, for quantifying agents’ search          completion time I. Our method features agent autonomy for
+     skill and the metric, Waypoint Allocation Factor (WAF),      search execution, a target prediction model, and automatic re-
+     for assessing the effectiveness of this parameter            planning; however, when the target is static the path planning
+   • Our algorithm can generate online mission plans for n        algorithm is equivalently a CPP problem, and therefore we
+     robotic agents and monitors team progress to determine       use [7] as a state-of-the-art comparison in terms of mission
+     when re-planning is required.                                time and computation time (see Table I).
+   • We validate our framework using both extensive Gazebo           There are an abundance of real-time algorithms for multi-
+     simulations of multiple robots and with a three robot        robot teams in coverage and exploration tasks. Groups
+     team in a real-world environment                             have emphasized resilience to robot failure [20], [21], [22],
+   This paper is organized as follows. Section II discusses       management of energy [23], [24], [25] or communications
+related works. In section III we formally introduce our           [26], [27], [28] constraints, and heterogeneous teaming [29],
+problem and describe our methods. In section IV we exper-         [30]. [24] also considers an information gathering mission,
+imentally validate our methods in simulation finally section      however their future work lists increasing to n agent systems.
+V concludes our work.                                             [25] performs search and exploration with UAVs, which
+                                                                  are limited in both communication and battery life. They
+         II. BACKGROUND AND R ELATED W ORK                        use a state machine to help team members decide between
+   For decades CPP has received great attention for its           exploring, meeting, sacrificing and relaying. They leverage
+relevance in navigation tasks. Early solutions offer an offline   a frontier based method. In [26] they consider a model of
+planner given a static map. A traditional method is to de-        communication strength between the agents and a central
+compose the coverage region into cells using Boustrophedon        control PC and cleverly use serial connection of the robots
+decomposition [14]. We employ a similar cell decomposition        to maximize their exploration area. Instead of constraining
+to generate the set of waypoints for complete coverage. A         the team to constant connectivity, [28] proposes a method
+common strategy in this form of the problem is to break           of periodic communications at fixed intervals to update the
+down the map and perform simple back-and-forth behaviors.         full team. In [13] an algorithm for solving the Multi-robot
+One alternative to such behavior is to generate the set of        Efficient Search Path Planning (MESPP) problem for find-
+points to visit and solve a Traveling Salesman Problem [6],       ing a non-adversarial moving target. This method provides
+[11]. [15] instead find the optimal order of visitation using     theoretical bounds on search performance however it only
+mixed integer linear programming.                                 scales up to five agents and does not provide resilience to
+   There are also a number of geometric approaches [5],           robot failure.
+[17], which typically give global guarantees with respect to         Our method, KC-TSS, builds on previous work [30] where
+distance traveled during execution. However, such methods         the team was not robust to agent failure because it did not
+often make assumptions about perfect omni-directional sens-       provide complete search plans at any given moment. As
+ing. Traditional methods for path planning are insufficient,      a result of both this fact and the greedy planner, some of
+however, when the goal is to operate in an online fashion to      the generated paths were overlapping and lacked efficiency.
+handle robot failure or dynamic environments.                     The additional clustering and TSP steps allow us to provide
+   Sampling based approaches are popular in mapping and           better candidate paths to the utility function and improve
+exploration [2], [3], [4], [9], [18]. Such methods account for    team cooperation.
+sensor noise and environment complexity. Early work used
+frontiers [19] to explore spaces. Frontiers are the boundaries                           III. M ETHODS
+between explored and unexplored regions of the search                In this section we define a cooperative multi-agent target
+polygon. The critical factor in information-theoretic based       search algorithm for solving the problem setting described
+strategies is how to generate subsequent observation paths;       above. Given a search map (entropy map), a search poly-
+that is, to provide quality candidates to the utility function.   gon, the number of robots and initial robot position, this
+Early work [2] uses a laser range scanner to map a previously     method first uses cell decomposition to generate a set of
+unknown small environment. In [3], [4] they leverage a            waypoints, which, if visited, provide complete map coverage
+utility function based on Cauchy-Schwartz quadratic mutual        over the unknown (high entropy) regions. Then we perform
+information to more efficiently generate plans to map 3D          a weighted clustering over all points and assign sub-regions
+spaces. [9] proposes three planning structures for information    (clusters) to each agent based on their coverage competency.
+gathering missions like signal monitoring. [18] focuses on        The next step solves instances of the single agent TSP in
+mission speed with MAVs by taking a hybrid approach to            parallel to maintain the computational efficiency needed for
+frontier and sampling based exploration strategies.               generating global paths online if re-planning is necessary.
+   [7] addresses the problem of scalable CPP by efficiently       The result is two high quality candidate paths for each agent,
+generating path plans with up to 150 agents in non-convex         that is, along both directions of the TSP solution (see Fig.
+areas. They propose the robot team conducts auction and           I). The final step is for these candidates for each agent to be
+Algorithm 1 Multi-Agent Search()                                         available, the estimated state can be updated as
+Input: M, µ , SR
+  Entropy Map, Robot Pose, Coverage Competency                                                       p(y1:n           1:n
+                                                                                                        k |xk )p(xk |y1:k−1 )
+                                                                                      p(xk |y1:n
+                                                                                             k )=                                     (2)
+Output: P∗ = {p∗1 , p∗2 , · · · , p∗N } (A set of paths)                                                    p(y1:n 1:n
+                                                                                                               k |y1:k−1 )
+  W ← ExtractionUnknownRegions()
+                                                                         where p(y1:n      1:n            p(y1:n             1:n
+                                                                                                        R
+  C = HeterogenousClustering(W)                                                        k |y1:k−1 ) =           k |xk )p(xk |yk−1 )dxk and
+                                                                             i:n
+  for n ← 1 to N do                          ⊲ for each cluser in C      p(yk |xk ) is a sensing model for multi agent system, which
+    rn = TravelingSalesmanProblem(cn)                                    can also be decomposed to each agent’s sensing model
+  end for                                                                p(yi |x). For the correction stage, the measurement of all
+  for n ← 1 to N do                                ⊲ for each agent      agents are used to modify the prior estimate, leading to
+    pˆn = SamplingPaths(rn)                                              the target belief. If a static target is assumed the target
+    for k ← 1 to | pˆn | do                                              prediction can be described as p(xk |xk−1 ) = N(xk−1 ; xk , Σ),
+      U(pk ) = IG(pk ) − c(pk )                      ⊲ Equation (7)      only containing a noise term with the previous target
+    end for                                                              state. If it is a target motion model assumed to have
+    p∗ = pk ← arg maxU(pk )                     ⊲ Get the best path      some constant velocity, we can represent the model as
+    P∗ .append(p∗)                                                       p(xk |xk−1 ) = N(xk−1 ; xk + V ∆, Σ).
+  end for
+  return P∗                                                              C. Target Prediction
+                                                                            The action plan our algorithm generates incorporates in-
+                                                                         formation from the target prediction model. The prediction
+considered by the IG based utility function (see Eq. 6). This            model is made based on various prior knowledge or experi-
+IG is computed as entropy reduction along the path, where                ence. For example, in a rescue mission, it might be useful
+entropy is modeled by the target prediction model and unseen             to take advantage of the fact that people are more likely to
+regions. Because of the computational efficiency and global              be near collapsed buildings.In this paper, those are called
+knowledge of this algorithm, re-planning is performed in                 context c and can be used to estimate a target location. A
+event of agent failure or if some agents finish their assigned           Gaussian Mixture Model (GMM) can be constructed using
+waypoints.                                                               a finite number of contexts at time k using the following
+                                                                         equation
+A. Overall Framework                                                                                    N
+  Our search, presented in Algorithm 1:                                                   p(xk |ck ) = ∑ p(xk |cik )p(cik )
+                                                                                                       i=1
+  1) Update search map using Bayesian filtering,                                                        N
+                                                                                                                                      (3)
+  2) Use Algorithm 2 to Generate waypoints from map,                                                = ∑ πi G(x|µi , Σi )
+  3) Heterogeneous Clustering using coverage competency,                                               i=1
+     See Algorithm 3,                                                      where πi , µi and Σi are a mixing coefficient, mean vector,
+  4) Solve Traveling Salesman Problem for each agent,
+                                                                         and covariance for i-th distribution, respectively. We use a
+  5) Select optimal path using information-theoretic ap-                 particle filter to implement this prediction model.
+     proach
+  6) If Re-plan conditions are met, repeat steps 2) - 5).                D. Search Map
+B. Target Estimation: Bayesian Filtering                                    The search map is updated using sensor data of each
+                                                                         robot at each instance. The exploration begins under the
+   We use Bayesian Inference to recursively estimate target              assumption that the target exists in the search region. We
+state x through sequential observations y. Bayesian inference            use a 2D occupancy grid map representation in which the
+is commonly used to estimate target state in a probabilistic             search region is discretized into cells. More details of the
+manner. This inference model aims to predict the posterior               search map cells are presented in [30]. A cell’s occupancy
+distribution of target position at time k, namely, p(xk ).               status is used to measure the uncertainty of the target over the
+Bayesian filtering uses a prediction stage and a correction              total search space (i.e the entropy map). Entropy is defined
+stage with incoming sensing information. Assuming that                   here as
+the prior distribution p(xk−1 ) is available at time k − 1,
+                                                                                          N
+the prediction step attempts to estimate P(xk |y1:n
+                                                  1:k−1 ) from               H(Mt ) = − ∑ (mti log(mti ) + (1 − mti )log(1 − mti ))   (4)
+previous observations as follows.                                                        i=1
+
+                         Z                                               where mti is the occupancy variable at time step t and N
+      p(xk |y1:n
+             1:k−1 ) =       p(xk |xk−1 )p(xk−1 |y1:n
+                                                  1:k−1 )dxk−1 ,   (1)   denotes the total number of cells. The search map is also
+                                                                         maintained in this way. Furthermore, it can be filtered such
+where p(xk |xk−1 ) is the target’s motion model based on a first         that the degree of entropy increases over time in previously
+order Markov process. Then, when the measurement y1:n    k is            searched regions to account for a target prediction model.
+Algorithm 2 ExtractionUnknownRegions()                                 Algorithm 3 HeterogeneousClustering()
+Input: M, pos                   ⊲ (Entropy Map, Current Pose)          Input: W, µ1:n , SR1:n = {η1 , . . . , ηn }(normalized)
+Output: W = {w1 , w2 , · · · , wn } NewUnknownSet                        (Waypoints, Centroids(Robot Poses), Sensing Capabilities)
+  queuem ← 0/                                                          Output: A Partition C = {C1 ,C2 , · · · ,Cn }
+  W ← 0/                                                                 cost − = 0
+  Initialize Visited[Mm=0.5] = False                                     Initiallize µ
+  c0 ≈ Mm=0.5 take the unknown cell                                      repeat
+  Enqueue(queuem, c0 )                                                     Ĉi = {w j : ηi d(w j , µi ) ≤ ηh d(w j , µh ) for all h = 1, . . . , n}
+  Visited[c0 ] = True                                                                     ⊲ assign all datapoints to the nearest cluster
+  while queuem is not empty() do                                           µ = |C1i | ∑w j ∈Ci w j         ⊲ update centroids if required
+    c0 ← DEQUEUE(queuem)                                                   cost = ∑nj=1 ∑w∈C j ||η j d(w, µ j )||
+    for nc ← neighborhood(c0) do              ⊲ neighborcells              ∆cost = |cost − cost −|
+       if IsNewUnknown(nc ) and visited[cell] == False                     if ∆cost < ε then
+  then                                                                        C ← Ĉ
+         w,Visited, lc ← buildNewUnknowns(nc )                                break
+         W.append(w)                                                       end if
+         Enqueue(queuem, lc )                                              cost − ← cost
+       else if Visited[nc] == False then                                 until MAXLOOP
+         Enqueue(queuem, nc )                                            return C
+         Visited[nc ] = True
+       end if
+    end for
+  end while                                                                                           K
+  return W(NewUnknownSet)                                                                   min
+                                                                                         cK ′ +1 ,··· ,cK
+                                                                                                          ∑ ∑ ||η j d j (w, c j )||            (5)
+                                                                                                      j=1 w∈C j
+
+                                                                       where η j d j (·, ·) is the weighted distance, which reflects the j-
+E. Waypoint Generation                                                 th robot’s sensing capability using the normalized coefficient
+                                                                       η j . We define coverage competency η j as SR       min
+                                                                                                                          SR j where SR j
+   Under the premise that we are given static map informa-             is the sensing capacity of j-th agent, which is the product of
+tion a priori, the search map (entropy map) can be used to             a moving speed and sensing range of agent j. Because we
+identify unexplored areas. We generate waypoints that divide           normalize this coefficient with SRmin , the minimum value of
+these unexplored portions of the search polygon according to           sensing capacity among all agents, we can use it to consider
+the unit FoV size (i.e. those points which have a 0.5 value).          relative proximity between centroids and points. In this way
+The resulting set of waypoints ensure complete coverage                we ensure that robots which are fast or have a large FoV are
+if visited. Our proposed algorithm generates this set using            allocated more waypoints than robots which are not.
+sensor range as shown in Algorithm 2.                                      Furthermore, this formulation has the advantage of being
+                                                                       flexible in varying situations. When the robots are evenly
+F. Heterogeneous Clustering
+                                                                       distributed in the search region, computed waypoints will
+   We view the waypoint assignment problem in this case as             easily be distributed among the agents. However, some
+a clustering problem. The K-means clustering method parti-             situations arise in which robots start next to one another.
+tions a set of data into a predefined number of K subgroups            If two agents with competency gaps begin next to each
+so as to minimize the sum of the distance squared between              other, then all of the nearby points will be assigned to the
+each data point and the centroid of assigned cluster. In the           more competent teammate. To avoid this, we compute a
+search setting K is equal to the number of team members.               new centroid when any agent is assigned fewer than some
+Unlike in the conventional method, which is completely un-             minimum defined number of points. If, on the other hand,
+supervised learning to determine cluster centers, we perform           two agents of equal skill begin next to each other we compute
+clustering based on the known position of the robots. When             the distance to other agents and determine which member is
+computing the nearest neighbors based on robot location, we            given the new centroid and in addition those nearby agents
+account for the robot’s coverage competency.                           are given a new centroid. As a result of clustering, we receive
+   Let W = {w1 , w2 , · · · , wm } where wi is i-th waypoint           the waypoints assigned to each agent (centroid) in C.
+extracted from search map (2) and let C = {c1 , · · · , ck } be
+a set of K centroids, which correspond to the location of              G. Traveling Salesman Problem
+the agents. Suppose K ′ (K ′ ≤ K) centroids are given as                  After constructing and assigning a cluster to each robot
+a constraint. The goal is to obtain the remaining number               we solve an instance of the Traveling Salesman Problem
+(K − K ′ ) of centroids and to assign each point to the nearest        (TSP) separately for each agent in parallel. In this study we
+centroid such that sum of the metric d j (x1 , x2 ) = η j |x1 − x2 |   adopted the Genetic Algorithm for solving TSP [31]. In this
+is minimized as follows.                                               setting the start point is the cluster’s centroid (i.e. the robot’s
+                                                                           B                                              B
+
+                                                                     A                                               A
+
+                                                                                 F           E                                   F
+
+                                                                                         C                                            C
+
+                                                                                         D                                            D
+
+Fig. 2. Scenario with 6 agents. All paths are described in different colors (a) Agent E (cyan) failure. (b) Re-planning step: Because the server has access
+to all robot plans, the waypoints assigned to the agent E can be reassigned to nearby agents. Ellipses represent the assignment of those waypoints (c)
+KC-TSS guarantees complete coverage by solving a new TSP instance.
+
+starting position). The result is the optimal route along the                    where c(si ) denotes the traveling cost to move along the
+cluster. While this generates a set of k optimal paths when                    path si .
+considered independently, the solution does not consider the
+other agents. To overcome this lack of consideration of the                    I. Re-planning
+team’s combined effort, we generate a set of sample paths
+for each agent then use the information-theoretic framework                       In the event of robot failure or if some of the agents
+using the aforementioned constraints. We exploit the utility                   finish covering their sub-region without finding the target,
+function which maximizes the acquisition of information for                    it is desirable to re-plan for the team. When a preset
+the full team in a limited time while penalizing traveling                     percentage of the team covers their region we generate a
+costs. In this way we have provided higher quality samples to                  new set of waypoints over the full unexplored search map
+the utility function when compared to traditional or frontier-                 and perform the full process again. Similarly, if a robot
+based methods.                                                                 loses communication with the server or fails to move for
+                                                                               an extended period of time, we perform the same process of
+H. Path Selection
+                                                                               resetting to generating waypoints ( step (2) in section III-A).
+   In this stage, our framework determines which direction                     We explicitly define re-planning conditions.
+the robots will travel along the given route from TSP (See
+                                                                                     • Failure (stop operating or lost communication)
+Fig. I. Given the routes from TSP, candidate paths are sam-
+                                                                                     • Another prediction prediction model applied
+pled using several points which are close to robot positions.
+                                                                                     • All way points assigned are visited by the corresponding
+An A* planner is used to generate obstacle-free paths and
+                                                                                       agent
+all paths are re-parameterized with respect to agent’s moving
+speed. Based on the number of sampled points along a path,                       These re-planning conditions allow our team to be adapt-
+we compute the Information Gain, denoted IG(s), with the                       able to changes in the environment including robot failure.
+following equation:                                                            One re-planning scenario is shown in Fig. 2.
+
+           Ns
+                                                                               J. WAF
+IG(s) ≈ ∑ H(FOV (si ))
+        i=1
+          "                                               #                       We introduce a new metric called WAF, Waypoint Alloca-
+       Ns   Nc                                                                tion Factor to evaluate the contribution of the task according
+    = ∑ ∑ mi, j log(mi, j ) + (1 − mi, j )log(1 − mi, j )
+                                                         
+                                                                               to the coverage competency. In order to compute how evenly
+         i=1    j=1
+                                                                               the area coverage is allocated, we take the total swept
+                                                                         (6)
+                                                                               area of each agent and divide by the coverage competency.
+where si denotes the i-th sampled point and m is the                           Specifically, we apply the following equation,
+occupancy probability, while Ns and Nc are the number of                                                                  
+sampling points and the number of cells in the FOV given the                                                      A(|ri |)
+                                                                                                  WAF = std λ                             (8)
+sampled points, respectively. Thus, The IG(s) is calculated                                                         ηi
+by summing over the FOV regions defined by sampled points
+through the path. The overall expected utility, E[Ũ], is then                 where A(|ri |) denotes total swept area for agent i, ηi is the
+computed for the full team as                                                  coverage competency, and λ means a normalizing constant.
+                                                                               A value close to zero indicates that the waypoints were
+                                           n
+           E[Ũ(xt |y1 , y2 , · · · , yn )] = ∑ (IG(si ) − c(si ))       (7)   evenly distributed among the team after competency con-
+                                            i                                  siderations
+                                                      80
+     0
+
+                                                      60
+
+     0                                                40
+
+                                                      20
+
+     0                                                 0
+
+                                                  y
+                                                      20
+
+     0                                                40
+
+                                                      60
+
+     0
+                                                      80
+         40       20       0        20       40            80   60   40   20   0     20   40      60     80
+                           x                                                   x
+
+                          (a)                                                  (b)                                                          (c)
+
+Fig. 3. Simulation results with different number of agents in different size search regions. (a) 3 agent case (40×40) (b) 10 agents (80×80) (c) 50 agents
+(200×200)
+
+K. Computational Complexity                                                                                                                Environment
+                                                                                               Given Information
+                                                                                               1. Static Map
+    Achieving computational efficiency is critical for achiev-                                 2. Search Polygon
+                                                                                               3. Team Size (n)
+ing online planning as the number of agents increase. We
+analyze here the computational efficiency of the proposed
+algorithm using the following parameters; Number of cells                                        Search Server
+                                                                                                       Search Map          agent i pose              Agent i
+Ng (map size / resolution), the number of trajectories to
+                                                                                                        (Entropy)
+sample Nt , the number of agents k, and other parameters for                                                                                         Localization
+                                                                                                                         agent i sensing
+other algorithm.                                                                                  Search Manager
+    In detail, the complexity of the waypoint generation al-                                                                                          Perception
+                                                                                                  Prediction Server
+gorithm 2 is O(Ng ). The clustering has a time complexity                                              Clustering
+                                                                                                                                                     Navigation
+of O(ikmd) where i denotes the fixed number of iterations
+                                                                                                       TSP Solver          agent i path
+(max iteration), k is the number of clusters which is equal
+                                                                                                   Path Smoother                                  Object Recognition
+to the number of agents, number of m data and d dimension
+                                           N
+of the data. It can be computed as kNFgOV and represents the
+worst case of decomposition (i.e. that the search region is
+totally unknown and divided by the product of number of                              Fig. 4. Flowchart describing simulation implementation and interactions
+                                                                                     between the search server and agents.
+agents and unit cell size of the FOV). The solution of the
+TSP with the genetic algorithm is of order O( jn0 n2 ) where                                                               TABLE I
+ j is number of outer iterations of genetic algorithm and n0 is                                                       C OMPARATIVE TEST
+the initial size of population, and n is number of locations.
+Sampling based path selection algorithm takes O(Nt log Nt                                                    Method            Completion Time (s)
+complexity. Overall, the complexity of our algorithm is                                                     Guastella’s           3591.8 ± 0.00
+               Ng                                                                                             SCoPP              196.53 ± 14.53
+O(Ng + 2ik kNFOV   + k jn0 n2 Nt log Nt ).                                                                 KC-TSS (ours)         180.22 ± 21.23
+
+               IV. E XPERIMENTS AND R ESULTS
+                                                                                     B. Comparative Results
+A. Numerical Simulation Results
+                                                                                       We benchmark our method against a state-of-the-art al-
+   We present python-based simulation results of our pro-                            gorithm with the results shown in Table I. KC-TSS is
+posed approach to demonstrate its scalability. Agent state                           shown to outperform the offline algorithm SCoPP [7] when
+is represented as s = [x, y, θ ] and has two control inputs                          using the same search setting. That is the simulation trials
+u = [v, ω ] as per the equations of motion for a non-holonomic                       were performed in the python-based numerical simulation
+mobile agent. Each agent is equipped with a ray sensor which                         in a region of the same size using the same number of
+has square-type of FoV with limited range. It is assumed that                        agents which are given equal skill. We generate this data
+the simulation environment (search region) and all the static                        using 13 agents in the same size rectangular search polygon
+obstacles have a rectangular shape and obstacles can not be                          as presented by [7] and we generate this data from 10
+known in advance. To achieve robust collision avoidance,                             comparative trials.
+we use dynamic window approach [32] to generate each
+agent’s control input. We tested different initial conditions                        C. Effectiveness of Coverage Competency
+with varying number of agents and we show some example                                  In simulation we tested six cases. Because of the random
+scenarios in Fig 3.                                                                  distribution of robot starting place, it will not approach
+                                          Local Costmap                                Target Location             Target Object
+
+                                                 Agent 1
+
+                       Agent 3                          Agent 2
+
+                                                Clusters
+
+                                              (a)                                                            (b)
+
+Fig. 5. (a) Experimental validation for a three robot search in the Aerospace Building 4th floor. In the top left figure, the yellow regions are those which
+have been explored, while the white areas are regions of uncertainty. The target location is described as a red box and is unknown to the robots. The red,
+green and blue markers represent the clusters for each agent. (b) The completion of the experimental validation with Agent 1 converging to the target of
+interest. The object recognition is performed using the well-known YOLO algorithm to detect people (shown in the cyan box).
+
+                 0.5                                                            has been struck by natural disaster. We validate the static
+                                                                                target search capability in all three environments. In the town
+                 0.4
+                                                                                map, the agents search for an injured person and we use this
+                                                                                information to guide the target prediction model by assuming
+           WAF
+
+                 0.3
+                                                                                the injured person will be near a building as opposed to in
+                 0.2                                                            open space. We also demonstrate the resilience of the search
+                                                                                method by performing re-planning under agent failure. This
+                 0.1                                                            paper’s accompanying video features the described scenarios.
+                                                                                   To validate the inclusion of coverage competency, we
+                         2       3       5       10     25    50                present II to compare mission time for the agents when
+                                     Number of agents                           coverage competency is used versus when it is not used.
+                                                                                Additionally, for the trials using coverage competency we
+      Fig. 6.     Waypoint Allocation Factor versus number of agents
+                                                                                include the WAF score. This table uses teams of n hetero-
+                                                                                geneous robots and is computed over 10 trials on each map
+zero because we cannot perfectly account for coverage                           with varying initial conditions. In all cases, it was confirmed
+skill. However, our results suggest that this value is safely                   that the search time was reduced and the WAF value was also
+maintained below 0.4 in all scenarios. It is natural that WAF                   low. There is a trend that the WAF increases slightly as the
+increases with the number of agents due to the random initial                   size of the map increases. The results clearly demonstrates
+conditions. The data from these trials is in Fig. 6.                            that the addition of coverage competency impacts the search
+                                                                                speed of the team and that the search area was more properly
+D. Resilience to Failure                                                        distributed.
+   One significant advantage of our framework is that it can
+                                                                                F. Real Robot Experiment
+quickly re-plan navigation behavior when one or more team
+members fail via loss of communication or navigational error                      We implement search for a static target with a het-
+(e.g. a computer loses internet connection, a legged robots                     erogeneous three robot team. This preliminary experiment
+falls). When faced with one of these events, we regenerate                      demonstrates that our proposed method is viable in real world
+the set of waypoints over the unexplored region, cluster and                    environments, however, execution of the search required
+allocate them, and then continue the method as before. Fig.                     human intervention due to localization errors. The team is
+2 demonstrates this resilience to failure.                                      comprised of two Unitree A1 quadrupeds with different sen-
+
+E. Gazebo-ROS Simulation
+                                                                                                                TABLE II
+  We validate our framework’s ability to transfer to robotic                       S EARCH T IME ( S ) WITH AND WITHOUT C OVERAGE C OMPETENCY
+systems in human environments with high fidelity Gazebo
+simulations. The first is a 10mx20m simulation of the Anna                         Map (# robots)          w/o CC         WAF       w CC (proposed)      WAF
+Hiss Gymnasium apartment, the second is a 40mx50m region                           Apartment (2)         124.8 ± 13.2     0.23        83.8 ± 22.4        0.07
+simulating the outside of a home environment (see Fig. 4                          Home Outdoor (3)        72.8 ± 8.5      0.31        58.1 ± 12.4        0.12
+                                                                                    Disaster (4)         252.2 ± 21.2     0.37       189.8 ± 29.6        0.18
+upper right corner) and the final is a 100mx100m town that
+sor suites and a Toyota HSR. One A1 quadruped is equipped                  [10] V. Cavinato, T. Eppenberger, D. Youakim, R. Siegwart, and R. Dubé,
+with a Velodyne VLP-16 3D Lidar and a RealSense D435.                           “Dynamic-aware autonomous exploration in populated environments,”
+                                                                                arXiv preprint arXiv:2104.02696, 2021.
+The other is equipped with a RPLidar A3 2D Lidar and a                     [11] R. Pěnička, M. Saska, C. Reymann, and S. Lacroix, “Reactive dubins
+Realsense D435. Both quadrupeds have Intel NUC Mini PCs                         traveling salesman problem for replanning of information gathering
+onboard which communicate with the robot hardware. The                          by uavs,” in 2017 European Conference on Mobile Robots (ECMR).
+                                                                                IEEE, 2017, pp. 1–6.
+HSR is equipped with Hokuyo 2D Lidar, RGB-D camera                         [12] S. Kohlbrecher, F. Kunz, D. Koert, C. Rose, P. Manns, K. Daun,
+sensing and has an on board Jetson TK1. The central search                      J. Schubert, A. Stumpf, and O. v. Stryk, “Towards highly reliable
+server is run on a remote laptop and we use Robofleet [33]                      autonomy for urban search and rescue robots,” in Robot Soccer World
+                                                                                Cup. Springer, 2014, pp. 118–129.
+for efficient communication between the server and agents.                 [13] G. Hollinger, S. Singh, J. Djugash, and A. Kehagias, “Efficient
+The entire framework is implemented in ROS Melodic. At                          multi-robot search for a moving target,” The International Journal
+initial planning or a re-planning step, the search server                       of Robotics Research, vol. 28, no. 2, pp. 201–219, 2009.
+                                                                           [14] H. Choset, “Coverage of known spaces: The boustrophedon cellular
+generates a set of n paths and then sends those to the agents                   decomposition,” Autonomous Robots, vol. 9, no. 3, pp. 247–253, 2000.
+(see Fig. 4).                                                              [15] E. I. Grotli and T. A. Johansen, “Path planning for uavs under
+   The search experiment is performed in the Aerospace                          communication constraints using splat! and milp,” pp. 265–282, 2012.
+                                                                           [16] T. I. F. Erik J. Forsmo, Esten I. Grotli and T. A. Johansen, “Optimal
+Engineering building at the University of Texas at Austin                       search mission with unmanned aerial vehicles using mixed integer
+while looking for a static volleyball and the total mission                     linear programming,” 2013.
+time is one minute 14 seconds. The experiment is depicted                  [17] A. P. Premkumar, K. Yu, and P. Tokekar, “A geometric approach
+                                                                                for multi-robot exploration in orthogonal polygons,” in Algorithmic
+in Fig 5.                                                                       Foundations of Robotics XII. Springer, Cham, 2020, pp. 896–911.
+                                                                           [18] A. Dai, S. Papatheodorou, N. Funk, D. Tzoumanikas, and S. Leuteneg-
+                  V. C ONCLUDING R EMARK                                        ger, “Fast frontier-based information-driven autonomous exploration
+                                                                                with an mav,” arXiv preprint arXiv:2002.04440, 2020.
+  This paper addresses online search for a general hetero-                 [19] B. Yamauchi, “A frontier-based approach for autonomous exploration,”
+                                                                                in Computational Intelligence in Robotics and Automation, 1997.
+geneous multi agent systems. The mission completion time                        CIRA’97., Proceedings., 1997 IEEE International Symposium on.
+of our method is compared with a state-of-the-art algorithm                     IEEE, 1997, pp. 146–151.
+and shown to outperform it. We further validate our al-                    [20] L. Zhou, V. Tzoumas, G. J. Pappas, and P. Tokekar, “Resilient active
+                                                                                target tracking with multiple robots,” IEEE Robotics and Automation
+gorithm with extensive simulation results in Gazebo using                       Letters, vol. 4, no. 1, pp. 129–136, 2018.
+ROS. Finally, we demonstrate the efficacy of this proposed                 [21] I. E. Rabban and P. Tokekar, “Improved resilient coverage maximiza-
+method in a real robot experiment. Overall results validate                     tion with multiple robots,” arXiv e-prints, pp. arXiv–2007, 2020.
+                                                                           [22] M. Ishat-E-Rabban and P. Tokekar, “Failure-resilient coverage maxi-
+the effectiveness and robustness of the proposed algorithm.                     mization with multiple robots,” IEEE Robotics and Automation Letters,
+Several future works remain, however, current efforts are                       vol. 6, no. 2, pp. 3894–3901, 2021.
+towards including a target motion model for dynamic targets                [23] K. Yu, J. M. O’Kane, and P. Tokekar, “Coverage of an environment
+                                                                                using energy-constrained unmanned aerial vehicles,” in 2019 interna-
+and performing continuous coverage.                                             tional conference on robotics and automation (ICRA). IEEE, 2019,
+                                                                                pp. 3259–3265.
+                           R EFERENCES                                     [24] X. Cai, B. Schlotfeldt, K. Khosoussi, N. Atanasov, G. J. Pappas, and
+                                                                                J. P. How, “Non-monotone energy-aware information gathering for
+[1] C. Cao, H. Zhu, H. Choset, and J. Zhang, “Tare: A hierarchical              heterogeneous robot teams,” arXiv preprint arXiv:2101.11093, 2021.
+    framework for efficiently exploring complex 3d environments,” in       [25] K. Cesare, R. Skeele, S.-H. Yoo, Y. Zhang, and G. Hollinger, “Multi-
+    Robotics: Science and Systems Conference (RSS), Virtual, 2021.              uav exploration with limited communication and battery,” in 2015
+[2] F. Amigoni and V. Caglioti, “An information-based exploration strat-        IEEE international conference on robotics and automation (ICRA).
+    egy for environment mapping with mobile robots,” Robotics and               IEEE, 2015, pp. 2230–2235.
+    Autonomous Systems, vol. 58, no. 5, pp. 684–699, 2010.                 [26] B. Woosley, P. Dasgupta, J. G. Rogers, and J. Twigg, “Multi-robot
+                                                                                information driven path planning under communication constraints,”
+[3] B. Charrow, G. Kahn, S. Patil, S. Liu, K. Goldberg, P. Abbeel,
+                                                                                Autonomous Robots, vol. 44, no. 5, pp. 721–737, 2020.
+    N. Michael, and V. Kumar, “Information-theoretic planning with
+                                                                           [27] G. Shi, I. E. Rabban, L. Zhou, and P. Tokekar, “Communication-
+    trajectory optimization for dense 3d mapping.” in Robotics: Science
+                                                                                aware multi-robot coordination with submodular maximization,” arXiv
+    and Systems, vol. 11, 2015.
+                                                                                preprint arXiv:2011.01476, 2020.
+[4] B. Charrow, S. Liu, V. Kumar, and N. Michael, “Information-theoretic
+                                                                           [28] G. A. Hollinger and S. Singh, “Multirobot coordination with peri-
+    mapping using cauchy-schwarz quadratic mutual information,” in 2015
+                                                                                odic connectivity: Theory and experiments,” IEEE Transactions on
+    IEEE International Conference on Robotics and Automation (ICRA).
+                                                                                Robotics, vol. 28, no. 4, pp. 967–973, 2012.
+    IEEE, 2015, pp. 4791–4798.
+                                                                           [29] T. Sakamoto, S. Bonardi, and T. Kubota, “A routing framework for
+[5] P. R. Tokekar, “Placement and motion planning algorithms for robotic
+                                                                                heterogeneous multi-robot teams in exploration tasks,” IEEE Robotics
+    sensing systems,” Ph.D. dissertation, University of Minnesota, 2014.
+                                                                                and Automation Letters, vol. 5, no. 4, pp. 6662–6669, 2020.
+[6] R. Bähnemann, N. Lawrance, J. J. Chung, M. Pantic, R. Siegwart,       [30] M. Kim, R. Gupta, and L. Sentis, “Information-theoretic based target
+    and J. Nieto, “Revisiting boustrophedon coverage path planning as           search with multiple agents,” arXiv preprint arXiv:2107.12715, 2021.
+    a generalized traveling salesman problem,” in Field and Service        [31] M. Sedighpour, M. Yousefikhoshbakht, and N. Mahmoodi Darani, “An
+    Robotics. Springer, 2021, pp. 277–290.                                      effective genetic algorithm for solving the multiple traveling salesman
+[7] L. Collins, P. Ghassemi, E. T. Esfahani, D. Doermann, K. Dantu, and         problem,” Journal of Optimization in Industrial Engineering, no. 8,
+    S. Chowdhury, “Scalable coverage path planning of multi-robot teams         pp. 73–79, 2012.
+    for monitoring non-convex areas,” arXiv preprint arXiv:2103.14709,     [32] D. Fox, W. Burgard, and S. Thrun, “The dynamic window approach to
+    2021.                                                                       collision avoidance,” IEEE Robotics & Automation Magazine, vol. 4,
+[8] S. McCammon and G. A. Hollinger, “Topological path planning                 no. 1, pp. 23–33, 1997.
+    for autonomous information gathering,” Autonomous Robots, vol. 45,     [33] K. S. Sikand, L. Zartman, S. Rabiee, and J. Biswas, “Robofleet:
+    no. 6, pp. 821–842, 2021.                                                   Open source communication and management for fleets of autonomous
+[9] G. A. Hollinger and G. S. Sukhatme, “Sampling-based robotic infor-          robots,” in 2021 IEEE/RSJ International Conference on Intelligent
+    mation gathering algorithms,” The International Journal of Robotics         Robots and Systems (IROS). IEEE, 2021, pp. 406–412.
+    Research, vol. 33, no. 9, pp. 1271–1287, 2014.
