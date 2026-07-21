@@ -45,6 +45,7 @@ def _detect_root() -> Path:
 PROJECT_ROOT: Path = _detect_root()
 SRC_DIR: Path = PROJECT_ROOT / "src"
 DATA_DIR: Path = PROJECT_ROOT / "data"
+LOGS_DIR: Path = PROJECT_ROOT / "logs"
 
 # Catégories connues (pour les scripts transverses / stats globales)
 CATEGORIES = ("cat1", "cat2", "cat3")
@@ -97,6 +98,23 @@ def stats_path(category: str) -> Path:
 
 def code_dir(category: str) -> Path:
     return SRC_DIR / category
+
+
+# --------------------------------------------------------------------------
+# Journaux d'exécution (rapports .md) -- transverse aux catégories
+# --------------------------------------------------------------------------
+
+def logs_dir() -> Path:
+    return LOGS_DIR
+
+
+def report_path(name: str, stamp: str) -> Path:
+    """
+    Chemin d'un rapport d'exécution : logs/<stamp>-<name>.md
+    stamp est fourni par l'appelant (common.run_report) pour que tous les
+    fichiers d'un même run partagent le même horodatage.
+    """
+    return LOGS_DIR / f"{stamp}-{name}.md"
 
 
 # --------------------------------------------------------------------------

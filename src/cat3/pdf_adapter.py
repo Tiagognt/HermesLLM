@@ -27,6 +27,8 @@ from typing import List, Optional
 
 from common.llm_provider import LLMProvider, TemplateProvider
 from common.corpus_assembler import DocumentDraft
+from common.ocr import (OcrUnavailable, looks_like_pdf, ocr_pdf,
+                        sniff_file_type)
 
 
 # --------------------------------------------------------------------------
@@ -150,6 +152,15 @@ def llm_format(text: str, provider: LLMProvider, max_chars: int = 12000) -> str:
 MIN_USEFUL_CHARS = 200   # en dessous : PDF probablement scanné (pas de couche texte)
 
 
+def ocr_cache_path(pdf_path: Path) -> Path:
+    """
+    Cache OCR, à côté du PDF source. L'OCR coûte quelques secondes par page :
+    sans cache, régénérer le corpus (phase 2) relancerait la reconnaissance
+    à chaque fois, ce qui reviendrait à coupler les deux phases.
+    """
+    return pdf_path.parent / f".ocr-{pdf_path.stem}.json"
+
+
 def adapt(
     robot_id: str,
     pdf_path: Path,
@@ -160,21 +171,62 @@ def adapt(
     provider: Optional[LLMProvider] = None,
     use_llm_format: bool = False,
     max_chars: Optional[int] = 40000,
+    use_ocr: bool = False,
+    ocr_max_pages: Optional[int] = None,
+    ocr_progress=None,
 ) -> DocumentDraft:
+    # Contrôle de signature AVANT toute tentative d'extraction : un fichier
+    # « .pdf » qui n'en est pas un produisait sinon une erreur pdfminer
+    # incompréhensible (« No /Root object! ») n'indiquant aucune action.
+    if not looks_like_pdf(pdf_path):
+        raise RuntimeError(
+            f"{pdf_path.name} n'est pas un PDF : contenu réel détecté = "
+            f"{sniff_file_type(pdf_path)}. Le fichier doit être "
+            f"re-téléchargé depuis la source officielle."
+        )
+
     pages = _extract_pages_pdfplumber(pdf_path)
     if pages is None:
         pages = [_extract_text_pdftotext(pdf_path)]
 
     text = clean_text(pages)
+    used_ocr = False
+    ocr_confidence: Optional[float] = None
+    provenance = {"pdf_file": pdf_path.name, "n_pages": len(pages),
+                  "extraction": "native"}
 
-    # Un PDF scanné (images seules) ressort quasi vide : mieux vaut une
-    # erreur explicite qu'un enregistrement vide dans le corpus.
+    # Un PDF scanné (images seules) ressort quasi vide.
     if len(text) < MIN_USEFUL_CHARS:
-        raise RuntimeError(
-            f"{pdf_path.name} : {len(text)} caractères extraits seulement "
-            f"({len(pages)} pages) -- PDF probablement scanné ou sans couche "
-            f"texte. OCR nécessaire, ou écarter ce manuel."
-        )
+        if not use_ocr:
+            raise RuntimeError(
+                f"{pdf_path.name} : {len(text)} caractères extraits seulement "
+                f"({len(pages)} pages) -- PDF probablement scanné ou sans couche "
+                f"texte. Relancer avec --ocr, ou écarter ce manuel."
+            )
+        try:
+            result = ocr_pdf(pdf_path, max_pages=ocr_max_pages,
+                             cache_path=ocr_cache_path(pdf_path),
+                             progress=ocr_progress)
+        except OcrUnavailable as exc:
+            raise RuntimeError(
+                f"{pdf_path.name} : PDF scanné et OCR indisponible. {exc}"
+            ) from exc
+
+        text = clean_text([result.text])
+        if len(text) < MIN_USEFUL_CHARS:
+            raise RuntimeError(
+                f"{pdf_path.name} : OCR effectué ({result.describe()}) mais "
+                f"seulement {len(text)} caractères exploitables -- document "
+                f"à écarter."
+            )
+        used_ocr = True
+        ocr_confidence = result.mean_confidence
+        provenance.update({
+            "extraction": "ocr",
+            "ocr_backend": result.backend,
+            "ocr_pages_with_text": result.n_pages_with_text,
+            "ocr_mean_confidence": round(result.mean_confidence, 4),
+        })
 
     if use_llm_format and provider is not None:
         text = llm_format(text, provider)
@@ -189,5 +241,7 @@ def adapt(
         url=url,
         lang="en",
         source_name=source_name or f"manual:{robot_id}",
-        provenance={"pdf_file": pdf_path.name, "n_pages": len(pages)},
+        provenance=provenance,
+        ocr=used_ocr,
+        ocr_confidence=ocr_confidence,
     )

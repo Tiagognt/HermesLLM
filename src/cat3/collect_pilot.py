@@ -29,6 +29,7 @@ from datetime import datetime, timezone
 
 from common import paths
 from common.license_utils import classify_license, is_collectible
+from common.run_report import RunReport
 from cat3.fetch_git_source import fetch_from_git
 from cat3.fetch_robot_descriptions import fetch_via_robot_descriptions
 from cat3.sources import PILOT_CATALOG, RobotSource, SourceType
@@ -97,9 +98,27 @@ def _collect_from_git(source: RobotSource, robot_dir: Path):
     }
 
 
-def _collect_one(source: RobotSource) -> None:
+def _robot_dir(source: RobotSource) -> Path:
+    return RAW_URDF_DIR / source.robot_id
+
+
+def _cleanup_if_empty(robot_dir: Path) -> bool:
+    """
+    Supprime le dossier d'un robot s'il est resté vide.
+
+    Le dossier est créé avant la récupération ; si celle-ci échoue, il
+    restait sur le disque, vide, et donnait l'illusion d'un robot collecté
+    (cas réel : `tiago`, dossier vide et absent des métadonnées).
+    """
+    if robot_dir.is_dir() and not any(robot_dir.iterdir()):
+        robot_dir.rmdir()
+        return True
+    return False
+
+
+def _collect_one(source: RobotSource, report: RunReport) -> None:
     print(f"[{source.robot_id}] collecte en cours...")
-    robot_dir = RAW_URDF_DIR / source.robot_id
+    robot_dir = _robot_dir(source)
     robot_dir.mkdir(parents=True, exist_ok=True)
 
     if source.source_type is SourceType.ROBOT_DESCRIPTIONS:
@@ -116,6 +135,10 @@ def _collect_one(source: RobotSource) -> None:
     if not collectible:
         print(f"[{source.robot_id}] ECARTE -- licence non conforme ({license_status})")
         shutil.rmtree(robot_dir, ignore_errors=True)
+        report.skip(source.robot_id, kind=source.robot_class or "urdf",
+                    reason=f"licence non conforme ({license_status}) — "
+                           f"bruts supprimés du disque"
+                           + (f". {source.notes}" if source.notes else ""))
         return
 
     _write_metadata_row({
@@ -138,27 +161,44 @@ def _collect_one(source: RobotSource) -> None:
     })
     flag = " (flagué, à traiter)" if license_status == "no-license" else ""
     print(f"[{source.robot_id}] collecté -- licence: {license_status}{flag}")
+    if license_status == "no-license":
+        report.warn(source.robot_id, kind=source.robot_class or "urdf",
+                    reason="collecté SANS licence déclarée, sur décision "
+                           "explicite du projet (ALLOW_NO_LICENSE_FOR)")
+    report.ok(source.robot_id, kind=source.robot_class or "urdf",
+              detail=f"{source.source_type.value} — licence {license_status}")
 
 
 def main() -> None:
+    report = RunReport("cat3-collect", category=CATEGORY,
+                       title="Catégorie 3 — phase 1 (collecte URDF)")
     print(f"Racine projet : {paths.PROJECT_ROOT}")
     print(f"Sortie brute  : {RAW_URDF_DIR}\n")
     paths.ensure_dirs(RAW_URDF_DIR, METADATA_PATH.parent, GIT_CACHE_DIR)
+    report.info("Catalogue", f"{len(PILOT_CATALOG)} robots")
+    report.info("Sortie brute", f"`{paths.to_relative(RAW_URDF_DIR)}`")
+    report.info("no-license tolérés", sorted(ALLOW_NO_LICENSE_FOR) or "aucun")
 
     if METADATA_PATH.exists():
         METADATA_PATH.unlink()
 
-    ok = failed = 0
     for source in PILOT_CATALOG:
         try:
-            _collect_one(source)
-            ok += 1
+            _collect_one(source, report)
         except Exception as exc:  # noqa: BLE001 -- on veut continuer les autres robots
-            failed += 1
             print(f"[{source.robot_id}] ECHEC: {exc}")
+            report.fail(source.robot_id, kind=source.robot_class or "urdf", exc=exc)
+            # Un échec laissait derrière lui un dossier vide, indistinguable
+            # d'une collecte réussie à l'inspection du disque.
+            if _cleanup_if_empty(_robot_dir(source)):
+                print(f"[{source.robot_id}] dossier vide supprimé")
 
-    print(f"\nTerminé : {ok} traités, {failed} en échec sur {len(PILOT_CATALOG)}.")
-    print(f"Résumé : {METADATA_PATH}")
+    report_path = report.write()
+    counts = report.counts()
+    print(f"\nTerminé : {counts['ok']} collectés, {counts['skip']} écartés, "
+          f"{counts['fail']} en échec sur {len(PILOT_CATALOG)}.")
+    print(f"Métadonnées : {METADATA_PATH}")
+    print(f"Rapport     : {report_path}")
 
 
 if __name__ == "__main__":

@@ -29,6 +29,11 @@ class DocumentDraft:
     lang: str = "en"
     source_name: str = ""     # ex: "robot_descriptions", "manual:unitree_g1"
     provenance: dict = field(default_factory=dict)  # infos annexes (capacités, fichiers...)
+    # Texte issu d'une reconnaissance optique (PDF scanné) : qualité et
+    # fiabilité des chiffres inférieures à une extraction native. Remonté
+    # dans le corpus pour rester filtrable en aval (cf. common/ocr.py).
+    ocr: bool = False
+    ocr_confidence: Optional[float] = None
 
 
 def assemble_record(
@@ -40,7 +45,7 @@ def assemble_record(
 ) -> dict:
     """DocumentDraft -> ligne de corpus (dict prêt à sérialiser en JSONL)."""
     tc = token_counter or TokenCounter()
-    return {
+    record = {
         "id": f"{category}-{draft.robot_id}-{draft.source_type}",
         "source": draft.source_name or draft.source_type,
         "category": category,
@@ -52,8 +57,12 @@ def assemble_record(
         "n_tokens": tc.count(draft.text),
         "n_tokens_exact": tc.is_exact,     # False = comptage approximatif (voir tokenizer_utils)
         "source_type": draft.source_type,  # pratique pour les stats/filtrage
+        "ocr": draft.ocr,                  # True = texte reconnu optiquement
         "collected_at": datetime.now(timezone.utc).isoformat(),
     }
+    if draft.ocr and draft.ocr_confidence is not None:
+        record["ocr_confidence"] = round(draft.ocr_confidence, 4)
+    return record
 
 
 REQUIRED_FIELDS = {"id", "source", "category", "tier", "license", "url",

@@ -168,7 +168,16 @@ PILOT_CATALOG: List[RobotSource] = [
 
     # ============ MANIPULATEURS MOBILES (7) ============
     _rd("fetch", "Fetch", "fetch_description", "mobile_manipulator"),
-    _rd("tiago", "TIAGo (official)", "tiago_official_description", "mobile_manipulator"),
+    # Le module s'appelle "tiago_description" (et non "tiago_official_description",
+    # qui n'existe pas dans robot_descriptions : l'entrée précédente plantait
+    # sur un ModuleNotFoundError, sans trace disque). Nom corrigé pour que la
+    # barrière licence puisse faire son travail : TIAGo est publié en
+    # CC-BY-NC-ND-3.0, donc HORS allowlist -> le robot est désormais écarté
+    # explicitement et journalisé, au lieu d'échouer silencieusement.
+    _rd("tiago", "TIAGo", "tiago_description", "mobile_manipulator",
+        notes="Licence CC-BY-NC-ND-3.0 (NonCommercial + NoDerivatives) : hors "
+              "allowlist des consignes. Écarté par la barrière licence, "
+              "conservé au catalogue pour que l'exclusion reste tracée."),
     _rd("reachy", "Reachy", "reachy_description", "mobile_manipulator"),
     _rd("pepper", "Pepper", "pepper_description", "mobile_manipulator"),
     _rd("rby1", "RBY1", "rby1_description", "mobile_manipulator"),

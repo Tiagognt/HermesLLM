@@ -15,6 +15,7 @@ de la lib standard) pour rester installable partout.
 from __future__ import annotations
 
 import math
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -67,6 +68,9 @@ class RobotModel:
     name: str
     links: List[Link] = field(default_factory=list)
     joints: List[Joint] = field(default_factory=list)
+    # Réparations appliquées au XML avant parsing. Jamais silencieuses :
+    # l'appelant les journalise (règle « aucun saut silencieux »).
+    parse_notes: List[str] = field(default_factory=list)
 
     def link_names(self) -> List[str]:
         return [l.name for l in self.links]
@@ -96,10 +100,75 @@ def _opt_float(x: Optional[str]) -> Optional[float]:
         return None
 
 
+# --------------------------------------------------------------------------
+# Lecture XML tolérante aux préfixes de namespace non déclarés
+#
+# Certains URDF publiés à l'époque de Gazebo Classic contiennent des balises
+# préfixées (<sensor:camera>, <controller:gazebo_ros_camera>) sans le
+# xmlns: correspondant. C'est du XML invalide : ElementTree refuse le
+# fichier entier avec « unbound prefix », et on perdait donc TOUT le robot
+# (cas réel : fetch, ligne 655) alors que ses <link>/<joint> sont parfaits.
+#
+# On déclare donc les préfixes manquants sur l'élément racine avant de
+# parser. Aucune donnée n'est supprimée ni réécrite : on n'ajoute que les
+# déclarations xmlns absentes. Les éléments concernés se retrouvent dans un
+# namespace factice, donc ignorés par nos findall("link")/findall("joint")
+# non préfixés -- exactement le comportement voulu, puisque ce sont des
+# extensions simulateur, pas de la description cinématique.
+# --------------------------------------------------------------------------
+
+_TAG_PREFIX_RE = re.compile(r"</?([A-Za-z_][\w.\-]*):")
+_ATTR_PREFIX_RE = re.compile(r"\s([A-Za-z_][\w.\-]*):[\w.\-]+\s*=")
+_XMLNS_DECL_RE = re.compile(r"xmlns:([A-Za-z_][\w.\-]*)\s*=")
+_FIRST_ELEMENT_RE = re.compile(r"<([A-Za-z_][\w.\-]*)(\s|>|/)")
+
+_RESERVED_PREFIXES = {"xml", "xmlns"}
+_UNDECLARED_NS_FMT = "urn:hermes:undeclared:{}"
+
+
+def _undeclared_prefixes(raw: str) -> List[str]:
+    used = set(_TAG_PREFIX_RE.findall(raw)) | set(_ATTR_PREFIX_RE.findall(raw))
+    declared = set(_XMLNS_DECL_RE.findall(raw))
+    return sorted(used - declared - _RESERVED_PREFIXES)
+
+
+def _declare_prefixes(raw: str, prefixes: List[str]) -> str:
+    m = _FIRST_ELEMENT_RE.search(raw)
+    if m is None:
+        raise ET.ParseError("aucun élément racine trouvé dans le document")
+    decls = " " + " ".join(
+        f'xmlns:{p}="{_UNDECLARED_NS_FMT.format(p)}"' for p in prefixes)
+    insert_at = m.end(1)
+    return raw[:insert_at] + decls + raw[insert_at:]
+
+
+def read_urdf_xml(path: Path) -> Tuple[ET.Element, List[str]]:
+    """
+    Retourne (racine, notes). `notes` documente toute réparation appliquée.
+    Une erreur XML qui n'est pas un préfixe non déclaré est relayée telle
+    quelle : on ne répare que ce qu'on sait réparer sans rien inventer.
+    """
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        return ET.fromstring(raw), []
+    except ET.ParseError as first_error:
+        if "unbound prefix" not in str(first_error):
+            raise
+        prefixes = _undeclared_prefixes(raw)
+        if not prefixes:
+            raise
+        root = ET.fromstring(_declare_prefixes(raw, prefixes))
+        note = (f"XML réparé avant parsing : préfixe(s) de namespace non "
+                f"déclaré(s) {prefixes} (erreur d'origine : {first_error}). "
+                f"Déclarations xmlns ajoutées sur la racine ; les éléments "
+                f"concernés (extensions simulateur) sont ignorés.")
+        return root, [note]
+
+
 def parse_urdf(path: Path) -> RobotModel:
     """Lit un fichier URDF et renvoie un RobotModel. Robuste aux champs absents."""
-    root = ET.parse(path).getroot()
-    model = RobotModel(name=root.get("name", "unnamed"))
+    root, notes = read_urdf_xml(path)
+    model = RobotModel(name=root.get("name", "unnamed"), parse_notes=notes)
 
     for l in root.findall("link"):
         mass_el = l.find("inertial/mass")

@@ -117,5 +117,8 @@ def adapt(
         url=url,
         lang="en",
         source_name=source_name,
-        provenance={"capabilities": cap},
+        # parse_notes documente toute réparation du XML source (préfixe de
+        # namespace non déclaré...). build_corpus la remonte en avertissement :
+        # une réparation n'est pas un échec, mais elle ne doit pas être tue.
+        provenance={"capabilities": cap, "parse_notes": model.parse_notes},
     )

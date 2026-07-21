@@ -1,0 +1,101 @@
+{
+  "_comment": "Scenarios d'evaluation a NE PAS retrouver dans le corpus d'entrainement. Regle globale des consignes : 'exclude any text overlapping our evaluation scenario'. Ce fichier est de la CONFIGURATION : il vit avec le code (src/common/), il est lu par common/contamination.py, et il s'applique a cat1, cat2 et cat3 sans modification de code. Ajouter un scenario d'evaluation = ajouter une entree ici.",
+  "_types_de_regles": {
+    "phrase": "contamine si l'une des phrases apparait telle quelle (comparaison insensible a la casse, espaces normalises).",
+    "cooccurrence": "contamine si AU MOINS un terme de CHAQUE groupe apparait a moins de window_chars caracteres d'un terme de chacun des autres groupes. Evite les faux positifs du type 'fire' seul dans un manuel de securite, ou 'metro' seul dans une adresse."
+  },
+  "scenarios": [
+    {
+      "id": "subway_station_fire",
+      "enabled": true,
+      "description": "Scenario d'evaluation du projet : incendie dans une station de metro (intervention d'une equipe de robots heterogenes). Tout texte qui recoupe ce scenario doit rester hors du corpus DAPT.",
+      "rules": [
+        {
+          "type": "phrase",
+          "id": "phrases_exactes",
+          "phrases": [
+            "subway station fire",
+            "subway fire",
+            "metro station fire",
+            "underground station fire",
+            "fire in a subway station",
+            "fire in the subway station",
+            "fire in a metro station",
+            "fire in the metro station",
+            "subway station evacuation",
+            "metro station evacuation",
+            "incendie dans une station de metro",
+            "incendie de station de metro",
+            "feu dans le metro"
+          ]
+        },
+        {
+          "type": "cooccurrence",
+          "id": "lieu_souterrain_x_incendie",
+          "window_chars": 400,
+          "groups": [
+            [
+              "subway",
+              "subway station",
+              "metro station",
+              "underground station",
+              "tube station",
+              "train station platform",
+              "railway platform",
+              "station platform",
+              "metro",
+              "station de metro",
+              "station de metro"
+            ],
+            [
+              "fire",
+              "fires",
+              "wildfire",
+              "blaze",
+              "smoke",
+              "burning",
+              "flames",
+              "flame",
+              "firefighting",
+              "firefighter",
+              "firefighters",
+              "incendie",
+              "fumee",
+              "flammes",
+              "pompier",
+              "pompiers"
+            ]
+          ]
+        },
+        {
+          "type": "cooccurrence",
+          "id": "evacuation_souterraine_x_secours",
+          "window_chars": 400,
+          "groups": [
+            [
+              "subway",
+              "metro",
+              "underground station",
+              "tube station",
+              "station platform"
+            ],
+            [
+              "evacuate",
+              "evacuation",
+              "evacuating",
+              "rescue",
+              "casualty",
+              "casualties",
+              "trapped passengers",
+              "search and rescue",
+              "victime",
+              "victimes",
+              "sauvetage",
+              "evacuation"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
